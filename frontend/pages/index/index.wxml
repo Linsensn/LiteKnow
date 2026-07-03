@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="header-title">AI 学习工作台</view>
+  
+  <!-- 重新排版：横向通栏卡片，信息更饱满 -->
+  <view class="feature-list">
+    <view class="feature-card" bindtap="navigateTo" data-url="/pages/summary/summary">
+      <view class="icon-box" style="background-color: #E8F5E9;">📝</view>
+      <view class="text-content">
+        <text class="card-title">课文摘要</text>
+        <text class="card-desc">自动提取核心主旨与段落大意</text>
+      </view>
+      <text class="arrow">></text>
+    </view>
+
+    <view class="feature-card" bindtap="navigateTo" data-url="/pages/explain/explain">
+      <view class="icon-box" style="background-color: #E3F2FD;">💡</view>
+      <view class="text-content">
+        <text class="card-title">知识精讲</text>
+        <text class="card-desc">AI 深度剖析知识点，答疑解惑</text>
+      </view>
+      <text class="arrow">></text>
+    </view>
+
+    <view class="feature-card" bindtap="navigateTo" data-url="/pages/quiz/quiz">
+      <view class="icon-box" style="background-color: #FFF3E0;">🎯</view>
+      <view class="text-content">
+        <text class="card-title">智能测验</text>
+        <text class="card-desc">基于课本内容，一键生成专属习题</text>
+      </view>
+      <text class="arrow">></text>
+    </view>
+  </view>
+
+  <!-- 底部半屏登录弹窗 (逻辑不变，样式微调) -->
+  <view class="mask" wx:if="{{showLoginPopup}}"></view>
+  <view class="login-popup {{showLoginPopup ? 'show' : ''}}">
+    <view class="popup-header">
+      <text class="popup-title">欢迎使用 LiteKnow</text>
+      <text class="popup-desc">请授权您的头像和昵称以继续</text>
+    </view>
+    <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <image class="avatar" src="{{tempAvatar}}"></image>
+    </button>
+    <view class="input-box">
+      <input type="nickname" class="nickname-input" placeholder="点击授权微信昵称" bindchange="onInputChange" value="{{tempNickName}}"/>
+    </view>
+    <button class="submit-btn" bindtap="confirmLogin">一键开启</button>
+  </view>
+</view>

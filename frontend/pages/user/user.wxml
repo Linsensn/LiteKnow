@@ -1,0 +1,42 @@
+<view class="container">
+  <!-- 头部用户信息 -->
+  <view class="user-profile" bindtap="openEditPopup">
+    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+    <view class="info">
+      <view class="nickname">{{userInfo.nickName || '未登录用户'}}</view>
+      <view class="sub-text">坚持学习，每天都有新收获</view>
+    </view>
+    <view class="edit-btn">修改资料 ></view>
+  </view>
+
+  <!-- 个人功能列表 -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/mistakes/mistakes">
+      <view class="menu-left"><text class="icon">📁</text><text>我的错题本</text></view>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item">
+      <view class="menu-left"><text class="icon">⭐</text><text>我的收藏</text></view>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item">
+      <view class="menu-left"><text class="icon">🕒</text><text>历史会话</text></view>
+      <text class="arrow">></text>
+    </view>
+  </view>
+
+  <!-- 修改资料半屏弹窗 -->
+  <view class="mask" wx:if="{{showEditPopup}}" bindtap="closeEditPopup"></view>
+  <view class="login-popup {{showEditPopup ? 'show' : ''}}">
+    <view class="popup-header">
+      <text class="popup-title">编辑个人资料</text>
+    </view>
+    <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <image class="avatar" src="{{tempAvatar}}"></image>
+    </button>
+    <view class="input-box">
+      <input type="nickname" class="nickname-input" placeholder="输入新昵称" bindchange="onInputChange" value="{{tempNickName}}"/>
+    </view>
+    <button class="submit-btn" bindtap="saveProfile">保存修改</button>
+  </view>
+</view>

@@ -1,0 +1,37 @@
+page { background-color: #F5F7FA; }
+/* 去除原有的 align-items: center，防止与子元素的 width: 100% 冲突 */
+.container { padding: 20rpx 24rpx; display: flex; flex-direction: column; }
+
+.user-profile { width: 100%; box-sizing: border-box; display: flex; align-items: center; background: #FFF; padding: 40rpx; border-radius: 20rpx; margin-bottom: 24rpx; box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02); }
+.user-profile:active { background-color: #F9F9F9; }
+
+/* 增加 flex-shrink: 0 防止头像被文字挤压，并提供灰色兜底背景 */
+.avatar { flex-shrink: 0; width: 120rpx; height: 120rpx; border-radius: 50%; margin-right: 30rpx; background-color: #F0F0F0; }
+
+/* 限制文字区域的宽度，防止挤成竖排 */
+.info { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 增加单行省略样式，昵称过长自动显示... */
+.nickname { font-size: 36rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-text { font-size: 24rpx; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 防止右侧按钮被挤压 */
+.edit-btn { flex-shrink: 0; font-size: 24rpx; color: #07c160; margin-left: 20rpx; }
+
+.menu-list { width: 100%; box-sizing: border-box; background: #FFF; border-radius: 20rpx; padding: 0 30rpx; box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02); }
+.menu-item { display: flex; justify-content: space-between; align-items: center; padding: 35rpx 0; border-bottom: 1rpx solid #F8F8F8; }
+.menu-item:last-child { border-bottom: none; }
+.menu-left { display: flex; align-items: center; font-size: 30rpx; color: #333; }
+.icon { font-size: 36rpx; margin-right: 20rpx; }
+.arrow { color: #CCC; font-weight: bold; }
+
+.mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+.login-popup { position: fixed; bottom: -100%; left: 0; right: 0; background: #FFF; border-radius: 30rpx 30rpx 0 0; padding: 50rpx 40rpx 60rpx; z-index: 100; transition: bottom 0.3s ease-out; display: flex; flex-direction: column; align-items: center; }
+.login-popup.show { bottom: 0; }
+.popup-title { font-size: 36rpx; font-weight: bold; color: #333; margin-bottom: 50rpx; display: block; text-align: center; }
+.avatar-wrapper { width: 140rpx !important; height: 140rpx !important; padding: 0; border-radius: 50%; margin-bottom: 40rpx; }
+/* 弹窗内的头像背景色兜底 */
+.login-popup .avatar { width: 100%; height: 100%; border-radius: 50%; margin: 0; background-color: #F0F0F0; }
+.input-box { width: 80%; border-bottom: 1rpx solid #eee; margin-bottom: 60rpx; padding-bottom: 20rpx; }
+.nickname-input { text-align: center; font-size: 32rpx; }
+.submit-btn { width: 80% !important; background: #07c160; color: #FFF; border-radius: 50rpx; font-size: 32rpx; font-weight: normal; }
