@@ -1,2 +1,27 @@
-<!--pages/summary/summary.wxml-->
-<text>pages/summary/summary.wxml</text>
+<view class="container">
+  <view class="content-card">
+    <view class="card-title">输入课文内容</view>
+    <textarea 
+      class="text-input" 
+      placeholder="请在此粘贴需要提取摘要的课文段落，或点击下方按钮上传文档..." 
+      maxlength="2000" 
+      bindinput="onInput" 
+      value="{{inputText}}">
+    </textarea>
+    
+    <view class="action-group">
+      <view class="upload-btn" bindtap="onUploadTap">
+        <text class="icon">📎</text> 传文件
+      </view>
+      <button class="generate-btn" bindtap="generateSummary" disabled="{{!inputText}}">生成摘要</button>
+    </view>
+  </view>
+
+  <view class="content-card result-card" wx:if="{{summaryResult}}">
+    <view class="card-title">✨ AI 核心主旨</view>
+    <view class="result-text">
+      <text user-select="true">{{summaryResult}}</text>
+    </view>
+    <view class="copy-btn" bindtap="copyResult">复制结果</view>
+  </view>
+</view>

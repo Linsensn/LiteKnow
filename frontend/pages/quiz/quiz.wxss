@@ -1,1 +1,158 @@
-/* pages/quiz/quiz.wxss */
+page {
+  background-color: #F5F7FA;
+}
+
+.container {
+  padding: 30rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: 60rpx; /* 给底部留点呼吸空间 */
+}
+
+/* 基础卡片样式复用 */
+.content-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #FFF;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.text-input {
+  width: 100%;
+  height: 180rpx;
+  background-color: #F9F9F9;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.action-group {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30rpx;
+}
+
+.generate-btn {
+  margin: 0;
+  background: #07c160;
+  color: #FFF;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  padding: 0 60rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+}
+
+.generate-btn[disabled] {
+  background: #A5E4C0 !important;
+  color: #FFF !important;
+}
+
+/* 题目卡片专属样式 */
+.quiz-title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 30rpx;
+  line-height: 1.5;
+}
+
+.quiz-num {
+  font-weight: bold;
+  color: #07c160;
+  margin-right: 10rpx;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  background-color: #F8F9FA;
+  border: 2rpx solid transparent;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  transition: all 0.2s;
+}
+
+.option-label {
+  font-weight: bold;
+  margin-right: 16rpx;
+  color: #666;
+}
+
+.option-text {
+  font-size: 30rpx;
+  color: #444;
+}
+
+/* 选项状态样式 */
+.option-item.selected {
+  background-color: #E8F5E9;
+  border-color: #07c160;
+}
+.option-item.selected .option-label {
+  color: #07c160;
+}
+
+/* 提交后的正确/错误反馈 */
+.option-item.correct {
+  background-color: #E8F5E9;
+  border-color: #07c160;
+}
+.option-item.wrong {
+  background-color: #FFEBEE;
+  border-color: #F44336;
+}
+
+/* 解析区域 */
+.explanation-box {
+  margin-top: 30rpx;
+  padding: 24rpx;
+  background-color: #FFF9E6;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.exp-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #F57C00;
+  margin-bottom: 12rpx;
+}
+
+.exp-content {
+  font-size: 28rpx;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* 底部大按钮 */
+.submit-quiz-btn {
+  width: 90% !important;
+  background: #07c160;
+  color: #FFF;
+  border-radius: 50rpx;
+  font-size: 34rpx;
+  font-weight: normal;
+  margin-top: 20rpx;
+}
+
+.restart-btn {
+  background: #FFF;
+  color: #07c160;
+  border: 2rpx solid #07c160;
+}
