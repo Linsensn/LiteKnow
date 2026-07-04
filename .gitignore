@@ -1,0 +1,49 @@
+# 环境配置与敏感文件 
+.env
+.env.local
+.env.*.local
+
+# 后端缓存与构建产物 
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# 本地虚拟环境 
+venv/
+env/
+.venv/
+
+# 前端依赖与构建产物 
+node_modules/
+dist/
+build/
+unpackage/
+miniprogram_npm/
+package-lock.json
+yarn.lock
+project.private.config.json
+
+# 配置文件 
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 日志与临时文件 
+logs/
+*.log
+*.tmp
