@@ -1,2 +1,45 @@
-<!--pages/quiz/quiz.wxml-->
-<text>pages/quiz/quiz.wxml</text>
+<view class="container">
+  <view class="content-card">
+    <view class="card-title">生成专属测验</view>
+    <textarea 
+      class="text-input" 
+      placeholder="请输入需要生成测验的知识点或课文段落（例如：唐朝历史、牛顿三大定律）..." 
+      maxlength="500" 
+      bindinput="onInput" 
+      value="{{topicText}}">
+    </textarea>
+    
+    <view class="action-group">
+      <button class="generate-btn" bindtap="generateQuiz" disabled="{{!topicText}}">一键出题</button>
+    </view>
+  </view>
+
+  <block wx:if="{{quizList.length > 0}}">
+    <view class="content-card quiz-card" wx:for="{{quizList}}" wx:key="id" wx:for-index="qIndex" wx:for-item="question">
+      <view class="quiz-title"><text class="quiz-num">{{qIndex + 1}}.</text> {{question.title}}</view>
+      
+      <view class="options-list">
+        <view 
+          class="option-item {{question.selected === oIndex ? 'selected' : ''}} {{hasSubmitted && question.correct === oIndex ? 'correct' : ''}} {{hasSubmitted && question.selected === oIndex && question.correct !== oIndex ? 'wrong' : ''}}" 
+          wx:for="{{question.options}}" 
+          wx:key="*this" 
+          wx:for-index="oIndex" 
+          wx:for-item="option"
+          bindtap="selectOption" 
+          data-qindex="{{qIndex}}" 
+          data-oindex="{{oIndex}}">
+          <text class="option-label">{{['A', 'B', 'C', 'D'][oIndex]}}.</text>
+          <text class="option-text">{{option}}</text>
+        </view>
+      </view>
+
+      <view class="explanation-box" wx:if="{{hasSubmitted}}">
+        <text class="exp-title">📝 AI 解析：</text>
+        <text class="exp-content">{{question.explanation}}</text>
+      </view>
+    </view>
+
+    <button class="submit-quiz-btn" bindtap="submitQuiz" wx:if="{{!hasSubmitted}}">提交答卷</button>
+    <button class="submit-quiz-btn restart-btn" bindtap="restartQuiz" wx:if="{{hasSubmitted}}">重新生成</button>
+  </block>
+</view>

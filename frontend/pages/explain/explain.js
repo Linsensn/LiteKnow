@@ -1,66 +1,62 @@
-// pages/explain/explain.js
+const util = require('../../utils/util.js')
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    questionText: '',
+    explainResult: ''
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
+  // 页面加载时触发
   onLoad(options) {
-
+    // 接收从其他页面（如错题本）传过来的问题参数
+    if (options.question) {
+      this.setData({
+        // 使用 decodeURIComponent 解码，防止中文或特殊符号变成乱码
+        questionText: decodeURIComponent(options.question)
+      });
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
+  onInput(e) {
+    this.setData({
+      questionText: e.detail.value
+    })
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
+  async generateExplanation() {
+    if (!this.data.questionText.trim()) return;
 
+    this.setData({ explainResult: '' });
+
+    try {
+      // 替换为实际的精讲 API 路由
+      const res = await util.request('/v1/agent/explain', 'POST', {
+        question: this.data.questionText
+      });
+      
+      this.setData({
+        explainResult: res.explanation
+      });
+      
+    } catch (error) {
+      console.error('精讲请求失败', error);
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
+  // 预留的多轮对话/追问接口
+  askMore() {
+    wx.showToast({
+      title: '多轮对话功能接入中...',
+      icon: 'none'
+    })
   },
 
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+  copyResult() {
+    wx.setClipboardData({
+      data: this.data.explainResult,
+      success: () => {
+        wx.showToast({ title: '已复制讲解内容' });
+      }
+    })
   }
 })
