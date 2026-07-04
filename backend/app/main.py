@@ -1,7 +1,7 @@
 import redis
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine, Base
+from config.database import SessionLocal, engine, Base
 import os
 
 # 创建 FastAPI 实例

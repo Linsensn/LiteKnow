@@ -4,3 +4,6 @@ sqlalchemy
 pymysql
 python-dotenv
 redis
+
+alembic
+pydantic-settings
