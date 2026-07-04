@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Body, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
-from utils.auth import get_current_student
+from utils.deps import get_current_user
 from services.practice_session_service import ps_service
 
 router = APIRouter(prefix="/practice-sessions", tags=["Student - Practice Sessions"])
@@ -12,7 +12,7 @@ async def start_practice_session(
     mode: str = Body(..., description="练习模式：sequential(顺序), random(随机) 等"),
     question_ids: list[int] = Body(..., description="初始题号列表序列"),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 发起一次新的练习会话，后端将根据 mode 打乱或初始化答题队列
@@ -29,7 +29,7 @@ async def start_practice_session(
 async def get_practice_session_progress(
     session_id: int = Path(..., description="会话ID"),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 恢复上次中断的练习进度，获取当前会话详情

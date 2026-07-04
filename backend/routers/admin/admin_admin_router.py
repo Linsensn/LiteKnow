@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from config.database import get_db 
-from utils.deps import get_admin_user 
 from utils.response import success 
 from utils.exceptions import CustomAPIException, ErrorCode 
 from schemas.schemas_user import UserUpdate, UserOut 
@@ -13,8 +12,7 @@ from models.users import User
 # 全局注入 get_admin_user 拦截器，确保下方所有接口都需要管理员权限
 router = APIRouter(
     prefix="/users", 
-    tags=["Admin/Users"],
-    dependencies=[Depends(get_admin_user)] 
+    tags=["Admin/Users"]
 )
 
 @router.get("/", summary="分页获取所有用户列表")

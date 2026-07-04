@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, Body, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
-from utils.auth import get_current_student
+from utils.deps import get_current_user
 from services.wrong_question_service import wq_service
 
 router = APIRouter(prefix="/wrong-questions", tags=["Student - Wrong Questions"])
@@ -12,7 +12,7 @@ async def list_my_wrong_questions(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 分页获取我的错题本记录
@@ -26,7 +26,7 @@ async def supplement_my_analysis(
     wq_id: int = Path(..., description="错题ID"),
     my_analysis: str = Body(..., embed=True, description="学生自己撰写的反思与解析"),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 为某道错题补充个人的解析体会
@@ -40,7 +40,7 @@ async def supplement_my_analysis(
 async def remove_wrong_question(
     wq_id: int = Path(..., description="错题ID"),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 掌握该错题后，将其从错题本中移除

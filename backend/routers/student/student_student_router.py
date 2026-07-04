@@ -6,7 +6,7 @@ from config.database import get_db
 from utils.deps import get_current_user 
 from utils.response import success 
 from schemas.schemas_user import WeChatLogin, UserUpdate, UserOut 
-from services import user_svc
+from services import user_service
 from crud import crud_user
 from models.users import User
 
@@ -14,7 +14,7 @@ router = APIRouter(tags=["Student/Users"])
 
 @router.post("/auth/wechat", summary="微信静默登录/注册")
 async def student_wechat_login(data: WeChatLogin, db: Session = Depends(get_db)): 
-    token_data = await user_svc.wechat_login_service(db, data.code)
+    token_data = await user_service.wechat_login_service(db, data.code)
     return success(data=token_data, message="登录成功") 
 
 @router.get("/users/me", summary="获取个人信息")

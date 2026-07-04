@@ -7,3 +7,7 @@ redis
 
 alembic
 pydantic-settings
+loguru
+python-jose
+httpx
+passlib

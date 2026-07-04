@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
-from utils.auth import get_current_student
+from utils.deps import get_current_user
 from services.practice_record_service import pr_service
 
 router = APIRouter(prefix="/practice-records", tags=["Student - Practice Records"])
@@ -15,7 +15,7 @@ async def submit_question_answer(
     question_content: str = Body(..., description="题干快照，用于错题本冗余展示"),
     current_index: int = Body(..., description="该题目在序列中的位置索引，用于记录进度"),
     db: AsyncSession = Depends(get_db),
-    current_student: dict = Depends(get_current_student)
+    current_student: dict = Depends(get_current_user)
 ):
     """
     [学生端] 提交单道题的作答。

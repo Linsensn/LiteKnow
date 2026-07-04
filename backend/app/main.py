@@ -58,5 +58,5 @@ app.add_exception_handler(Exception, global_exception_handler)
 # 将路由挂载到 FastAPI 实例上
 from routers import system, admin_router, student_router
 app.include_router(system.router)
-app.include_router(admin_router.router, prefix="/api/v1/admin", tags=["Admin"])
-app.include_router(student_router.router, prefix="/api/v1/student", tags=["Student"])
+app.include_router(admin_router.admin_router, prefix="/api/v1/admin", tags=["Admin"])
+app.include_router(student_router.student_router, prefix="/api/v1/student", tags=["Student"])
