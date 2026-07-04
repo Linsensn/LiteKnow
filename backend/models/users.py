@@ -8,4 +8,5 @@ class User(BaseModel):
     wechat_openid = Column(String(128), nullable=False, unique=True, comment='微信用户唯一标识')
     nickname = Column(String(64), comment='用户昵称')
     avatar_url = Column(String(255), comment='头像链接')
+    role = Column(String(32), default='student', comment='用户角色: student/admin')
     signature = Column(String(255), comment='个性签名')
