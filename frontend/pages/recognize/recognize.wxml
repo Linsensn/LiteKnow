@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="content-card">
+    <view class="card-title">上传文档或图片</view>
+    <view class="sub-text">支持上传图片、PDF、Word等格式，AI将自动提取并整理成专属题库。</view>
+
+    <view class="upload-area" bindtap="chooseFiles">
+      <view class="upload-icon">+</view>
+      <view class="upload-text">点击选择文件</view>
+    </view>
+
+    <view class="file-list" wx:if="{{fileList.length > 0}}">
+      <view class="file-item" wx:for="{{fileList}}" wx:key="path">
+        <image class="file-thumb" src="{{item.type === 'image' ? item.path : '/assets/file-icon.png'}}" mode="aspectFill"></image>
+        <view class="file-info">
+          <text class="file-name">{{item.name}}</text>
+          <text class="file-size">{{item.size / 1000}} KB</text>
+        </view>
+        <view class="delete-btn" catchtap="removeFile" data-index="{{index}}">✕</view>
+      </view>
+    </view>
+
+    <view class="action-group">
+      <button 
+        class="generate-btn" 
+        bindtap="startRecognize" 
+        disabled="{{fileList.length === 0 || isRecognizing}}">
+        {{isRecognizing ? '处理中...' : '开始提取'}}
+      </button>
+    </view>
+  </view>
+</view>

@@ -17,35 +17,37 @@ Page({
     }
   },
 
-  // 获取头像
+  // 获取头像 (保持不变)
   onChooseAvatar(e) {
     this.setData({ tempAvatar: e.detail.avatarUrl });
   },
 
-  // 获取/输入昵称
-  onInputChange(e) {
-    this.setData({ tempNickName: e.detail.value });
-  },
-
+  // 确认登录 (已改造：通过表单提交获取数据)
   // 确认登录
-  confirmLogin() {
-    if (!this.data.tempNickName) {
+  confirmLogin(e) {
+    const finalNickName = e.detail.value.nickname;
+
+    if (!finalNickName) {
       wx.showToast({ title: '请输入昵称', icon: 'none' });
       return;
     }
-    // 保存到全局状态
+    
+    // ✨ 这里也要对齐数据库字段！
     app.globalData.userInfo = {
-      avatarUrl: this.data.tempAvatar,
-      nickName: this.data.tempNickName
+      avatar_url: this.data.tempAvatar,
+      nickname: finalNickName
     };
     app.globalData.isLoggedIn = true;
     
-    // 关闭弹窗
-    this.setData({ showLoginPopup: false });
+    this.setData({ 
+      tempNickName: finalNickName,
+      showLoginPopup: false 
+    });
+    
     wx.showToast({ title: '登录成功', icon: 'success' });
   },
 
-  // 页面跳转拦截
+  // 页面跳转拦截 (保持不变)
   navigateTo(e) {
     if (!app.globalData.isLoggedIn) {
       this.setData({ showLoginPopup: true });

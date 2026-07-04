@@ -1,0 +1,138 @@
+/* 页面整体底色 */
+.container {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+/* 核心包裹卡片 */
+.content-card {
+  background: #ffffff;
+  padding: 40rpx 30rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 12rpx;
+}
+
+.sub-text {
+  font-size: 26rpx;
+  color: #888888;
+  margin-bottom: 30rpx;
+  line-height: 1.5;
+}
+
+/* 内部虚线上传框 */
+.upload-area {
+  background: #f8f9fb;
+  border: 2rpx dashed #d1d5db;
+  border-radius: 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  margin-bottom: 40rpx;
+  transition: all 0.2s;
+}
+
+.upload-area:active {
+  background: #f0fdf4;
+  border-color: #07c160;
+}
+
+.upload-icon {
+  font-size: 50rpx;
+  color: #999999;
+  margin-bottom: 10rpx;
+  line-height: 1;
+}
+
+.upload-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+/* 文件列表 */
+.file-list {
+  margin-bottom: 30rpx;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  background: #f8f9fb;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.file-thumb {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 8rpx;
+  margin-right: 20rpx;
+  background: #e0e0e0;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 26rpx;
+  color: #333333;
+  margin-bottom: 6rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.delete-btn {
+  font-size: 32rpx;
+  color: #cccccc;
+  padding: 10rpx 20rpx;
+}
+
+/* 操作按钮组（右对齐，和摘要页一模一样） */
+.action-group {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 10rpx;
+}
+
+.generate-btn {
+  background-color: #a8e3c3; /* 不可点击时的浅绿色 */
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 500;
+  border-radius: 40rpx; /* 药丸形圆角 */
+  margin: 0;
+  padding: 0 50rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  min-width: 200rpx;
+}
+
+.generate-btn:not([disabled]) {
+  background-color: #07c160; /* 可点击时的微信绿 */
+}
+
+.generate-btn::after {
+  border: none;
+}

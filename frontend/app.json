@@ -1,36 +1,44 @@
 {
-    "pages": [
-      "pages/index/index",
-      "pages/user/user",
-      "pages/summary/summary",
-      "pages/explain/explain",
-      "pages/quiz/quiz",
-      "pages/mistakes/mistakes"
-    ],
-    "window": {
-      "navigationBarTextStyle": "black",
-      "navigationBarTitleText": "LiteKnow 教育助手",
-      "navigationBarBackgroundColor": "#ffffff"
-    },
-    "tabBar": {
-      "color": "#999999",
-      "selectedColor": "#07c160",
-      "backgroundColor": "#ffffff",
-      "borderStyle": "black",
-      "list": [
-        {
-          "pagePath": "pages/index/index",
-          "text": "工作台"
-        },
-        {
-          "pagePath": "pages/user/user",
-          "text": "我的"
-        }
-      ]
-    },
-    "style": "v2",
-    "componentFramework": "glass-easel",
-    "sitemapLocation": "sitemap.json",
-    "lazyCodeLoading": "requiredComponents"
-  }
-  
+  "pages": [
+    "pages/index/index",
+    "pages/user/user",
+    "pages/summary/summary",
+    "pages/explain/explain",
+    "pages/quiz/quiz",
+    "pages/mistakes/mistakes",
+    "pages/recognize/recognize",
+    "pages/bankList/bankList",
+    "pages/bankDetail/bankDetail",
+    "pages/favorites/favorites",
+    "pages/history/history"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "LiteKnow 教育助手",
+    "navigationBarBackgroundColor": "#ffffff"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#07c160",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "工作台"
+      },
+      {
+        "pagePath": "pages/bankList/bankList",
+        "text": "题库"
+      },
+      {
+        "pagePath": "pages/user/user",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

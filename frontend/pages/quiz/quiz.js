@@ -4,110 +4,95 @@ Page({
   data: {
     topicText: '',
     quizList: [],      // 题目列表
-    hasSubmitted: false // 是否已提交查看解析
+    hasSubmitted: false, // 是否已提交查看解析
+    
+    // ✨ 新增双核引擎所需状态
+    bankId: '',        // 记录从哪个题库来的
+    mode: '',          // 记录练习模式（如：随机练习）
+    isBankMode: false  // 判断当前是不是题库刷题模式
+  },
+
+  // ✨ 核心一：监听页面加载，捕捉参数
+  onLoad(options) {
+    if (options.bankId) {
+      this.setData({
+        bankId: options.bankId,
+        mode: decodeURIComponent(options.mode || '默认练习'),
+        isBankMode: true // 开启题库模式！
+      });
+      
+      // 如果是题库模式，一进页面就自动拉取题目，无需用户再点按钮
+      this.fetchBankQuiz();
+    }
   },
 
   onInput(e) {
-    this.setData({
-      topicText: e.detail.value
-    })
+    this.setData({ topicText: e.detail.value })
   },
 
-  // 模拟从 AI Agent 获取测验题目
+  // 🚀 引擎 A：工作台模式 (AI 实时出题)
   async generateQuiz() {
     if (!this.data.topicText.trim()) return;
 
-    // 重置状态
-    this.setData({ 
-      quizList: [],
-      hasSubmitted: false
-    });
-    wx.showLoading({ title: 'AI正在出题...', mask: true });
+    this.setData({ quizList: [], hasSubmitted: false });
 
     try {
-      /* * 注意：这里是模拟数据以便您测试前端 UI。
-       * 实际开发中，请使用以下代码调用后端：
-       * const res = await util.request('/v1/agent/quiz', 'POST', { topic: this.data.topicText }, false);
-       */
+      const res = await util.request('/v1/agent/quiz', 'POST', { 
+        topic: this.data.topicText 
+      });
       
-      // 模拟网络延迟
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockData = [
-        {
-          id: 101,
-          title: "关于光合作用，下列说法正确的是？",
-          options: ["只在白天进行", "只在夜间进行", "白天夜间均可进行", "需要吸收氧气释放二氧化碳"],
-          correct: 0, // 正确答案的索引 (A)
-          explanation: "光合作用必须有光才能进行，因此在自然条件下通常只在白天（有光照时）进行。植物在夜间主要进行呼吸作用。"
-        },
-        {
-          id: 102,
-          title: "水（H2O）在常温常压下呈什么状态？",
-          options: ["固态", "液态", "气态", "等离子态"],
-          correct: 1, // (B)
-          explanation: "在标准大气压和常温（20-25摄氏度）下，水是液态的。"
-        }
-      ];
-
-      // 给每道题初始化一个 selected 字段，记录用户的选择
-      const formattedList = mockData.map(item => ({
-        ...item,
-        selected: -1 
-      }));
-
+      const formattedList = res.map(item => ({ ...item, selected: -1 }));
       this.setData({ quizList: formattedList });
-      wx.hideLoading();
-
     } catch (error) {
-      wx.hideLoading();
-      wx.showToast({ title: '出题失败，请重试', icon: 'none' });
+      console.error('出题请求失败', error);
     }
   },
 
-  // 用户点击选项
-  selectOption(e) {
-    // 如果已经交卷，就不能再修改答案了
-    if (this.data.hasSubmitted) return;
+  // 🚀 引擎 B：题库模式 (从已有题库抽题)
+  async fetchBankQuiz() {
+    this.setData({ quizList: [], hasSubmitted: false });
 
+    try {
+      // 替换为真实的题库抽题接口，把题库 ID 和模式传给后端
+      const res = await util.request(`/v1/agent/bank/quiz?bankId=${this.data.bankId}&mode=${this.data.mode}`, 'GET');
+      
+      const formattedList = res.map(item => ({ ...item, selected: -1 }));
+      this.setData({ quizList: formattedList });
+    } catch (error) {
+      console.error('获取题库题目失败', error);
+    }
+  },
+
+  // 👇 以下答题与判分逻辑，两套引擎完全共享，无需改动！
+  selectOption(e) {
+    if (this.data.hasSubmitted) return;
     const { qindex, oindex } = e.currentTarget.dataset;
     const key = `quizList[${qindex}].selected`;
-    
-    this.setData({
-      [key]: oindex
-    });
+    this.setData({ [key]: oindex });
   },
 
-  // 提交答卷
   submitQuiz() {
-    // 简单校验一下是不是所有题都做了
     const allAnswered = this.data.quizList.every(q => q.selected !== -1);
     if (!allAnswered) {
-      wx.showToast({
-        title: '还有题目未作答哦',
-        icon: 'none'
-      });
+      wx.showToast({ title: '还有题目未作答哦', icon: 'none' });
       return;
     }
-
-    // 可以在这里计算分数、将错题通过接口保存到用户的【错题本】中
-    // 演示仅展示将状态切换为已提交
-    this.setData({
-      hasSubmitted: true
-    });
-    
-    wx.showToast({
-      title: '已交卷',
-      icon: 'success'
-    });
+    this.setData({ hasSubmitted: true });
+    wx.showToast({ title: '已交卷', icon: 'success' });
   },
 
-  // 重新生成/再来一次
+  // ✨ 核心二：智能的“再来一次”按钮
   restartQuiz() {
-    this.setData({
-      topicText: '',
-      quizList: [],
-      hasSubmitted: false
-    });
+    if (this.data.isBankMode) {
+      // 如果是题库模式，点击重新开始，就再向后端抽一次题
+      this.fetchBankQuiz();
+    } else {
+      // 如果是工作台模式，清空状态，让用户重新输入知识点
+      this.setData({
+        topicText: '',
+        quizList: [],
+        hasSubmitted: false
+      });
+    }
   }
 })
