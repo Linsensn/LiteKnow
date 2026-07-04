@@ -44,8 +44,8 @@ services:
         condition: service_healthy  # 等待 MySQL 健康检查通过后再启动后端
       redis:
         condition: service_started
-    # 启动命令，开启 Uvicorn 的 --reload 热重载模式
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    # 修改为 app.main:app，指向 app 目录下的 main.py
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # 定义持久化数据卷
 volumes:
