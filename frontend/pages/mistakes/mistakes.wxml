@@ -1,2 +1,43 @@
-<!--pages/mistakes/mistakes.wxml-->
-<text>pages/mistakes/mistakes.wxml</text>
+<view class="container">
+  <view class="empty-state" wx:if="{{mistakesList.length === 0}}">
+    <text class="empty-icon">🎉</text>
+    <text class="empty-text">太棒了，目前没有任何错题记录！</text>
+  </view>
+
+  <block wx:else>
+    <view 
+      class="content-card mistake-card" 
+      wx:for="{{mistakesList}}" 
+      wx:key="id" 
+      bindtap="toggleExpand" 
+      data-index="{{index}}">
+      
+      <view class="card-header">
+        <text class="tag">{{item.topic}}</text>
+        <text class="date">{{item.date}}</text>
+      </view>
+      
+      <view class="question-text">{{item.question}}</view>
+
+      <view class="expand-hint" wx:if="{{!item.expanded}}">
+        <text>点击查看解析 ▾</text>
+      </view>
+
+      <view class="detail-area" wx:if="{{item.expanded}}">
+        <view class="answer-row">
+          <text class="wrong-ans">你的答案：{{item.userAnswer}}</text>
+          <text class="correct-ans">正确答案：{{item.correctAnswer}}</text>
+        </view>
+        
+        <view class="explanation-box">
+          <text class="exp-title">💡 知识点回扣：</text>
+          <text class="exp-content">{{item.explanation}}</text>
+        </view>
+        
+        <view class="action-row">
+          <button class="review-btn" catchtap="goToExplain" data-question="{{item.question}}">没看懂？让 AI 再讲讲</button>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

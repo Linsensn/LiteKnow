@@ -1,66 +1,57 @@
-// pages/summary/summary.js
+const util = require('../../utils/util.js')
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    inputText: '',
+    summaryResult: ''
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
+  // 监听输入
+  onInput(e) {
+    this.setData({
+      inputText: e.detail.value
+    })
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
+  // 模拟/处理多模态上传预留接口
+  onUploadTap() {
+    wx.showToast({
+      title: '文档解析功能开发中...',
+      icon: 'none'
+    })
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
+  // 调用 Agent 接口生成摘要
+  async generateSummary() {
+    if (!this.data.inputText.trim()) return;
 
+    // 清空历史结果
+    this.setData({ summaryResult: '' });
+
+    try {
+      // 这里的 '/v1/agent/summary' 需替换为您实际的 FastAPI 路由
+      const res = await util.request('/v1/agent/summary', 'POST', {
+        content: this.data.inputText
+      });
+      
+      // 假设后端返回的数据在 res.summary 中
+      this.setData({
+        summaryResult: res.summary
+      });
+      
+    } catch (error) {
+      console.error('Agent请求失败', error);
+      // 兜底提示在 util.request 中已处理
+    }
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+  // 复制结果到剪贴板
+  copyResult() {
+    wx.setClipboardData({
+      data: this.data.summaryResult,
+      success: () => {
+        wx.showToast({ title: '已复制' });
+      }
+    })
   }
 })

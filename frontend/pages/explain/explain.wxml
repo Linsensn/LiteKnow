@@ -1,2 +1,27 @@
-<!--pages/explain/explain.wxml-->
-<text>pages/explain/explain.wxml</text>
+<view class="container">
+  <view class="content-card">
+    <view class="card-title">指定知识点或提出疑问</view>
+    <textarea 
+      class="text-input" 
+      placeholder="例如：请帮我详细讲解一下光合作用的过程，或者解释一下什么是牛顿第一定律..." 
+      maxlength="500" 
+      bindinput="onInput" 
+      value="{{questionText}}">
+    </textarea>
+    
+    <view class="action-group">
+      <button class="generate-btn" bindtap="generateExplanation" disabled="{{!questionText}}">开始精讲</button>
+    </view>
+  </view>
+
+  <view class="content-card result-card" wx:if="{{explainResult}}">
+    <view class="card-title">💡 AI 深度剖析</view>
+    <view class="result-text">
+      <text user-select="true">{{explainResult}}</text>
+    </view>
+    <view class="action-footer">
+      <view class="feedback-btn" bindtap="askMore">没太懂，继续追问</view>
+      <view class="copy-btn" bindtap="copyResult">复制</view>
+    </view>
+  </view>
+</view>
