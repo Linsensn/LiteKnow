@@ -1,0 +1,52 @@
+
+services:
+  # MySQL 数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: liteknow-mysql-dev
+    restart: always
+    environment:
+      # 从根目录下的 .env 文件中读取以下变量
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3307:3306"  # 把宿主机的 3307 映射到容器的 3306
+    volumes:
+      - mysql_data:/var/lib/mysql  # 数据持久化，避免每次重启数据库清空数据
+    healthcheck:      # 健康检查，确保后端等数据库完全启动后再连接
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis 缓存服务 (AI Agent 常用，支持会话与缓存)
+  redis:
+    image: redis:alpine
+    container_name: liteknow-redis-dev
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # FastAPI 后端服务
+  backend:
+    build:
+      context: ./backend     # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
+      dockerfile: Dockerfile
+    container_name: liteknow-backend-dev
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"          # 对外暴露 API 端口
+    volumes:
+      - ./backend:/app       # 挂载本地后端代码到容器内，实现代码保存即热重载
+    depends_on:
+      mysql:
+        condition: service_healthy  # 等待 MySQL 健康检查通过后再启动后端
+      redis:
+        condition: service_started
+    # 启动命令，开启 Uvicorn 的 --reload 热重载模式
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# 定义持久化数据卷
+volumes:
+  mysql_data:
