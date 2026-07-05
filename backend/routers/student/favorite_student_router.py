@@ -18,7 +18,7 @@ async def toggle_favorite(
     current_student: dict = Depends(get_current_user)
 ):
     result = await fav_service.toggle_favorite(
-        db, user_id=current_student["id"], obj_in=fav_in
+        db, user_id=current_student.id, obj_in=fav_in
     )
     return success(data={"action": result["action"]}, message=result["message"])
 
@@ -32,7 +32,7 @@ async def get_my_favorites(
     current_student: dict = Depends(get_current_user)
 ):
     data = await fav_service.get_my_favorites(
-        db, user_id=current_student["id"], content_type=content_type,
+        db, user_id=current_student.id, content_type=content_type,
         page=page, page_size=page_size
     )
     return success(data=data)

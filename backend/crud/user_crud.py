@@ -1,5 +1,3 @@
-
-
 # backend/crud/crud_user.py
 from sqlalchemy.orm import Session
 from sqlalchemy import func, update, or_

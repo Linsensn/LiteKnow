@@ -40,11 +40,11 @@ class MessageService:
     async def create_message(self, db: AsyncSession, obj_in: MessageCreate):
         try:
             new_msg = await msg_crud.create(db, obj_in=obj_in.model_dump())
-            await db.commit()
-            await db.refresh(new_msg)
+            db.commit()
+            db.refresh(new_msg)
             return new_msg
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 5. 删除消息
@@ -52,9 +52,9 @@ class MessageService:
         message = await self.get_message(db, message_id=message_id)
         try:
             await msg_crud.delete(db, db_obj=message)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
 

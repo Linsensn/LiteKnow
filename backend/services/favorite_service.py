@@ -19,7 +19,7 @@ class FavoriteService:
 
             if existing_fav:
                 await favorite_crud.delete(db, db_obj=existing_fav)
-                await db.commit()
+                db.commit()
                 return {"action": "removed", "message": "已取消收藏"}
             else:
                 create_data = {
@@ -30,11 +30,11 @@ class FavoriteService:
                     "source_session": obj_in.source_session
                 }
                 await favorite_crud.create(db, obj_in=create_data)
-                await db.commit()
+                db.commit()
                 return {"action": "added", "message": "收藏成功"}
 
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(
                 code=ErrorCode.DB_OPERATION_FAILED,
                 message=str(e)
