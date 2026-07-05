@@ -10,7 +10,7 @@ class CRUDAttachment:
     # 1. 单条查询
     async def get(self, db: AsyncSession, attachment_id: int) -> Optional[Attachment]:
         stmt = select(Attachment).where(Attachment.id == attachment_id)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_first()
 
     # 2. 分页查询（user_id 为 None 则查全量，用于管理员；传值则查个人，用于学生）
@@ -25,7 +25,7 @@ class CRUDAttachment:
             stmt = stmt.where(Attachment.file_type.ilike(f"%{file_type}%"))
 
         stmt = stmt.order_by(desc(Attachment.created_at)).offset(skip).limit(limit)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalars().all()
 
     # 3. 统计符合条件的总记录数（配合分页）
@@ -39,7 +39,7 @@ class CRUDAttachment:
         if file_type:
             stmt = stmt.where(Attachment.file_type.ilike(f"%{file_type}%"))
 
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_one()
 
     # 4. 带用户归属创建
@@ -56,13 +56,13 @@ class CRUDAttachment:
             message_id=message_id
         )
         db.add(db_obj)
-        await db.flush()
+        db.flush()
         return db_obj
 
     # 5. 物理删除
     async def delete(self, db: AsyncSession, *, db_obj: Attachment):
-        await db.delete(db_obj)
-        await db.flush()
+        db.delete(db_obj)
+        db.flush()
 
 
 attachment_crud = CRUDAttachment()

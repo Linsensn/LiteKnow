@@ -13,7 +13,7 @@ class CRUDBankQuestion:
             BankQuestion.id == question_id,
             BankQuestion.is_deleted == False
         )
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_first()
 
     # 2. 分页多条件查询
@@ -32,7 +32,7 @@ class CRUDBankQuestion:
             stmt = stmt.where(BankQuestion.content.ilike(f"%{keyword}%"))
 
         stmt = stmt.order_by(desc(BankQuestion.created_at)).offset(skip).limit(limit)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalars().all()
 
     # 3. 统计符合条件的总记录数（配合分页）
@@ -49,21 +49,21 @@ class CRUDBankQuestion:
         if keyword:
             stmt = stmt.where(BankQuestion.content.ilike(f"%{keyword}%"))
 
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_one()
 
     # 4. 单条新增
     async def create(self, db: AsyncSession, *, obj_in: dict) -> BankQuestion:
         db_obj = BankQuestion(**obj_in)
         db.add(db_obj)
-        await db.flush()
+        db.flush()
         return db_obj
 
     # 5. 批量新增
     async def create_multi(self, db: AsyncSession, *, objects_in: List[dict]) -> int:
         db_objs = [BankQuestion(**obj) for obj in objects_in]
         db.add_all(db_objs)
-        await db.flush()
+        db.flush()
         return len(db_objs)
 
     # 6. 局部更新
@@ -72,7 +72,7 @@ class CRUDBankQuestion:
             BankQuestion.id == question_id,
             BankQuestion.is_deleted == False
         ).values(**update_data)
-        await db.execute(stmt)
+        db.execute(stmt)
 
     # 7. 逻辑删除
     async def delete_logical(self, db: AsyncSession, *, question_id: int):
@@ -80,7 +80,7 @@ class CRUDBankQuestion:
             BankQuestion.id == question_id,
             BankQuestion.is_deleted == False
         ).values(is_deleted=True)
-        await db.execute(stmt)
+        db.execute(stmt)
 
 
 bank_question = CRUDBankQuestion()

@@ -39,11 +39,11 @@ class BankQuestionService:
     async def create_question(self, db: AsyncSession, obj_in: QuestionCreate):
         try:
             new_question = await bank_question.create(db, obj_in=obj_in.model_dump())
-            await db.commit()
-            await db.refresh(new_question)
+            db.commit()
+            db.refresh(new_question)
             return new_question
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED)
 
 
@@ -52,10 +52,10 @@ class BankQuestionService:
         try:
             dicts = [obj.model_dump() for obj in objects_in]
             count = await bank_question.create_multi(db, objects_in=dicts)
-            await db.commit()
+            db.commit()
             return count
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED)
 
     # 5. 更新题目信息
@@ -65,10 +65,10 @@ class BankQuestionService:
         try:
             update_data = obj_in.model_dump(exclude_unset=True)
             await bank_question.update(db, question_id=question_id, update_data=update_data)
-            await db.commit()
+            db.commit()
             return await self.get_question(db, question_id=question_id)
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 6. 逻辑删除题目
@@ -76,9 +76,9 @@ class BankQuestionService:
         await self.get_question(db, question_id=question_id)
         try:
             await bank_question.delete_logical(db, question_id=question_id)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED)
 
 
