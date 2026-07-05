@@ -21,7 +21,7 @@ async def get_practice_session(db: AsyncSession, id: int) -> Optional[PracticeSe
     """单条查询"""
     stmt = select(PracticeSession).where(PracticeSession.id == id)
     result = db.execute(stmt)
-    return result.scalar_first()
+    return result.scalars().first()
 
 async def get_multi_sessions(
     db: AsyncSession, *, user_id: Optional[int] = None, status: Optional[str] = None, 

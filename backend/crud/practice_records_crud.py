@@ -47,7 +47,7 @@ async def get_practice_record(db: AsyncSession, id: int) -> Optional[PracticeRec
     """单条查询"""
     stmt = select(PracticeRecord).where(PracticeRecord.id == id)
     result = db.execute(stmt)
-    return result.scalar_first()
+    return result.scalars().first()
 
 async def get_multi_records(
     db: AsyncSession, *, user_id: Optional[int] = None, session_id: Optional[int] = None, 

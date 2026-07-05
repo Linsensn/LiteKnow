@@ -21,7 +21,7 @@ async def get_wrong_question(db: AsyncSession, id: int, user_id: int) -> Optiona
     """单条查询"""
     stmt = select(WrongQuestion).where(WrongQuestion.id == id, WrongQuestion.user_id == user_id)
     result = db.execute(stmt)
-    return result.scalar_first()
+    return result.scalars().first()
 
 async def get_multi_wrong_questions(
     db: AsyncSession, *, user_id: int, keyword: Optional[str] = None, skip: int = 0, limit: int = 20, sort_by: str = "desc"

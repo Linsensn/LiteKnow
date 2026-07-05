@@ -23,7 +23,7 @@ from schemas.practice_record_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/practice-records", tags=["Student - Practice Records"])
 
-@router.post("/submit", response_model=ResponseModel[SubmitResultOut])
+@router.post("/submit", response_model=ResponseModel[SubmitResultOut], summary="提交题目作答")
 async def submit_question_answer(
     data: PracticeRecordSubmit, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -37,7 +37,7 @@ async def submit_question_answer(
     audit_logger.info(f"User {current_student.id} submitted question {data.question_id}")
     return success(data=SubmitResultOut(is_correct=result["is_correct"]), message="答题记录提交成功")
 
-@router.post("", response_model=ResponseModel[PracticeRecordDetailOut])
+@router.post("", response_model=ResponseModel[PracticeRecordDetailOut], summary="新增答题记录")
 async def create_record(
     data: PracticeRecordCreate, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -49,7 +49,7 @@ async def create_record(
     audit_logger.info(f"User {current_student.id} manually created record {record.id}")
     return success(data=PracticeRecordDetailOut.model_validate(record))
 
-@router.post("/batch", response_model=ResponseModel[dict])
+@router.post("/batch", response_model=ResponseModel[dict], summary="批量新增答题记录")
 async def create_batch_records(
     data: List[PracticeRecordCreate], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -60,7 +60,7 @@ async def create_batch_records(
     audit_logger.info(f"User {current_student.id} batch created {len(objs_in)} records")
     return success(message=f"批量新增 {len(objs_in)} 条成功")
 
-@router.get("/list", response_model=ResponseModel[PageResult[PracticeRecordDetailOut]])
+@router.get("/list", response_model=ResponseModel[PageResult[PracticeRecordDetailOut]], summary="获取答题记录列表")
 async def get_practice_records_list(
     session_id: Optional[int] = Query(None, description="多条件：按练习会话过滤"),
     is_correct: Optional[bool] = Query(None, description="多条件：按正误状态过滤"),
@@ -85,7 +85,7 @@ async def get_practice_records_list(
     )
     return success(data=page_data)
 
-@router.get("/tree", response_model=ResponseModel[List[dict]])
+@router.get("/tree", response_model=ResponseModel[List[dict]], summary="获取按会话分组的答题记录树")
 async def get_practice_records_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -100,7 +100,7 @@ async def get_practice_records_tree(
     ]
     return success(data=tree_data)
 
-@router.get("/{record_id}", response_model=ResponseModel[PracticeRecordDetailOut])
+@router.get("/{record_id}", response_model=ResponseModel[PracticeRecordDetailOut], summary="获取单条答题记录详情")
 async def get_practice_record_detail(
     record_id: int = Path(..., description="主键ID"), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -110,17 +110,8 @@ async def get_practice_record_detail(
         return fail(code=ErrorCode.DATA_NOT_FOUND, message="记录不存在或无权访问")
     return success(data=PracticeRecordDetailOut.model_validate(record))
 
-@router.put("/{record_id}", response_model=ResponseModel[dict])
-async def update_single_record(
-    data: PracticeRecordUpdate, record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
-):
-    """[基础] 修改单条记录内容"""
-    await practice_records_crud.update_record(db=db, id=record_id, obj_in=data.model_dump(exclude_unset=True))
-    db.commit()
-    audit_logger.info(f"User {current_student.id} updated record {record_id}")
-    return success(message="记录更新成功")
-
-@router.put("/batch", response_model=ResponseModel[dict])
+# ===== 修改点：将 PUT /batch 移至 PUT /{record_id} 前面 =====
+@router.put("/batch", response_model=ResponseModel[dict], summary="批量修改答题记录")
 async def update_batch_records(
     data: BatchUpdateReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -130,7 +121,18 @@ async def update_batch_records(
     audit_logger.info(f"User {current_student.id} batch updated records {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 条记录")
 
-@router.patch("/{record_id}/status", response_model=ResponseModel[dict])
+@router.put("/{record_id}", response_model=ResponseModel[dict], summary="修改单条答题记录")
+async def update_single_record(
+    data: PracticeRecordUpdate, record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+):
+    """[基础] 修改单条记录内容"""
+    await practice_records_crud.update_record(db=db, id=record_id, obj_in=data.model_dump(exclude_unset=True))
+    db.commit()
+    audit_logger.info(f"User {current_student.id} updated record {record_id}")
+    return success(message="记录更新成功")
+# =========================================================
+
+@router.patch("/{record_id}/status", response_model=ResponseModel[dict], summary="切换答题记录正误状态")
 async def toggle_record_status(
     payload: StatusToggleReq, record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -140,17 +142,8 @@ async def toggle_record_status(
     audit_logger.info(f"User {current_student.id} toggled status for record {record_id} to {payload.is_correct}")
     return success(message="状态更新成功")
 
-@router.delete("/{record_id}", response_model=ResponseModel[dict])
-async def delete_single_record(
-    record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
-):
-    """[基础] 物理删除单条记录"""
-    await practice_records_crud.delete_records_by_ids(db=db, ids=[record_id])
-    db.commit()
-    audit_logger.warning(f"User {current_student.id} deleted record {record_id}")
-    return success(message="删除成功")
-
-@router.delete("/batch", response_model=ResponseModel[dict])
+# ===== 修改点：将 DELETE /batch 移至 DELETE /{record_id} 前面 =====
+@router.delete("/batch", response_model=ResponseModel[dict], summary="批量删除答题记录")
 async def delete_batch_records(
     payload: BatchDeleteReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -160,7 +153,18 @@ async def delete_batch_records(
     audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} records")
     return success(message=f"成功删除 {len(payload.ids)} 条记录")
 
-@router.get("/session/{session_id}/stats", response_model=ResponseModel[dict])
+@router.delete("/{record_id}", response_model=ResponseModel[dict], summary="删除单条答题记录")
+async def delete_single_record(
+    record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+):
+    """[基础] 物理删除单条记录"""
+    await practice_records_crud.delete_records_by_ids(db=db, ids=[record_id])
+    db.commit()
+    audit_logger.warning(f"User {current_student.id} deleted record {record_id}")
+    return success(message="删除成功")
+# ==========================================================
+
+@router.get("/session/{session_id}/stats", response_model=ResponseModel[dict], summary="获取会话答题统计")
 async def get_session_stats(
     session_id: int, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -168,7 +172,7 @@ async def get_session_stats(
     stats = await pr_service.get_session_analysis(db=db, session_id=session_id)
     return success(data=stats)
 
-@router.get("/export/csv")
+@router.get("/export/csv", summary="导出答题记录为CSV")
 async def export_records(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -181,7 +185,7 @@ async def export_records(
         headers={"Content-Disposition": f"attachment; filename=practice_records_{current_student.id}.csv"}
     )
 
-@router.post("/import/csv", response_model=ResponseModel[dict])
+@router.post("/import/csv", response_model=ResponseModel[dict], summary="从CSV导入答题记录")
 async def import_records(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):

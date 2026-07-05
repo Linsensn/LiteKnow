@@ -21,7 +21,7 @@ async def get_question_bank(db: AsyncSession, id: int) -> Optional[QuestionBank]
     """单条查询：获取详情"""
     stmt = select(QuestionBank).where(QuestionBank.id == id)
     result = db.execute(stmt)
-    return result.scalar_first()
+    return result.scalars().first()
 
 async def get_multi_question_banks(
     db: AsyncSession, *, user_id: Optional[int] = None, keyword: Optional[str] = None, 
