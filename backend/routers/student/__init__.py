@@ -19,7 +19,7 @@ from . import (
     attachment_student_router,
     message_student_router, 
     wrong_questions_student_router, 
-    sessions_student_router
+    ai_summary_route
 )
 
 # 挂载学生视角的学习与练习路由，同步修改名称
@@ -33,4 +33,5 @@ student_router.include_router(question_banks_student_router.router, dependencies
 student_router.include_router(wrong_questions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_sessions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(ai_summary_route.router, dependencies=[Depends(get_current_user)])
 

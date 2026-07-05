@@ -14,10 +14,10 @@ load_dotenv()
 
 class LLMClient:
     def __init__(self):
-        self.enabled = settings.llm_enabled.lower() == "true"
-        self.api_key = settings.llm_api_key
-        self.base_url = settings.llm_base_url
-        self.model_name = settings.llm_model_name
+        self.enabled = settings.LLM_ENABLED
+        self.api_key = settings.LLM_API_KEY
+        self.base_url = settings.LLM_BASE_URL
+        self.model_name = settings.LLM_MODEL_NAME
 
         self.client = None
         if self.enabled and self.api_key:
