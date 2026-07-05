@@ -52,7 +52,7 @@ def update_my_session(
 ):
     session = session_crud.get_session_by_id(db, session_id)
     if not session or session.user_id != user.id:
-        raise CustomAPIException(ErrorCode.NOT_FOUND, message="会话不存在或无权操作")
+        raise CustomAPIException(ErrorCode.SESSION_NOT_FOUND, message="会话不存在或无权操作")
     
     updated_session = session_crud.update_session(db, db_obj=session, update_data=update_data.model_dump(exclude_unset=True))
     return success(data=SessionOut.model_validate(updated_session).model_dump())
@@ -61,7 +61,7 @@ def update_my_session(
 def delete_my_session(session_id: int, db: DBSession = Depends(get_db), user: User = Depends(get_current_user)):
     session = session_crud.get_session_by_id(db, session_id)
     if not session or session.user_id != user.id:
-        raise CustomAPIException(ErrorCode.NOT_FOUND, message="会话不存在或无权操作")
+        raise CustomAPIException(ErrorCode.SESSION_NOT_FOUND, message="会话不存在或无权操作")
     
     session_crud.soft_delete_session(db, session)
     return success(message="会话已删除")

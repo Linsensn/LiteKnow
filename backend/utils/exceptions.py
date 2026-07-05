@@ -49,6 +49,7 @@ class ErrorCode(int, Enum):
     # AI 与任务
     AI_SERVICE_BUSY = 30001
     AI_VALIDATION_FAILED = 30002
+    SESSION_NOT_FOUND = 30003
     SYS_RES_EXHAUSTED = 30006
 
 ERROR_MESSAGES = {
@@ -74,6 +75,7 @@ ERROR_MESSAGES = {
     
     ErrorCode.AI_SERVICE_BUSY: "大模型推荐服务暂不可用",
     ErrorCode.AI_VALIDATION_FAILED: "大模型语义解析失败",
+    ErrorCode.SESSION_NOT_FOUND: "会话不存在或无权操作",
     ErrorCode.SYS_RES_EXHAUSTED: "服务器正忙，请稍后重试"
 }
 
