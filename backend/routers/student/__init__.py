@@ -10,7 +10,8 @@ from . import (
     practice_sessions_student_router,
     question_banks_student_router,
     student_student_router, 
-    wrong_questions_student_router
+    wrong_questions_student_router, 
+    sessions_student_router
 )
 from utils.deps import get_current_user, get_admin_user
 
@@ -22,4 +23,5 @@ student_router.include_router(question_banks_student_router.router, dependencies
 student_router.include_router(wrong_questions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_sessions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(sessions_student_router.router)
 
