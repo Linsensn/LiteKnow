@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
-    WX_APPID: str
-    WX_SECRET: str
+    WX_APPID: str = ""  # 添加默认值
+    WX_SECRET: str = ""  # 添加默认值
     
     LLM_ENABLED: bool = True
     # 密钥

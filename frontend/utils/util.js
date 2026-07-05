@@ -23,40 +23,34 @@ const BASE_URL = 'http://127.0.0.1:8080';
  * @param {object} data - 请求参数
  * @param {boolean} showLoading - 是否显示默认的 Loading 提示
  */
-const request = (url, method = 'GET', data = {}, showLoading = true) => {
-  if (showLoading) {
-    wx.showLoading({ title: '加载中...', mask: true });
-  }
-
+// 在 util.js 中
+const request = (url, method, data) => {
   return new Promise((resolve, reject) => {
+    // 每次请求前，实时获取本地的 token
+    const token = wx.getStorageSync('token'); 
+    
+    const header = {
+      'Content-Type': 'application/json',
+      // 标准 JWT 请求头规范
+      ...(token && { 'Authorization': `Bearer ${token}` }) 
+    };
+
     wx.request({
-      url: BASE_URL + url,
+      url: 'http://127.0.0.1:8000' + url, // 请确保 BASE_URL 正确
       method: method,
       data: data,
-      header: {
-        'Content-Type': 'application/json',
-        // 'Authorization': 'Bearer ' + wx.getStorageSync('token') // 预留 Token 位置
-      },
+      header: header,
       success: (res) => {
-        if (showLoading) wx.hideLoading();
-        // 假设您的后端标准返回格式为 { code: 200, data: {...}, message: "..." }
+        // 假设您的后端用 success() 包裹了数据，通常 HTTP 状态码为 200，且业务码为 200/0
         if (res.statusCode === 200 && res.data.code === 200) {
-          resolve(res.data.data);
+          resolve(res.data.data); // 直接剥离外壳，把最核心的 data 传给业务层
         } else {
-          wx.showToast({
-            title: res.data.message || '服务器繁忙',
-            icon: 'none',
-            duration: 2000
-          });
+          wx.showToast({ title: res.data.message || '请求错误', icon: 'none' });
           reject(res.data);
         }
       },
       fail: (err) => {
-        if (showLoading) wx.hideLoading();
-        wx.showToast({
-          title: '网络连接失败',
-          icon: 'none'
-        });
+        wx.showToast({ title: '网络连接失败', icon: 'none' });
         reject(err);
       }
     });

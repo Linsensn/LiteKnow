@@ -39,8 +39,8 @@
     </view>
   </view>
 
-  <view class="mask" wx:if="{{showLoginPopup}}"></view>
-  <view class="login-popup {{showLoginPopup ? 'show' : ''}}">
+  <view class="mask" wx:if="{{!isLoggedIn}}"></view>
+  <view class="login-popup {{!isLoggedIn ? 'show' : ''}}">
     <view class="popup-header">
       <text class="popup-title">欢迎使用 LiteKnow</text>
       <text class="popup-desc">请授权您的头像和昵称以继续</text>
@@ -49,11 +49,9 @@
       <image class="avatar" src="{{tempAvatar}}"></image>
     </button>
     
-    <form bindsubmit="confirmLogin">
-      <view class="input-box">
-        <input type="nickname" name="nickname" class="nickname-input" placeholder="点击授权微信昵称" value="{{tempNickName}}"/>
-      </view>
-      <button class="submit-btn" form-type="submit">一键开启</button>
-    </form>
+    <view class="input-box">
+      <input type="nickname" class="nickname-input" placeholder="点击授权微信昵称" bindchange="onInputChange" value="{{tempNickName}}"/>
     </view>
+    <button class="submit-btn" bindtap="handleLogin">一键开启</button>
+  </view>
 </view>
