@@ -1,0 +1,26 @@
+<view class="container">
+  <view class="header">
+    <view class="title">LiteKnow 控制台</view>
+    <view class="subtitle">System Administration</view>
+  </view>
+
+  <view class="admin-grid">
+    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminUsers/adminUsers">
+      <view class="card-icon">👥</view>
+      <view class="card-title">用户管理</view>
+      <view class="card-desc">增删改查 / 权限管控</view>
+    </view>
+
+    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminBanks/adminBanks">
+      <view class="card-icon">📚</view>
+      <view class="card-title">题库管理</view>
+      <view class="card-desc">全局题库维护 / 批量删除</view>
+    </view>
+
+    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminSessions/adminSessions">
+      <view class="card-icon">📊</view>
+      <view class="card-title">会话与统计</view>
+      <view class="card-desc">批量状态操作 / 数据导出</view>
+    </view>
+  </view>
+</view>

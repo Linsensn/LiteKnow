@@ -1,0 +1,27 @@
+<view class="container">
+  <view class="form-group">
+    <view class="form-item avatar-item">
+      <text class="label">头像</text>
+      <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+        <image class="avatar-preview" src="{{tempAvatar}}"></image>
+        <text class="arrow">></text>
+      </button>
+    </view>
+
+    <view class="divider"></view>
+
+    <view class="form-item">
+      <text class="label">昵称</text>
+      <input 
+        type="nickname" 
+        class="nickname-input" 
+        placeholder="请输入昵称" 
+        value="{{tempNickname}}" 
+        bindinput="onInputNickname" 
+        bindblur="onInputNickname"
+      />
+    </view>
+  </view>
+
+  <button class="save-btn" bindtap="submitProfile">保存修改</button>
+</view>

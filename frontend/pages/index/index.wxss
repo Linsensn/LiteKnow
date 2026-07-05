@@ -10,6 +10,11 @@ page {
   box-sizing: border-box;
 }
 
+.card-hover {
+  opacity: 0.8; /* 点击时稍微变透明 */
+  transform: scale(0.98); /* 点击时微微缩小，更有弹性 */
+  transition: all 0.1s ease; /* 动画过渡 */
+}
 .header-title { 
   font-size: 42rpx;
   /* 稍微再放大一点点显得更饱满 */
