@@ -5,13 +5,28 @@ from sqlalchemy.orm import Session as DBSession
 from config.database import get_db  
 from utils.deps import get_admin_user  
 from utils.response import success  
-from schemas.session_schemas import SessionCreate, SessionStatusToggle
+from schemas.session_schemas import SessionCreate, SessionStatusToggle, SessionOut
 from schemas.common import ResponseModel, PageResult
 from crud import session_crud
 from services import session_service
 from models.users import User
 
 router = APIRouter(prefix="/sessions", tags=["Admin/Sessions"])
+
+@router.get("/", summary="全局分页与关联查询", response_model=ResponseModel[PageResult[SessionOut]])
+def read_all_sessions(
+    page: int = 1, page_size: int = 20, keyword: str = None, user_id: int = None,
+    db: DBSession = Depends(get_db), admin: User = Depends(get_admin_user)
+):
+    skip = (page - 1) * page_size
+    total, sessions = session_crud.get_sessions_paginated(
+        db, skip=skip, limit=page_size, user_id=user_id, keyword=keyword
+    )
+    
+    data_list = [SessionOut.model_validate(s).model_dump() for s in sessions]
+    page_data = PageResult(list=data_list, total=total, page=page, page_size=page_size)[cite: 45]
+    
+    return success(data=page_data.model_dump())
 
 @router.post("/batch", summary="批量新建会话", response_model=ResponseModel[dict])
 def batch_create_sessions(

@@ -24,14 +24,14 @@ class UserRoleUpdate(BaseModel):
     role: str
 
 class UserOut(BaseModel):
-    id: int #[cite: 36]
+    id: int 
     wechat_openid: Optional[str]
-    nickname: Optional[str] #[cite: 36]
-    avatar_url: Optional[str] #[cite: 36]
-    signature: Optional[str] #[cite: 36]
-    role: str #[cite: 36]
-    is_active: bool
-    is_deleted: bool
+    nickname: Optional[str] 
+    avatar_url: Optional[str] 
+    signature: Optional[str] 
+    role: str 
+    is_active: bool = True
+    is_deleted: bool = False
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
