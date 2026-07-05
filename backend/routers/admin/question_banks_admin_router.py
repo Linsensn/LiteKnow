@@ -17,10 +17,10 @@ router = APIRouter(prefix="/admin/question-banks", tags=["Admin - Question Banks
 
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]], summary="管理员分页搜索全局题库")
 async def admin_list_question_banks(
-    keyword: str = Query(None, description="模糊搜索题库名或描述"),
-    sort_by: str = Query("desc", description="排序"),
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    keyword: str = Query(None, description="模糊搜索题库名或描述", examples=["MQTT通信与ThingsBoard平台配置"]),
+    sort_by: str = Query("desc", description="排序", examples=["desc"]),
+    page: int = Query(1, ge=1, description="页码", examples=[1]),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量", examples=[20]),
     db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """管理员分页查看全局题库列表，支持关键字搜索和排序"""
@@ -37,7 +37,7 @@ async def admin_list_question_banks(
 
 @router.get("/{bank_id}", response_model=ResponseModel[QuestionBankOut], summary="管理员获取单个题库详情")
 async def admin_get_question_bank_detail(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
+    bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """根据题库ID获取全局题库的详细信息"""
     bank = await qb_service.get_bank_detail(db=db, current_user=current_admin, bank_id=bank_id)
@@ -45,7 +45,7 @@ async def admin_get_question_bank_detail(
 
 @router.patch("/{bank_id}", response_model=ResponseModel[dict], summary="管理员强制更新题库信息")
 async def admin_update_question_bank(
-    data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
+    data: QuestionBankUpdate, bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """管理员直接修改指定题库的属性（无视归属校验）"""
     updated_count = await qb_service.update_bank(db=db, current_user=current_admin, bank_id=bank_id, update_data=data.model_dump())
@@ -63,7 +63,7 @@ async def admin_bulk_delete_question_banks(
 
 @router.delete("/{bank_id}", response_model=ResponseModel[dict], summary="管理员删除单个题库")
 async def admin_delete_single_bank(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
+    bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """删除指定ID的题库，内部复用批量删除逻辑"""
     deleted_count = await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=[bank_id])

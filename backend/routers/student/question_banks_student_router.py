@@ -42,10 +42,10 @@ async def create_batch_question_banks(
 
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]])
 async def list_my_question_banks(
-    keyword: str = Query(None, description="模糊搜索题库名或描述"),
-    sort_by: str = Query("desc", description="排序：asc或desc"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    keyword: str = Query(None, description="模糊搜索题库名或描述", examples=["STM32 GPIO与外设驱动"]),
+    sort_by: str = Query("desc", description="排序：asc或desc", examples=["desc"]),
+    page: int = Query(1, ge=1, description="页码", examples=[1]),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量", examples=[20]),
     db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     result = await qb_service.get_banks(db=db, current_user=current_student, keyword=keyword, page=page, page_size=page_size, sort_by=sort_by)
@@ -78,14 +78,14 @@ async def get_banks_tree(
 
 @router.get("/{bank_id}", response_model=ResponseModel[QuestionBankOut])
 async def get_my_question_bank_detail(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
+    bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     bank = await qb_service.get_bank_detail(db=db, current_user=current_student, bank_id=bank_id)
     return success(data=QuestionBankOut.model_validate(bank))
 
 @router.put("/{bank_id}", response_model=ResponseModel[dict])
 async def update_my_question_bank(
-    data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
+    data: QuestionBankUpdate, bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     updated_count = await qb_service.update_bank(db=db, current_user=current_student, bank_id=bank_id, update_data=data.model_dump())
     audit_logger.info(f"Student {current_student.id} updated bank {bank_id}")
@@ -110,7 +110,7 @@ async def student_bulk_delete_question_banks(
 
 @router.delete("/{bank_id}", response_model=ResponseModel[dict])
 async def student_delete_single_bank(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
+    bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     deleted_count = await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=[bank_id])
     audit_logger.warning(f"Student {current_student.id} deleted bank {bank_id}")
