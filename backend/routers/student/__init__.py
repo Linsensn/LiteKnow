@@ -9,12 +9,17 @@ student_router = APIRouter()
 
 # 修改这里的导入文件名
 from . import (
+    practice_records_student_router,
+    practice_sessions_student_router,
+    question_banks_student_router,
     student_student_router, 
     sessions_student_router, 
     bank_question_student_router,
     favorite_student_router,
     attachment_student_router,
-    message_student_router
+    message_student_router, 
+    wrong_questions_student_router, 
+    sessions_student_router
 )
 
 # 挂载学生视角的学习与练习路由，同步修改名称
@@ -24,3 +29,8 @@ student_router.include_router(bank_question_student_router.router, dependencies=
 student_router.include_router(favorite_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(attachment_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(message_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(question_banks_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(wrong_questions_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(practice_sessions_student_router.router, dependencies=[Depends(get_current_user)])
+student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
+

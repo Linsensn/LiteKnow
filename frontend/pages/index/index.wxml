@@ -2,7 +2,7 @@
   <view class="header-title">AI 学习工作台</view>
   
   <view class="feature-list">
-    <view class="feature-card" bindtap="navigateTo" data-url="/pages/summary/summary">
+    <view class="feature-card" catchtap="navigateTo" data-url="/pages/summary/summary">
       <view class="icon-box" style="background-color: #E8F5E9;">📝</view>
       <view class="text-content">
         <text class="card-title">课文摘要</text>
@@ -11,7 +11,7 @@
       <text class="arrow">></text>
     </view>
 
-    <view class="feature-card" bindtap="navigateTo" data-url="/pages/explain/explain">
+    <view class="feature-card" catchtap="navigateTo" data-url="/pages/explain/explain">
       <view class="icon-box" style="background-color: #E3F2FD;">💡</view>
       <view class="text-content">
         <text class="card-title">知识精讲</text>
@@ -20,7 +20,7 @@
       <text class="arrow">></text>
     </view>
 
-    <view class="feature-card" bindtap="navigateTo" data-url="/pages/quiz/quiz">
+    <view class="feature-card" catchtap="navigateTo" data-url="/pages/quiz/quiz">
       <view class="icon-box" style="background-color: #FFF3E0;">🎯</view>
       <view class="text-content">
         <text class="card-title">智能测验</text>
@@ -29,7 +29,7 @@
       <text class="arrow">></text>
     </view>
 
-    <view class="feature-card" bindtap="navigateTo" data-url="/pages/recognize/recognize">
+    <view class="feature-card" catchtap="navigateTo" data-url="/pages/recognize/recognize">
       <view class="icon-box" style="background-color: #FCE4EC;">📸</view>
       <view class="text-content">
         <text class="card-title">识别题库</text>
@@ -50,7 +50,7 @@
     </button>
     
     <view class="input-box">
-      <input type="nickname" class="nickname-input" placeholder="点击授权微信昵称" bindchange="onInputChange" value="{{tempNickName}}"/>
+      <input type="nickname" class="nickname-input" placeholder="点击授权微信昵称" bindinput="onInputChange" bindblur="onInputChange" value="{{tempNickName}}"/>
     </view>
     <button class="submit-btn" bindtap="handleLogin">一键开启</button>
   </view>

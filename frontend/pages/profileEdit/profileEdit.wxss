@@ -1,0 +1,91 @@
+.container {
+  padding: 40rpx;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.form-group {
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 0 32rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.04);
+  margin-bottom: 80rpx;
+}
+
+.form-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 0;
+}
+
+.divider {
+  height: 2rpx;
+  background-color: #f0f0f0;
+}
+
+.label {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+  width: 120rpx;
+}
+
+/* 头像专属样式 */
+.avatar-item {
+  height: 160rpx;
+}
+
+.avatar-btn {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+/* 去除 button 默认边框 */
+.avatar-btn::after {
+  border: none;
+}
+
+.avatar-preview {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  background-color: #f0f0f0;
+  border: 2rpx solid #eeeeee;
+}
+
+.arrow {
+  color: #cccccc;
+  font-size: 32rpx;
+  font-family: consolas; /* 让箭头看起来更细长 */
+}
+
+/* 昵称输入框 */
+.nickname-input {
+  flex: 1;
+  text-align: right;
+  font-size: 32rpx;
+  color: #333333;
+}
+
+/* 保存按钮 */
+.save-btn {
+  background-color: #07c160;
+  color: #ffffff;
+  border-radius: 50rpx;
+  font-size: 34rpx;
+  font-weight: bold;
+  padding: 12rpx 0;
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+}
+
+.save-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}

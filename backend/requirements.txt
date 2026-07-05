@@ -13,4 +13,4 @@ python-jose
 httpx
 passlib
 
-python-multipart>=0.0.9
+python-multipart
