@@ -5,12 +5,14 @@ from typing import Optional
 from config.database import get_db
 from utils.deps import get_admin_user
 from utils.response import success
+from schemas.common import ResponseModel, PageResult
+from schemas.attachment_schema import AttachmentResponse
 from services.attachment_service import att_service
 
 router = APIRouter(prefix="/attachments", tags=["Admin - 资源审计"])
 
 
-@router.get("", summary="管理员分页查询全站附件")
+@router.get("", summary="管理员分页查询全站附件", response_model=ResponseModel[PageResult[AttachmentResponse]])
 async def admin_get_all_attachments(
     file_type: Optional[str] = Query(None, description="按类型检索"),
     page: int = Query(1, ge=1, description="页码"),
