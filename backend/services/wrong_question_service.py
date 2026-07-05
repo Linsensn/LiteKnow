@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_wrong_questions import wrong_question
+from crud.wrong_questions_crud import wrong_question
 
 class WrongQuestionService:
     async def get_my_wrong_questions(self, db: AsyncSession, user_id: int, keyword: str, page: int, page_size: int):

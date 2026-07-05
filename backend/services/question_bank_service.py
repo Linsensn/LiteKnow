@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_question_banks import question_bank
+from crud.question_banks_crud import question_bank
 
 class QuestionBankService:
     async def create_bank(self, db: AsyncSession, current_user: dict, bank_in: dict):
