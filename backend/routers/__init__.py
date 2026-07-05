@@ -11,7 +11,7 @@ from utils.deps import get_current_user, get_admin_user
 
 root_router = APIRouter()
 
-root_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
-root_router.include_router(student_router, prefix="/student", tags=["Student"])
+root_router.include_router(admin_router, prefix="/admin",)
+root_router.include_router(student_router, prefix="/student",)
 root_router.include_router(system_router)
 

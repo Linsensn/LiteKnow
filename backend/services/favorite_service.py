@@ -5,6 +5,7 @@ from crud.favorites_crud import favorite_crud
 from schemas.favorite_schema import FavoriteCreate
 from schemas.common import ResponseModel
 from utils.exceptions import CustomAPIException, ErrorCode
+from schemas.common import PageResult
 
 class FavoriteService:
 
@@ -18,13 +19,8 @@ class FavoriteService:
 
             if existing_fav:
                 await favorite_crud.delete(db, db_obj=existing_fav)
-                await db.commit()
-                return ResponseModel(
-                    code=200,
-                    success=True,
-                    message="已取消收藏",
-                    data={"action": "removed"}
-                )
+                db.commit()
+                return {"action": "removed", "message": "已取消收藏"}
             else:
                 create_data = {
                     "user_id": user_id,
@@ -34,16 +30,11 @@ class FavoriteService:
                     "source_session": obj_in.source_session
                 }
                 await favorite_crud.create(db, obj_in=create_data)
-                await db.commit()
-                return ResponseModel(
-                    code=200,
-                    success=True,
-                    message="收藏成功",
-                    data={"action": "added"}
-                )
+                db.commit()
+                return {"action": "added", "message": "收藏成功"}
 
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(
                 code=ErrorCode.DB_OPERATION_FAILED,
                 message=str(e)
@@ -60,16 +51,11 @@ class FavoriteService:
             db, user_id=user_id, content_type=content_type, skip=skip, limit=page_size
         )
 
-        return ResponseModel(
-            code=200,
-            success=True,
-            message="获取成功",
-            data={
-                "list": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size
-            }
+        return PageResult(
+            list=items,
+            total=total,
+            page=page,
+            page_size=page_size
         )
 
     # 3. 管理端：获取全站收藏 Top N
@@ -83,13 +69,7 @@ class FavoriteService:
                 "content_id": row.content_id,
                 "fav_count": row.fav_count
             })
-        return ResponseModel(
-            code=200,
-            success=True,
-            message="获取成功",
-            data=result
-        )
-
+        return result
 
 
 fav_service = FavoriteService()

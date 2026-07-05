@@ -1,9 +1,9 @@
 # backend/services/attachment_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
+from utils.exceptions import CustomAPIException, ErrorCode
 from crud.attachments_crud import attachment_crud
 from schemas.attachment_schema import AttachmentResponse
-
+from schemas.common import PageResult
 
 class AttachmentService:
 
@@ -11,7 +11,7 @@ class AttachmentService:
     async def get_attachment(self, db: AsyncSession, attachment_id: int):
         attachment = await attachment_crud.get(db, attachment_id=attachment_id)
         if not attachment:
-            raise HTTPException(status_code=404, detail="附件不存在")
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
         return attachment
 
     # 2. 分页获取附件列表（通用，通过 user_id 控制权限范围）
@@ -27,7 +27,12 @@ class AttachmentService:
             db, user_id=user_id, file_type=file_type,
             skip=skip, limit=page_size
         )
-        return {"total": total, "items": items}
+        return PageResult(
+            list=items,
+            total=total,
+            page=page,
+            page_size=page_size
+        )
 
     # 3. 创建附件记录
     async def create_attachment(
@@ -40,12 +45,12 @@ class AttachmentService:
                 file_url=file_url, extracted_text=extracted_text,
                 message_id=message_id
             )
-            await db.commit()
-            await db.refresh(new_attachment)
+            db.commit()
+            db.refresh(new_attachment)
             return new_attachment
         except Exception as e:
-            await db.rollback()
-            raise HTTPException(status_code=400, detail=f"上传失败: {str(e)}")
+            db.rollback()
+            raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 4. 删除附件（学生端需校验归属权）
     async def delete_attachment(
@@ -55,14 +60,14 @@ class AttachmentService:
         
         # 学生端校验归属，管理员端跳过
         if user_id is not None and attachment.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权限删除该附件")
+            raise CustomAPIException(code=ErrorCode.RESOURCE_ACCESS_DENIED)
 
         try:
             await attachment_crud.delete(db, db_obj=attachment)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
-            raise HTTPException(status_code=400, detail=f"删除失败: {str(e)}")
+            db.rollback()
+            raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
 
 att_service = AttachmentService()

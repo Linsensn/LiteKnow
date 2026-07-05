@@ -16,7 +16,7 @@ class CRUDFavorite:
         if content_type:
             stmt = stmt.where(Favorite.content_type == content_type)
         stmt = stmt.order_by(desc(Favorite.created_at)).offset(skip).limit(limit)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalars().all()
 
     # 2. 统计用户收藏总数（配合分页）
@@ -26,7 +26,7 @@ class CRUDFavorite:
         stmt = select(func.count(Favorite.id)).where(Favorite.user_id == user_id)
         if content_type:
             stmt = stmt.where(Favorite.content_type == content_type)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_one()
 
     # 3. 根据内容ID精确匹配单条记录（用于 Toggle 判断）
@@ -39,20 +39,20 @@ class CRUDFavorite:
             Favorite.content_type == content_type,
             Favorite.content_id == content_id
         )
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.scalar_first()
     # 4. 新增单条收藏
     async def create(self, db: AsyncSession, *, obj_in: dict) -> Favorite:
         db_obj = Favorite(**obj_in)
         db.add(db_obj)
-        await db.flush()
-        await db.refresh(db_obj) # 延迟同步问题
+        db.flush()
+        db.refresh(db_obj) # 延迟同步问题
         return db_obj
 
     # 5. 删除单条收藏
     async def delete(self, db: AsyncSession, *, db_obj: Favorite):
-        await db.delete(db_obj)
-        await db.flush()
+        db.delete(db_obj)
+        db.flush()
 
     # 6. 管理端：全站收藏 Top N 聚合统计
     # 【修改】分组与统计字段从 content_data 改为 content_id
@@ -65,7 +65,7 @@ class CRUDFavorite:
             Favorite.content_id,
             Favorite.content_type
         ).order_by(desc('fav_count')).limit(limit)
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         return result.all()
 
 
