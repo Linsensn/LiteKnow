@@ -1,7 +1,6 @@
 <view class="container">
   <view class="header-title">AI 学习工作台</view>
   
-  <!-- 重新排版：横向通栏卡片，信息更饱满 -->
   <view class="feature-list">
     <view class="feature-card" bindtap="navigateTo" data-url="/pages/summary/summary">
       <view class="icon-box" style="background-color: #E8F5E9;">📝</view>
@@ -29,11 +28,19 @@
       </view>
       <text class="arrow">></text>
     </view>
+
+    <view class="feature-card" bindtap="navigateTo" data-url="/pages/recognize/recognize">
+      <view class="icon-box" style="background-color: #FCE4EC;">📸</view>
+      <view class="text-content">
+        <text class="card-title">识别题库</text>
+        <text class="card-desc">拍照或上传，一键导入专属题库</text>
+      </view>
+      <text class="arrow">></text>
+    </view>
   </view>
 
-  <!-- 底部半屏登录弹窗 (逻辑不变，样式微调) -->
-  <view class="mask" wx:if="{{showLoginPopup}}"></view>
-  <view class="login-popup {{showLoginPopup ? 'show' : ''}}">
+  <view class="mask" wx:if="{{!isLoggedIn}}"></view>
+  <view class="login-popup {{!isLoggedIn ? 'show' : ''}}">
     <view class="popup-header">
       <text class="popup-title">欢迎使用 LiteKnow</text>
       <text class="popup-desc">请授权您的头像和昵称以继续</text>
@@ -41,9 +48,10 @@
     <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
       <image class="avatar" src="{{tempAvatar}}"></image>
     </button>
+    
     <view class="input-box">
       <input type="nickname" class="nickname-input" placeholder="点击授权微信昵称" bindchange="onInputChange" value="{{tempNickName}}"/>
     </view>
-    <button class="submit-btn" bindtap="confirmLogin">一键开启</button>
+    <button class="submit-btn" bindtap="handleLogin">一键开启</button>
   </view>
 </view>

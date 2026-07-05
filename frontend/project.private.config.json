@@ -3,7 +3,7 @@
   "projectname": "frontend",
   "setting": {
     "compileHotReLoad": true,
-    "urlCheck": true,
+    "urlCheck": false,
     "coverView": true,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,
@@ -18,6 +18,6 @@
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false
   },
-  "libVersion": "3.16.2",
+  "libVersion": "3.15.2",
   "condition": {}
 }

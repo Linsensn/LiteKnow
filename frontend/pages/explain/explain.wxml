@@ -10,15 +10,21 @@
     </textarea>
     
     <view class="action-group">
-      <button class="generate-btn" bindtap="generateExplanation" disabled="{{!questionText}}">开始精讲</button>
+      <button 
+        class="generate-btn" 
+        bindtap="generateExplanation" 
+        disabled="{{!questionText || isTyping}}">
+        {{isTyping ? '正在生成讲解...' : '开始精讲'}}
+      </button>
     </view>
   </view>
 
-  <view class="content-card result-card" wx:if="{{explainResult}}">
+  <view class="content-card result-card" wx:if="{{explainResult || isTyping}}">
     <view class="card-title">💡 AI 深度剖析</view>
     <view class="result-text">
       <text user-select="true">{{explainResult}}</text>
     </view>
+    
     <view class="action-footer">
       <view class="feedback-btn" bindtap="askMore">没太懂，继续追问</view>
       <view class="copy-btn" bindtap="copyResult">复制</view>

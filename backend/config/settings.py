@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "127.0.0.1"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
+
+    WX_APPID: str = ""  # 添加默认值
+    WX_SECRET: str = ""  # 添加默认值
     
     LLM_ENABLED: bool = True
     # 密钥

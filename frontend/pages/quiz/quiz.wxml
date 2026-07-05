@@ -1,5 +1,5 @@
 <view class="container">
-  <view class="content-card">
+  <view class="content-card" wx:if="{{!isBankMode}}">
     <view class="card-title">生成专属测验</view>
     <textarea 
       class="text-input" 

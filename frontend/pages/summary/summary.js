@@ -3,55 +3,60 @@ const util = require('../../utils/util.js')
 Page({
   data: {
     inputText: '',
-    summaryResult: ''
+    summaryResult: '',
+    isTyping: false
   },
 
-  // 监听输入
   onInput(e) {
-    this.setData({
-      inputText: e.detail.value
-    })
+    this.setData({ inputText: e.detail.value })
   },
 
-  // 模拟/处理多模态上传预留接口
   onUploadTap() {
-    wx.showToast({
-      title: '文档解析功能开发中...',
-      icon: 'none'
-    })
+    wx.showToast({ title: '文档解析功能开发中...', icon: 'none' })
   },
 
-  // 调用 Agent 接口生成摘要
   async generateSummary() {
-    if (!this.data.inputText.trim()) return;
+    if (!this.data.inputText.trim() || this.data.isTyping) return;
 
-    // 清空历史结果
-    this.setData({ summaryResult: '' });
+    this.setData({ 
+      summaryResult: 'AI 正在为您提炼核心主旨...', 
+      isTyping: true 
+    });
 
-    try {
-      // 这里的 '/v1/agent/summary' 需替换为您实际的 FastAPI 路由
-      const res = await util.request('/v1/agent/summary', 'POST', {
-        content: this.data.inputText
-      });
-      
-      // 假设后端返回的数据在 res.summary 中
-      this.setData({
-        summaryResult: res.summary
-      });
-      
-    } catch (error) {
-      console.error('Agent请求失败', error);
-      // 兜底提示在 util.request 中已处理
-    }
+    let isFirstChunk = true;
+
+    // ✨ 极致精简：直接调用封装好的流式水管
+    util.streamRequest(
+      '/v1/agent/summary', 
+      { content: this.data.inputText },
+      (newText) => {
+        if (isFirstChunk) {
+          this.setData({ summaryResult: '' });
+          isFirstChunk = false;
+        }
+        this.setData({ summaryResult: this.data.summaryResult + newText });
+      },
+      () => {
+        this.setData({ isTyping: false });
+      },
+      (err) => {
+        console.error('Agent请求失败', err);
+        this.setData({ 
+          summaryResult: '网络请求失败，请稍后重试。',
+          isTyping: false 
+        });
+      }
+    );
   },
 
-  // 复制结果到剪贴板
   copyResult() {
+    if (this.data.isTyping) {
+      wx.showToast({ title: '请等待生成完毕', icon: 'none' });
+      return;
+    }
     wx.setClipboardData({
       data: this.data.summaryResult,
-      success: () => {
-        wx.showToast({ title: '已复制' });
-      }
+      success: () => { wx.showToast({ title: '已复制' }); }
     })
   }
 })

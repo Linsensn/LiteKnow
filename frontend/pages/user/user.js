@@ -12,7 +12,6 @@ Page({
     this.setData({ userInfo: app.globalData.userInfo });
   },
 
-  // 唤起编辑资料弹窗
   openEditPopup() {
     if (!app.globalData.isLoggedIn) {
       wx.switchTab({ url: '/pages/index/index' });
@@ -20,16 +19,17 @@ Page({
     }
     this.setData({
       showEditPopup: true,
-      tempAvatar: this.data.userInfo.avatarUrl,
-      tempNickName: this.data.userInfo.nickName
+      // ✨ 对齐数据库字段名
+      tempAvatar: this.data.userInfo.avatar_url,
+      tempNickName: this.data.userInfo.nickname
     });
   },
 
-  // 关闭弹窗
   closeEditPopup() {
     this.setData({ showEditPopup: false });
   },
 
+  // ⚠️ 注意：这里的 e.detail.avatarUrl 是微信原生 API 传回来的固定名字，不能改！
   onChooseAvatar(e) {
     this.setData({ tempAvatar: e.detail.avatarUrl });
   },
@@ -44,14 +44,18 @@ Page({
       wx.showToast({ title: '昵称不能为空', icon: 'none' });
       return;
     }
+    
+    // ✨ 重点：拼装成和数据库一模一样的对象格式，存入全局
     app.globalData.userInfo = {
-      avatarUrl: this.data.tempAvatar,
-      nickName: this.data.tempNickName
+      avatar_url: this.data.tempAvatar,
+      nickname: this.data.tempNickName
     };
+    
     this.setData({ 
       userInfo: app.globalData.userInfo,
       showEditPopup: false 
     });
+    
     wx.showToast({ title: '保存成功', icon: 'success' });
   },
 
@@ -61,5 +65,13 @@ Page({
       return;
     }
     wx.navigateTo({ url: e.currentTarget.dataset.url });
+  },
+
+  // 修改 user.js 里的绑定事件
+  navigateToFavorites() {
+    wx.navigateTo({ url: '/pages/favorites/favorites' });
+  },
+  navigateToHistory() {
+    wx.navigateTo({ url: '/pages/history/history' });
   }
 })
