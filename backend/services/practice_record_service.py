@@ -22,10 +22,10 @@ class PracticeRecordService:
                 await wrong_questions_crud.create_wrong_question(db=db, obj_in=wq_data, user_id=user_id)
                 
             await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=current_index)
-            await db.commit()
+            db.commit()
             return {"is_correct": is_correct}
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.PRACTICE_RECORD_SUBMIT_FAILED, data={"error_detail": str(e)})
 
     async def get_session_analysis(self, db: AsyncSession, session_id: int):
@@ -60,6 +60,6 @@ class PracticeRecordService:
             })
         if objs_in:
             await practice_records_crud.create_multi_records(db=db, objs_in=objs_in)
-            await db.commit()
+            db.commit()
 
 pr_service = PracticeRecordService()
