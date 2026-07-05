@@ -46,11 +46,11 @@ async def create_batch_sessions(
 
 @router.get("/list", response_model=ResponseModel[PageResult[PracticeSessionDetailOut]])
 async def get_sessions_list(
-    status: Optional[str] = Query(None, description="按状态过滤：ongoing, completed"),
-    keyword: Optional[str] = Query(None, description="模糊搜索：练习模式"),
-    sort_by: str = Query("desc", description="排序：asc或desc"),
-    skip: int = Query(0, description="分页起始偏移量"),
-    limit: int = Query(20, le=100, description="每页返回数量，最大100"),
+    status: Optional[str] = Query(None, description="按状态过滤：ongoing, completed", examples=["ongoing"]),
+    keyword: Optional[str] = Query(None, description="模糊搜索：练习模式", examples=["STM32固件开发测试"]),
+    sort_by: str = Query("desc", description="排序：asc或desc", examples=["desc"]),
+    skip: int = Query(0, description="分页起始偏移量", examples=[0]),
+    limit: int = Query(20, le=100, description="每页返回数量，最大100", examples=[20]),
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[查询] 关联题库分页获取会话列表，严格使用 PageResult"""
@@ -90,7 +90,7 @@ async def get_practice_sessions_tree(
 
 @router.get("/{session_id}", response_model=ResponseModel[PracticeSessionOut])
 async def get_practice_session_progress(
-    session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    session_id: int = Path(..., description="会话ID", examples=[2048]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[查询] 恢复中断的进度，查看单条会话信息"""
     result = await ps_service.get_session_detail(db=db, session_id=session_id, user_id=current_student.id)
@@ -101,7 +101,6 @@ async def update_batch_sessions(
     data: BatchUpdateSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量修改会话"""
-    # 接收真实的受影响行数
     updated_count = await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
     db.commit()
     audit_logger.info(f"User {current_student.id} batch updated sessions {data.ids}")
@@ -109,7 +108,7 @@ async def update_batch_sessions(
 
 @router.put("/{session_id}", response_model=ResponseModel[dict])
 async def update_single_session(
-    data: PracticeSessionUpdate, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: PracticeSessionUpdate, session_id: int = Path(..., description="会话ID", examples=[2048]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 修改单条会话信息"""
     updated_count = await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
@@ -119,7 +118,7 @@ async def update_single_session(
 
 @router.patch("/{session_id}/status", response_model=ResponseModel[dict])
 async def submit_practice_session(
-    payload: StatusToggleReq, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    payload: StatusToggleReq, session_id: int = Path(..., description="会话ID", examples=[2048]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[业务] 强制结束会话/主动交卷"""
     await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=0, status=payload.status)
@@ -132,7 +131,6 @@ async def delete_batch_sessions(
     payload: BatchDeleteSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量删除记录"""
-    # 接收真实的受影响行数
     deleted_count = await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
     db.commit()
     audit_logger.warning(f"User {current_student.id} batch deleted {deleted_count} sessions")
@@ -140,7 +138,7 @@ async def delete_batch_sessions(
 
 @router.delete("/{session_id}", response_model=ResponseModel[dict])
 async def delete_single_session(
-    session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    session_id: int = Path(..., description="会话ID", examples=[2048]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 删除单条记录"""
     deleted_count = await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
