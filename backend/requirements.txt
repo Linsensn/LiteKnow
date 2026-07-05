@@ -11,3 +11,5 @@ loguru
 python-jose
 httpx
 passlib
+
+python-multipart
