@@ -11,6 +11,9 @@ SEED_USERS = [
         "nickname": "学海无涯",
         "avatar_url": "https://avatar.test/1.png",
         "signature": "学而不思则罔",
+        "role": "student",
+        "is_active": True,
+        "is_deleted": False, 
         "created_at": "2026-07-06 09:00:00",
         "updated_at": "2026-07-06 09:00:00"
     },
@@ -19,6 +22,9 @@ SEED_USERS = [
         "nickname": "物理小王子",
         "avatar_url": "https://avatar.test/2.png",
         "signature": "探索宇宙的奥秘",
+        "role": "student",
+        "is_active": True,
+        "is_deleted": False, 
         "created_at": "2026-07-06 09:05:00",
         "updated_at": "2026-07-06 09:05:00"
     },
@@ -27,6 +33,9 @@ SEED_USERS = [
         "nickname": "英语语法侠",
         "avatar_url": "https://avatar.test/3.png",
         "signature": "Just do it.",
+        "role": "student",
+        "is_active": True,
+        "is_deleted": False, 
         "created_at": "2026-07-06 09:10:00",
         "updated_at": "2026-07-06 09:10:00"
     },
@@ -35,6 +44,9 @@ SEED_USERS = [
         "nickname": "数学王老师",
         "avatar_url": "https://avatar.test/4.png",
         "signature": "授人以鱼不如授人以渔",
+        "role": "student",
+        "is_active": True,
+        "is_deleted": False, 
         "created_at": "2026-07-06 09:15:00",
         "updated_at": "2026-07-06 09:15:00"
     }
@@ -334,6 +346,8 @@ SEED_SESSIONS = [
         "user_id": 1,
         "title": "历史考前冲刺",
         "task_type": "测验",
+        "status": "active", 
+        "is_deleted": False,
         "created_at": "2026-07-06 12:00:00",
         "updated_at": "2026-07-06 12:00:00"
     },
@@ -341,6 +355,8 @@ SEED_SESSIONS = [
         "user_id": 2,
         "title": "物理作业解答",
         "task_type": "精讲",
+        "status": "active", 
+        "is_deleted": False,
         "created_at": "2026-07-06 12:05:00",
         "updated_at": "2026-07-06 12:05:00"
     },
@@ -348,6 +364,8 @@ SEED_SESSIONS = [
         "user_id": 3,
         "title": "英语四级语法复习",
         "task_type": "摘要",
+        "status": "active", 
+        "is_deleted": False,
         "created_at": "2026-07-06 12:10:00",
         "updated_at": "2026-07-06 12:10:00"
     }
@@ -467,34 +485,25 @@ SEED_FAVORITES = [
         "user_id": 3,
         "content_type": "英语语法",
         "cover_image_url": None,
-        "content_data": {
-            "title": "虚拟语气固定搭配",
-            "content": "If I were you (如果我是你)，无论主语单复数。"
-        },
+        "content_id": "1",
         "source_session": 3,
         "created_at": "2026-07-06 17:40:00",
         "updated_at": "2026-07-06 17:40:00"
     },
     {
-        "user_id": 3,
+        "user_id": 2,
         "content_type": "数学技巧",
         "cover_image_url": None,
-        "content_data": {
-            "title": "导数单调性解题流程",
-            "content": "1. 求定义域; 2. 求导; 3. 令导数等于0; 4. 列表分析"
-        },
+        "content_id": "3",
         "source_session": 3,
         "created_at": "2026-07-06 17:45:00",
         "updated_at": "2026-07-06 17:45:00"
     },
     {
-        "user_id": 3,
+        "user_id": 1,
         "content_type": "英语考点",
         "cover_image_url": "https://test.oss/grammar.png",
-        "content_data": {
-            "title": "非谓语动词做状语",
-            "content": "主动用doing，被动用done，原因状语提前看。"
-        },
+        "content_id": "2",
         "source_session": 3,
         "created_at": "2026-07-06 17:50:00",
         "updated_at": "2026-07-06 17:50:00"
