@@ -58,11 +58,11 @@ async def create_batch_records(
 
 @router.get("/list", response_model=ResponseModel[PageResult[PracticeRecordDetailOut]], summary="获取答题记录列表")
 async def get_practice_records_list(
-    session_id: Optional[int] = Query(None, description="多条件：按练习会话过滤"),
-    is_correct: Optional[bool] = Query(None, description="多条件：按正误状态过滤"),
-    sort_by: str = Query("desc", description="排序与聚合：asc或desc"),
-    skip: int = Query(0, description="分页：起始偏移量"),
-    limit: int = Query(20, le=100, description="分页：每页返回数量"),
+    session_id: Optional[int] = Query(None, description="多条件：按练习会话过滤", examples=[1024]),
+    is_correct: Optional[bool] = Query(None, description="多条件：按正误状态过滤", examples=[True]),
+    sort_by: str = Query("desc", description="排序与聚合：asc或desc", examples=["desc"]),
+    skip: int = Query(0, description="分页：起始偏移量", examples=[0]),
+    limit: int = Query(20, le=100, description="分页：每页返回数量", examples=[20]),
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     records, total = await practice_records_crud.get_multi_records(
@@ -90,7 +90,7 @@ async def get_practice_records_tree(
 
 @router.get("/{record_id}", response_model=ResponseModel[PracticeRecordDetailOut], summary="获取单条答题记录详情")
 async def get_practice_record_detail(
-    record_id: int = Path(..., description="主键ID"), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    record_id: int = Path(..., description="主键ID", examples=[1001]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     record = await practice_records_crud.get_practice_record(db=db, id=record_id)
     if not record or record.user_id != current_student.id:
@@ -108,7 +108,7 @@ async def update_batch_records(
 
 @router.put("/{record_id}", response_model=ResponseModel[dict], summary="修改单条答题记录")
 async def update_single_record(
-    data: PracticeRecordUpdate, record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: PracticeRecordUpdate, record_id: int = Path(..., description="主键ID", examples=[1001]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     updated_count = await practice_records_crud.update_record(db=db, id=record_id, obj_in=data.model_dump(exclude_unset=True))
     db.commit()
@@ -117,7 +117,7 @@ async def update_single_record(
 
 @router.patch("/{record_id}/status", response_model=ResponseModel[dict], summary="切换答题记录正误状态")
 async def toggle_record_status(
-    payload: StatusToggleReq, record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    payload: StatusToggleReq, record_id: int = Path(..., description="主键ID", examples=[1001]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     updated_count = await practice_records_crud.toggle_record_status(db=db, id=record_id, is_correct=payload.is_correct)
     db.commit() 
@@ -135,7 +135,7 @@ async def delete_batch_records(
 
 @router.delete("/{record_id}", response_model=ResponseModel[dict], summary="删除单条答题记录")
 async def delete_single_record(
-    record_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    record_id: int = Path(..., description="主键ID", examples=[1001]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     deleted_count = await practice_records_crud.delete_records_by_ids(db=db, ids=[record_id])
     db.commit()
@@ -144,7 +144,7 @@ async def delete_single_record(
 
 @router.get("/session/{session_id}/stats", response_model=ResponseModel[dict], summary="获取会话答题统计")
 async def get_session_stats(
-    session_id: int, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    session_id: int = Path(..., description="会话ID", examples=[1024]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     stats = await pr_service.get_session_analysis(db=db, session_id=session_id)
     return success(data=stats)
