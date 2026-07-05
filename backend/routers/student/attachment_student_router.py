@@ -1,5 +1,5 @@
 # backend/routers/student/attachments_student_route.py
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from config.database import get_db
@@ -39,13 +39,13 @@ async def upload_attachment(
     file_path = save_file_local(
         file_bytes=file_bytes,
         filename=file.filename,
-        user_id=current_student["id"]
+        user_id=current_student.id
     )
     
     # 4. 写入数据库
     new_attachment = await att_service.create_attachment(
         db=db,
-        user_id=current_student["id"],
+        user_id=current_student.id,
         file_type=file.content_type,
         file_url=file_path,
         message_id=message_id
@@ -63,18 +63,18 @@ async def get_my_attachments(
     current_student: dict = Depends(get_current_user)
 ):
     data = await att_service.get_attachment_page(
-        db, user_id=current_student["id"],
+        db, user_id=current_student.id,
         file_type=file_type, page=page, page_size=page_size
     )
     return success(data=data)
 
 @router.delete("/{attachment_id}", summary="删除我的附件")
 async def delete_my_attachment(
-    attachment_id: int,
+    attachment_id: int = Path(..., description="附件ID"),
     db: AsyncSession = Depends(get_db),
     current_student: dict = Depends(get_current_user)
 ):
     await att_service.delete_attachment(
-        db, attachment_id=attachment_id, user_id=current_student["id"]
+        db, attachment_id=attachment_id, user_id=current_student.id
     )
     return success(message="附件删除成功")
