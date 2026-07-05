@@ -22,14 +22,20 @@ async def wechat_login_service(db: Session, code: str):
     async with httpx.AsyncClient() as client:
         resp = await client.get(wx_url)
         wx_data = resp.json()
+        print(">>> 微信接口完整返回:", wx_data) # 临时添加这行代码
         
     openid = wx_data.get("openid")
     if not openid:
         raise CustomAPIException(code=ErrorCode.WECHAT_AUTH_FAILED)
-        
-    # 尝试查询用户。如果是我们预置的管理员，这里能直接查出 user，且 user.role == 'admin'
+
+    # 2. 查询用户，不存在则注册
     user = user_crud.get_user_by_openid(db, openid)
-    
+    if not user:
+        user = user_crud.create_user(db, openid, role='student')
+        
+    # 3. 签发 JWT Token
+    access_token = create_access_token(subject=user.id) #
+ 
     # 如果不存在，说明是全新的普通学生用户，走自动注册逻辑
     if not user:
         user = user_crud.create_user(db, openid, role='student')

@@ -9,20 +9,12 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError 
 from sqlalchemy.orm import Session
 from config.settings import settings 
-from config.database import SessionLocal 
+from config.database import get_db 
 from models.users import User
 from utils.exceptions import HttpErrMsg 
 
 # 设置 Swagger UI 的全局鉴权地址
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/student/auth/wechat") 
-
-def get_db():
-    """全局数据库会话生成器"""
-    db = SessionLocal() 
-    try:
-        yield db 
-    finally:
-        db.close() 
 
 async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
     """解析 JWT，获取当前登录的 User (可能是学生，也可能是管理员)"""

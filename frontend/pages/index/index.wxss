@@ -1,97 +1,109 @@
 page { 
-    background-color: #F5F7FA; 
-  }
-  
-  /* 统一容器样式，与 user 页面保持绝对一致 */
-  .container { 
-    padding: 20rpx 24rpx; 
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-  
-  .header-title { 
-    font-size: 42rpx; /* 稍微再放大一点点显得更饱满 */
-    font-weight: bold; 
-    margin: 20rpx 0 30rpx 0; /* 去掉了原来 10rpx 的左边距 */
-    color: #333; 
-    width: 100%;
-    text-align: center; /* 核心居中属性 */
-  }
-  
-  .feature-list { 
-    display: flex; 
-    flex-direction: column; 
-    width: 100%;
-  }
-  
-  /* 增加 width: 100% 和 box-sizing: border-box，确保与我的页面卡片等宽 */
-  .feature-card { 
-    width: 100%;
-    box-sizing: border-box;
-    display: flex; 
-    align-items: center; 
-    background: #FFF; 
-    border-radius: 20rpx; 
-    padding: 30rpx; 
-    margin-bottom: 24rpx; 
-    box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02); 
-  }
-  
-  .feature-card:active { 
-    background-color: #F9F9F9; 
-  }
-  
-  .icon-box { 
-    flex-shrink: 0;
-    width: 96rpx; 
-    height: 96rpx; 
-    border-radius: 24rpx; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    font-size: 48rpx; 
-    margin-right: 30rpx; 
-  }
-  
-  .text-content { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    overflow: hidden;
-  }
-  
-  .card-title { 
-    font-size: 32rpx; 
-    font-weight: bold; 
-    color: #333; 
-    margin-bottom: 8rpx; 
-  }
-  
-  .card-desc { 
-    font-size: 24rpx; 
-    color: #888; 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis;
-  }
-  
-  .arrow { 
-    flex-shrink: 0;
-    color: #CCC; 
-    font-size: 32rpx; 
-    font-weight: bold; 
-    margin-left: 20rpx;
-  }
-  
-  /* 登录弹窗样式保持不变 */
-  .mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99; }
-  .login-popup { position: fixed; bottom: -100%; left: 0; right: 0; background: #FFF; border-radius: 30rpx 30rpx 0 0; padding: 50rpx 40rpx 60rpx; z-index: 100; transition: bottom 0.3s ease-out; display: flex; flex-direction: column; align-items: center; }
-  .login-popup.show { bottom: 0; }
-  .popup-title { font-size: 36rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; text-align: center; }
-  .popup-desc { font-size: 26rpx; color: #999; margin-bottom: 50rpx; display: block; text-align: center; }
-  .avatar-wrapper { width: 140rpx !important; height: 140rpx !important; padding: 0; border-radius: 50%; margin-bottom: 40rpx; }
-  .avatar { width: 100%; height: 100%; border-radius: 50%; background-color: #F0F0F0; margin: 0; }
-  .input-box { width: 80%; border-bottom: 1rpx solid #eee; margin-bottom: 60rpx; padding-bottom: 20rpx; }
-  .nickname-input { text-align: center; font-size: 32rpx; }
-  .submit-btn { width: 80% !important; background: #07c160; color: #FFF; border-radius: 50rpx; font-size: 32rpx; font-weight: normal; }
+  background-color: #F5F7FA; 
+}
+
+/* 统一容器样式，与 user 页面保持绝对一致 */
+.container { 
+  padding: 20rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.header-title { 
+  font-size: 42rpx;
+  /* 稍微再放大一点点显得更饱满 */
+  font-weight: bold; 
+  margin: 20rpx 0 30rpx 0;
+  /* 去掉了原来 10rpx 的左边距 */
+  color: #333; 
+  width: 100%;
+  text-align: center;
+  /* 核心居中属性 */
+}
+
+.feature-list { 
+  display: flex; 
+  flex-direction: column; 
+  width: 100%;
+}
+
+/* 增加 width: 100% 和 box-sizing: border-box，确保与我的页面卡片等宽 */
+.feature-card { 
+  width: 100%;
+  box-sizing: border-box;
+  display: flex; 
+  align-items: center; 
+  background: #FFF; 
+  border-radius: 20rpx; 
+  padding: 30rpx; 
+  margin-bottom: 24rpx; 
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
+}
+
+.feature-card:active { 
+  background-color: #F9F9F9;
+}
+
+.icon-box { 
+  flex-shrink: 0;
+  width: 96rpx; 
+  height: 96rpx; 
+  border-radius: 24rpx; 
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  font-size: 48rpx; 
+  margin-right: 30rpx; 
+}
+
+.text-content { 
+  flex: 1;
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden;
+}
+
+.card-title { 
+  font-size: 32rpx; 
+  font-weight: bold;
+  color: #333; 
+  margin-bottom: 8rpx; 
+}
+
+.card-desc { 
+  font-size: 24rpx; 
+  color: #888; 
+  white-space: nowrap;
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+.arrow { 
+  flex-shrink: 0;
+  color: #CCC; 
+  font-size: 32rpx;
+  font-weight: bold; 
+  margin-left: 20rpx;
+}
+
+/* 登录弹窗样式保持不变 */
+.mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+.login-popup { position: fixed; bottom: -100%; left: 0; right: 0; background: #FFF; border-radius: 30rpx 30rpx 0 0; padding: 50rpx 40rpx 60rpx; z-index: 100; transition: bottom 0.3s ease-out; display: flex; flex-direction: column; align-items: center; }
+.login-popup.show { bottom: 0; }
+
+/* ✨ 新增 form 的样式，接管居中排版 */
+form { 
+  width: 100%; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+}
+
+.popup-title { font-size: 36rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; text-align: center; }
+.popup-desc { font-size: 26rpx; color: #999; margin-bottom: 50rpx; display: block; text-align: center; }
+.avatar-wrapper { width: 140rpx !important; height: 140rpx !important; padding: 0; border-radius: 50%; margin-bottom: 40rpx; }
+.avatar { width: 100%; height: 100%; border-radius: 50%; background-color: #F0F0F0; margin: 0; }
+.input-box { width: 80%; border-bottom: 1rpx solid #eee; margin: 0 auto 60rpx auto; padding-bottom: 20rpx; }
+.nickname-input { text-align: center; font-size: 32rpx; }
+.submit-btn { width: 80% !important; background: #07c160; color: #FFF; border-radius: 50rpx; font-size: 32rpx; font-weight: normal; }

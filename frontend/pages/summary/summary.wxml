@@ -13,11 +13,16 @@
       <view class="upload-btn" bindtap="onUploadTap">
         <text class="icon">📎</text> 传文件
       </view>
-      <button class="generate-btn" bindtap="generateSummary" disabled="{{!inputText}}">生成摘要</button>
+      <button 
+        class="generate-btn" 
+        bindtap="generateSummary" 
+        disabled="{{!inputText || isTyping}}">
+        {{isTyping ? '正在生成摘要...' : '生成摘要'}}
+      </button>
     </view>
   </view>
 
-  <view class="content-card result-card" wx:if="{{summaryResult}}">
+  <view class="content-card result-card" wx:if="{{summaryResult || isTyping}}">
     <view class="card-title">✨ AI 核心主旨</view>
     <view class="result-text">
       <text user-select="true">{{summaryResult}}</text>

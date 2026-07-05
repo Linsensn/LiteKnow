@@ -1,0 +1,8 @@
+.container { padding: 30rpx; background: #f7f8fa; min-height: 100vh; }
+.item-card { 
+  background: #fff; padding: 30rpx; border-radius: 16rpx; 
+  margin-bottom: 20rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+}
+.item-title { font-size: 30rpx; font-weight: bold; margin-bottom: 10rpx; }
+.item-meta { font-size: 24rpx; color: #999; }
+.empty-state { text-align: center; color: #999; margin-top: 200rpx; }

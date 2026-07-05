@@ -1,0 +1,12 @@
+<view class="container">
+  <view class="list-wrapper" wx:if="{{list.length > 0}}">
+    <view class="item-card" wx:for="{{list}}" wx:key="id">
+      <view class="item-title">{{item.title}}</view>
+      <view class="item-meta">{{item.created_at}}</view>
+    </view>
+  </view>
+  
+  <view class="empty-state" wx:else>
+    <text>暂无记录</text>
+  </view>
+</view>

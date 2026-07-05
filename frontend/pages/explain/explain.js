@@ -3,60 +3,66 @@ const util = require('../../utils/util.js')
 Page({
   data: {
     questionText: '',
-    explainResult: ''
+    explainResult: '',
+    isTyping: false
   },
 
-  // 页面加载时触发
   onLoad(options) {
-    // 接收从其他页面（如错题本）传过来的问题参数
     if (options.question) {
-      this.setData({
-        // 使用 decodeURIComponent 解码，防止中文或特殊符号变成乱码
-        questionText: decodeURIComponent(options.question)
-      });
+      this.setData({ questionText: decodeURIComponent(options.question) });
     }
   },
 
   onInput(e) {
-    this.setData({
-      questionText: e.detail.value
-    })
+    this.setData({ questionText: e.detail.value })
   },
 
   async generateExplanation() {
-    if (!this.data.questionText.trim()) return;
+    if (!this.data.questionText.trim() || this.data.isTyping) return;
 
-    this.setData({ explainResult: '' });
+    this.setData({ 
+      explainResult: 'AI 正在深度思考中...', 
+      isTyping: true 
+    });
 
-    try {
-      // 替换为实际的精讲 API 路由
-      const res = await util.request('/v1/agent/explain', 'POST', {
-        question: this.data.questionText
-      });
-      
-      this.setData({
-        explainResult: res.explanation
-      });
-      
-    } catch (error) {
-      console.error('精讲请求失败', error);
-    }
+    let isFirstChunk = true;
+
+    // ✨ 极致精简：直接调用封装好的流式水管
+    util.streamRequest(
+      '/v1/agent/explain', // 接口地址
+      { question: this.data.questionText }, // 发送的数据
+      (newText) => { // 收到新文字的回调
+        if (isFirstChunk) {
+          this.setData({ explainResult: '' });
+          isFirstChunk = false;
+        }
+        this.setData({ explainResult: this.data.explainResult + newText });
+      },
+      () => { // 传输结束的回调
+        this.setData({ isTyping: false });
+      },
+      (err) => { // 报错的回调
+        console.error('精讲请求失败', err);
+        this.setData({ 
+          explainResult: '网络请求失败，请稍后重试。',
+          isTyping: false 
+        });
+      }
+    );
   },
 
-  // 预留的多轮对话/追问接口
   askMore() {
-    wx.showToast({
-      title: '多轮对话功能接入中...',
-      icon: 'none'
-    })
+    wx.showToast({ title: '多轮对话功能接入中...', icon: 'none' })
   },
 
   copyResult() {
+    if (this.data.isTyping) {
+      wx.showToast({ title: '请等待生成完毕', icon: 'none' });
+      return;
+    }
     wx.setClipboardData({
       data: this.data.explainResult,
-      success: () => {
-        wx.showToast({ title: '已复制讲解内容' });
-      }
+      success: () => { wx.showToast({ title: '已复制讲解内容' }); }
     })
   }
 })

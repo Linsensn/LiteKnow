@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="list-wrapper" wx:if="{{bankList.length > 0}}">
+    <view 
+      class="bank-item" 
+      wx:for="{{bankList}}" 
+      wx:key="id"
+      bindtap="goToBankDetail"
+      data-id="{{item.id}}"
+      data-title="{{item.title}}"
+    >
+      <view class="item-left">
+        <text class="bank-title">{{item.title}}</text>
+        <text class="bank-subtitle" wx:if="{{item.subTitle}}">{{item.subTitle}}</text>
+      </view>
+      
+      <view class="item-right">
+        <text class="bank-count">{{item.questionCount}}题</text>
+        <text class="arrow">></text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <text class="empty-icon">📭</text>
+    <text class="empty-text">暂无专属题库</text>
+    <text class="empty-subtext">请前往“工作台”使用“识别题库”功能生成</text>
+  </view>
+</view>
