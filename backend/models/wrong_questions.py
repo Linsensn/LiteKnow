@@ -11,3 +11,4 @@ class WrongQuestion(BaseModel):
     user_answer = Column(String(255), comment='用户错误答案')
     correct_answer = Column(String(255), comment='正确答案')
     ai_analysis = Column(Text, comment='AI深度解析')
+    my_analysis = Column(Text, comment='我生成的解析')

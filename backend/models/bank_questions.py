@@ -13,3 +13,4 @@ class BankQuestion(BaseModel):
     options_json = Column(JSON, comment='选项列表(JSON格式,如 ["A. 选项1", "B. 选项2"])')
     correct_answer = Column(String(255), nullable=False, comment='正确答案')
     ai_analysis = Column(Text, comment='AI生成的解析')
+    my_analysis = Column(Text, comment='我生成的解析')
