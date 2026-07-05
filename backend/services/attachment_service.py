@@ -45,11 +45,11 @@ class AttachmentService:
                 file_url=file_url, extracted_text=extracted_text,
                 message_id=message_id
             )
-            await db.commit()
-            await db.refresh(new_attachment)
+            db.commit()
+            db.refresh(new_attachment)
             return new_attachment
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 4. 删除附件（学生端需校验归属权）
@@ -64,9 +64,9 @@ class AttachmentService:
 
         try:
             await attachment_crud.delete(db, db_obj=attachment)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
 
