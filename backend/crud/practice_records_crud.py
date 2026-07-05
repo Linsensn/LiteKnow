@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, desc
+from sqlalchemy import select, update, delete, func, desc, case
+from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.mysql import insert
 from models.practice_records import PracticeRecord
 from typing import List, Optional, Dict, Any
@@ -10,6 +11,11 @@ async def create_practice_record(db: AsyncSession, *, obj_in: dict) -> PracticeR
     db.add(db_obj)
     await db.flush()
     return db_obj
+
+async def create_multi_records(db: AsyncSession, *, objs_in: List[dict]):
+    """批量新增：适用于交卷时一次性提交所有客观题答案"""
+    stmt = insert(PracticeRecord).values(objs_in)
+    await db.execute(stmt)
 
 async def upsert_practice_record(db: AsyncSession, *, session_id: int, user_id: int, question_id: int, user_answer: str, is_correct: bool):
     """新增或更新答题记录：利用 MySQL 的 ON DUPLICATE KEY UPDATE 特性，避免同一会话重复插入相同题目"""
@@ -26,6 +32,16 @@ async def upsert_practice_record(db: AsyncSession, *, session_id: int, user_id: 
         is_correct=is_correct,
         user_answer=user_answer
     )
+    await db.execute(stmt)
+
+async def update_record(db: AsyncSession, *, id: int, obj_in: dict) -> None:
+    """单条更改：通用更新"""
+    stmt = update(PracticeRecord).where(PracticeRecord.id == id).values(**obj_in)
+    await db.execute(stmt)
+
+async def toggle_record_status(db: AsyncSession, *, id: int, is_correct: bool) -> None:
+    """状态切换：例如老师人工批改主观题后，切换正误状态"""
+    stmt = update(PracticeRecord).where(PracticeRecord.id == id).values(is_correct=is_correct)
     await db.execute(stmt)
 
 async def get_practice_record(db: AsyncSession, id: int) -> Optional[PracticeRecord]:
@@ -55,6 +71,45 @@ async def get_multi_records(db: AsyncSession, *, user_id: Optional[int] = None, 
     stmt = stmt.order_by(desc(PracticeRecord.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def get_records_with_question_details(
+    db: AsyncSession, 
+    *, 
+    user_id: int, 
+    user_answer_keyword: Optional[str] = None, 
+    skip: int = 0, 
+    limit: int = 20
+) -> List[PracticeRecord]:
+    """关联与模糊查询：联表查询题目内容，并支持对用户的作答进行模糊搜索"""
+    # 假设 PracticeRecord 模型中定义了 relationship("BankQuestion", backref="records") 命名为 question
+    stmt = select(PracticeRecord).options(joinedload(PracticeRecord.question)).where(PracticeRecord.user_id == user_id)
+    
+    if user_answer_keyword:
+        stmt = stmt.where(PracticeRecord.user_answer.like(f"%{user_answer_keyword}%"))
+        
+    stmt = stmt.order_by(desc(PracticeRecord.created_at)).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+async def get_session_statistics(db: AsyncSession, *, session_id: int) -> dict:
+    """聚合计算：统计某个练习会话的总题数、已答题数、正确题数、正确率"""
+    stmt = select(
+        func.count(PracticeRecord.id).label("total_questions"),
+        func.sum(case((PracticeRecord.is_completed == True, 1), else_=0)).label("completed_count"),
+        func.sum(case((PracticeRecord.is_correct == True, 1), else_=0)).label("correct_count")
+    ).where(PracticeRecord.session_id == session_id)
+    
+    result = await db.execute(stmt)
+    row = result.first()
+    
+    total = row.total_questions or 0
+    correct = row.correct_count or 0
+    return {
+        "total": total,
+        "completed": row.completed_count or 0,
+        "correct": correct,
+        "accuracy_rate": round(correct / total, 4) if total > 0 else 0.0
+    }
 
 async def delete_records_by_ids(db: AsyncSession, *, ids: List[int]):
     """批量条件删除：底层生成 DELETE ... WHERE id IN (...) 语句，由 Service 层控制事务"""

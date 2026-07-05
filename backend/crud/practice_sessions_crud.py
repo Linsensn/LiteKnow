@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, desc, func
+from sqlalchemy.orm import joinedload
 from models.practice_sessions import PracticeSession
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 async def create_practice_session(db: AsyncSession, *, user_id: int, bank_id: int, practice_mode: str, question_sequence: list) -> PracticeSession:
     """创建练习会话：初始化 JSON 格式的题目序列和起始状态"""
@@ -24,7 +25,7 @@ async def get_practice_session(db: AsyncSession, id: int) -> Optional[PracticeSe
     return result.scalar_first()
 
 async def get_multi_sessions(db: AsyncSession, *, user_id: Optional[int] = None, status: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeSession]:
-    """分页查询：查询历史会话列表，支持通过状态（如 ongoing, completed）过滤"""
+    """分页查询：查询历史会话列表，支持通过状态过滤"""
     stmt = select(PracticeSession)
     conditions = []
     if user_id is not None:
@@ -33,6 +34,17 @@ async def get_multi_sessions(db: AsyncSession, *, user_id: Optional[int] = None,
         conditions.append(PracticeSession.status == status)
     if conditions:
         stmt = stmt.where(*conditions)
+    stmt = stmt.order_by(desc(PracticeSession.created_at)).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+async def get_sessions_with_bank_details(db: AsyncSession, *, user_id: int, status: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeSession]:
+    """关联查询：获取会话列表及关联的题库信息（用于前端展示历史记录）"""
+    # 假设 PracticeSession 模型中定义了 relationship("QuestionBank", backref="sessions") 命名为 bank
+    stmt = select(PracticeSession).options(joinedload(PracticeSession.bank)).where(PracticeSession.user_id == user_id)
+    if status:
+        stmt = stmt.where(PracticeSession.status == status)
+        
     stmt = stmt.order_by(desc(PracticeSession.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -56,6 +68,11 @@ async def update_session_progress(db: AsyncSession, *, session_id: int, last_vie
     if status:
         values["status"] = status
     stmt = update(PracticeSession).where(PracticeSession.id == session_id).values(**values)
+    await db.execute(stmt)
+
+async def update_session_status(db: AsyncSession, *, session_id: int, status: str):
+    """单独切换会话状态（如：强制交卷）"""
+    stmt = update(PracticeSession).where(PracticeSession.id == session_id).values(status=status)
     await db.execute(stmt)
 
 async def delete_sessions_by_ids(db: AsyncSession, *, ids: List[int]):

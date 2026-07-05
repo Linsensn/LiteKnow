@@ -21,3 +21,11 @@ class PracticeSessionOut(BaseModel):
     updated_at: Optional[datetime]
 
     model_config = ConfigDict(from_attributes=True)
+
+# 响应：携带题库详情的会话信息（用于列表渲染）
+class PracticeSessionDetailOut(PracticeSessionOut):
+    bank_name: Optional[str] = Field(None, description="冗余返回关联题库的名称")
+
+# 请求：批量删除会话
+class BatchDeleteSessionReq(BaseModel):
+    ids: List[int] = Field(..., description="需要删除的会话ID列表")

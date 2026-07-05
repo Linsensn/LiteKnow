@@ -7,6 +7,11 @@ class QuestionBankCreate(BaseModel):
     bank_name: str = Field(..., description="题库名称")
     description: Optional[str] = Field(None, description="题库描述")
 
+# 请求：更新题库（字段均可选）
+class QuestionBankUpdate(BaseModel):
+    bank_name: Optional[str] = Field(None, description="题库名称")
+    description: Optional[str] = Field(None, description="题库描述")
+
 # 请求：批量删除
 class BulkDeleteIn(BaseModel):
     bank_ids: List[int] = Field(..., description="要操作的题库ID列表")
