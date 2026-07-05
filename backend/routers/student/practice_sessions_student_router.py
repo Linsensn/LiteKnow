@@ -27,10 +27,10 @@ async def start_practice_session(
 ):
     """[业务] 发起一次新的练习会话，并生成题号序列"""
     result = await ps_service.start_new_session(
-        db=db, user_id=current_student["id"], bank_id=data.bank_id, 
+        db=db, user_id=current_student.id, bank_id=data.bank_id, 
         mode=data.practice_mode, question_sequence=data.question_sequence
     )
-    audit_logger.info(f"User {current_student['id']} started new session {result.id}")
+    audit_logger.info(f"User {current_student.id} started new session {result.id}")
     return success(data=PracticeSessionOut.model_validate(result), message="练习会话创建成功")
 
 @router.post("/batch", response_model=ResponseModel[dict])
@@ -38,10 +38,10 @@ async def create_batch_sessions(
     data: List[PracticeSessionCreate], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量创建练习会话"""
-    objs_in = [{"user_id": current_student["id"], "last_viewed_index": 0, "status": "ongoing", **item.model_dump()} for item in data]
+    objs_in = [{"user_id": current_student.id, "last_viewed_index": 0, "status": "ongoing", **item.model_dump()} for item in data]
     await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} batch created {len(objs_in)} sessions")
+    audit_logger.info(f"User {current_student.id} batch created {len(objs_in)} sessions")
     return success(message=f"批量新增 {len(objs_in)} 条成功")
 
 @router.get("/list", response_model=ResponseModel[PageResult[PracticeSessionDetailOut]])
@@ -55,7 +55,7 @@ async def get_sessions_list(
 ):
     """[查询] 关联题库分页获取会话列表，严格使用 PageResult"""
     sessions, total = await practice_sessions_crud.get_multi_sessions(
-        db=db, user_id=current_student["id"], status=status, search_keyword=keyword, 
+        db=db, user_id=current_student.id, status=status, search_keyword=keyword, 
         skip=skip, limit=limit, sort_by=sort_by
     )
     
@@ -78,7 +78,7 @@ async def get_practice_sessions_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[查询] 树形查询：将历史会话按 ongoing/completed 状态进行分组"""
-    sessions, _ = await practice_sessions_crud.get_multi_sessions(db=db, user_id=current_student["id"], limit=1000)
+    sessions, _ = await practice_sessions_crud.get_multi_sessions(db=db, user_id=current_student.id, limit=1000)
     list_data = [PracticeSessionOut.model_validate(s).model_dump() for s in sessions]
     
     list_data.sort(key=lambda x: str(x.get("status")))
@@ -93,7 +93,7 @@ async def get_practice_session_progress(
     session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[查询] 恢复中断的进度，查看单条会话信息"""
-    result = await ps_service.get_session_detail(db=db, session_id=session_id, user_id=current_student["id"])
+    result = await ps_service.get_session_detail(db=db, session_id=session_id, user_id=current_student.id)
     return success(data=PracticeSessionOut.model_validate(result))
 
 @router.put("/{session_id}", response_model=ResponseModel[dict])
@@ -103,7 +103,7 @@ async def update_single_session(
     """[基础] 修改单条会话信息"""
     await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} updated session {session_id}")
+    audit_logger.info(f"User {current_student.id} updated session {session_id}")
     return success(message="会话更新成功")
 
 @router.put("/batch", response_model=ResponseModel[dict])
@@ -113,7 +113,7 @@ async def update_batch_sessions(
     """[基础] 批量修改会话"""
     await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} batch updated sessions {data.ids}")
+    audit_logger.info(f"User {current_student.id} batch updated sessions {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 条会话")
 
 @router.patch("/{session_id}/status", response_model=ResponseModel[dict])
@@ -123,7 +123,7 @@ async def submit_practice_session(
     """[业务] 强制结束会话/主动交卷"""
     await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=0, status=payload.status)
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} toggled status of session {session_id} to {payload.status}")
+    audit_logger.info(f"User {current_student.id} toggled status of session {session_id} to {payload.status}")
     return success(message=f"状态已更新为 {payload.status}")
 
 @router.delete("/{session_id}", response_model=ResponseModel[dict])
@@ -133,7 +133,7 @@ async def delete_single_session(
     """[基础] 删除单条记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
     await db.commit()
-    audit_logger.warning(f"User {current_student['id']} deleted session {session_id}")
+    audit_logger.warning(f"User {current_student.id} deleted session {session_id}")
     return success(message="删除成功")
 
 @router.delete("/batch", response_model=ResponseModel[dict])
@@ -143,7 +143,7 @@ async def delete_batch_sessions(
     """[基础] 批量删除记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
     await db.commit()
-    audit_logger.warning(f"User {current_student['id']} batch deleted {len(payload.ids)} sessions")
+    audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} sessions")
     return success(message=f"成功删除 {len(payload.ids)} 条会话")
 
 @router.get("/export/csv")
@@ -151,11 +151,11 @@ async def export_sessions(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[业务] 导出历史会话数据为 CSV"""
-    csv_data = await ps_service.export_sessions_to_csv(db=db, user_id=current_student["id"])
-    audit_logger.info(f"User {current_student['id']} exported practice sessions")
+    csv_data = await ps_service.export_sessions_to_csv(db=db, user_id=current_student.id)
+    audit_logger.info(f"User {current_student.id} exported practice sessions")
     return StreamingResponse(
         iter([csv_data.encode("utf-8-sig")]), media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=practice_sessions_{current_student['id']}.csv"}
+        headers={"Content-Disposition": f"attachment; filename=practice_sessions_{current_student.id}.csv"}
     )
 
 @router.post("/import/csv", response_model=ResponseModel[dict])
@@ -163,6 +163,6 @@ async def import_sessions(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[业务] 从 CSV 导入历史会话"""
-    await ps_service.import_sessions_from_csv(db=db, user_id=current_student["id"], file=file)
-    audit_logger.info(f"User {current_student['id']} imported sessions from {file.filename}")
+    await ps_service.import_sessions_from_csv(db=db, user_id=current_student.id, file=file)
+    audit_logger.info(f"User {current_student.id} imported sessions from {file.filename}")
     return success(message="数据导入完成")

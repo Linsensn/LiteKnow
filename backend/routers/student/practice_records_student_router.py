@@ -29,12 +29,12 @@ async def submit_question_answer(
 ):
     """[业务] 提交单道题的作答，底层服务会自动判题并联动记录到错题本"""
     result = await pr_service.submit_answer(
-        db=db, user_id=current_student["id"], session_id=data.session_id, 
+        db=db, user_id=current_student.id, session_id=data.session_id, 
         question_id=data.question_id, user_answer=data.user_answer, 
         correct_answer=data.correct_answer, question_content=data.question_content, 
         current_index=data.current_index
     )
-    audit_logger.info(f"User {current_student['id']} submitted question {data.question_id}")
+    audit_logger.info(f"User {current_student.id} submitted question {data.question_id}")
     return success(data=SubmitResultOut(is_correct=result["is_correct"]), message="答题记录提交成功")
 
 @router.post("", response_model=ResponseModel[PracticeRecordDetailOut])
@@ -43,10 +43,10 @@ async def create_record(
 ):
     """[基础] 手动单条新增答题记录"""
     obj_in = data.model_dump()
-    obj_in["user_id"] = current_student["id"]
+    obj_in["user_id"] = current_student.id
     record = await practice_records_crud.create_practice_record(db=db, obj_in=obj_in)
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} manually created record {record.id}")
+    audit_logger.info(f"User {current_student.id} manually created record {record.id}")
     return success(data=PracticeRecordDetailOut.model_validate(record))
 
 @router.post("/batch", response_model=ResponseModel[dict])
@@ -54,10 +54,10 @@ async def create_batch_records(
     data: List[PracticeRecordCreate], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量新增答题记录（适用于离线答题后一次性同步）"""
-    objs_in = [{"user_id": current_student["id"], **item.model_dump()} for item in data]
+    objs_in = [{"user_id": current_student.id, **item.model_dump()} for item in data]
     await practice_records_crud.create_multi_records(db=db, objs_in=objs_in)
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} batch created {len(objs_in)} records")
+    audit_logger.info(f"User {current_student.id} batch created {len(objs_in)} records")
     return success(message=f"批量新增 {len(objs_in)} 条成功")
 
 @router.get("/list", response_model=ResponseModel[PageResult[PracticeRecordDetailOut]])
@@ -71,7 +71,7 @@ async def get_practice_records_list(
 ):
     """[查询] 分页查询历史答题记录，支持多条件过滤，严格使用 PageResult 封装"""
     records, total = await practice_records_crud.get_multi_records(
-        db=db, user_id=current_student["id"], session_id=session_id, 
+        db=db, user_id=current_student.id, session_id=session_id, 
         is_correct=is_correct, skip=skip, limit=limit, sort_by=sort_by
     )
     list_data = [PracticeRecordDetailOut.model_validate(r) for r in records]
@@ -90,7 +90,7 @@ async def get_practice_records_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[查询] 树形查询：将用户的答题记录按 session_id 进行聚合归类"""
-    records, _ = await practice_records_crud.get_multi_records(db=db, user_id=current_student["id"], limit=1000)
+    records, _ = await practice_records_crud.get_multi_records(db=db, user_id=current_student.id, limit=1000)
     list_data = [PracticeRecordDetailOut.model_validate(r).model_dump() for r in records]
     
     list_data.sort(key=lambda x: x["session_id"])
@@ -106,7 +106,7 @@ async def get_practice_record_detail(
 ):
     """[查询] 获取单条答题记录的详细信息"""
     record = await practice_records_crud.get_practice_record(db=db, id=record_id)
-    if not record or record.user_id != current_student["id"]:
+    if not record or record.user_id != current_student.id:
         return fail(code=ErrorCode.DATA_NOT_FOUND, message="记录不存在或无权访问")
     return success(data=PracticeRecordDetailOut.model_validate(record))
 
@@ -117,7 +117,7 @@ async def update_single_record(
     """[基础] 修改单条记录内容"""
     await practice_records_crud.update_record(db=db, id=record_id, obj_in=data.model_dump(exclude_unset=True))
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} updated record {record_id}")
+    audit_logger.info(f"User {current_student.id} updated record {record_id}")
     return success(message="记录更新成功")
 
 @router.put("/batch", response_model=ResponseModel[dict])
@@ -127,7 +127,7 @@ async def update_batch_records(
     """[基础] 批量修改多条记录内容"""
     await practice_records_crud.update_multi_records(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
     await db.commit()
-    audit_logger.info(f"User {current_student['id']} batch updated records {data.ids}")
+    audit_logger.info(f"User {current_student.id} batch updated records {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 条记录")
 
 @router.patch("/{record_id}/status", response_model=ResponseModel[dict])
@@ -137,7 +137,7 @@ async def toggle_record_status(
     """[业务] 切换正误状态，通常用于人工重新批改"""
     await practice_records_crud.toggle_record_status(db=db, id=record_id, is_correct=payload.is_correct)
     await db.commit() 
-    audit_logger.info(f"User {current_student['id']} toggled status for record {record_id} to {payload.is_correct}")
+    audit_logger.info(f"User {current_student.id} toggled status for record {record_id} to {payload.is_correct}")
     return success(message="状态更新成功")
 
 @router.delete("/{record_id}", response_model=ResponseModel[dict])
@@ -147,7 +147,7 @@ async def delete_single_record(
     """[基础] 物理删除单条记录"""
     await practice_records_crud.delete_records_by_ids(db=db, ids=[record_id])
     await db.commit()
-    audit_logger.warning(f"User {current_student['id']} deleted record {record_id}")
+    audit_logger.warning(f"User {current_student.id} deleted record {record_id}")
     return success(message="删除成功")
 
 @router.delete("/batch", response_model=ResponseModel[dict])
@@ -157,7 +157,7 @@ async def delete_batch_records(
     """[基础] 批量物理删除记录"""
     await practice_records_crud.delete_records_by_ids(db=db, ids=payload.ids)
     await db.commit()
-    audit_logger.warning(f"User {current_student['id']} batch deleted {len(payload.ids)} records")
+    audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} records")
     return success(message=f"成功删除 {len(payload.ids)} 条记录")
 
 @router.get("/session/{session_id}/stats", response_model=ResponseModel[dict])
@@ -173,12 +173,12 @@ async def export_records(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[业务] 导出我的历史记录为 CSV 文件"""
-    csv_data = await pr_service.export_user_records_to_csv(db=db, user_id=current_student["id"])
-    audit_logger.info(f"User {current_student['id']} exported practice records")
+    csv_data = await pr_service.export_user_records_to_csv(db=db, user_id=current_student.id)
+    audit_logger.info(f"User {current_student.id} exported practice records")
     return StreamingResponse(
         iter([csv_data.encode("utf-8-sig")]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=practice_records_{current_student['id']}.csv"}
+        headers={"Content-Disposition": f"attachment; filename=practice_records_{current_student.id}.csv"}
     )
 
 @router.post("/import/csv", response_model=ResponseModel[dict])
@@ -186,6 +186,6 @@ async def import_records(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[业务] 从 CSV 文件导入答题记录"""
-    await pr_service.import_user_records_from_csv(db=db, user_id=current_student["id"], file=file)
-    audit_logger.info(f"User {current_student['id']} imported records from {file.filename}")
+    await pr_service.import_user_records_from_csv(db=db, user_id=current_student.id, file=file)
+    audit_logger.info(f"User {current_student.id} imported records from {file.filename}")
     return success(message="数据导入完成")
