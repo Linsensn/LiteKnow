@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, desc, case
+from sqlalchemy import select, update, delete, func, desc, asc, case
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.mysql import insert
 from models.practice_records import PracticeRecord
@@ -66,16 +66,17 @@ async def get_multi_records(
     if conditions:
         stmt = stmt.where(*conditions)
         
-    # 计算总数
+    # 🌟 修复：采用最稳妥的 execute + scalar 写法
     count_stmt = select(func.count(PracticeRecord.id)).select_from(PracticeRecord).where(*conditions) if conditions else select(func.count(PracticeRecord.id)).select_from(PracticeRecord)
-    total = await db.scalar(count_stmt)
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
         
     # 排序与分页
-    order_col = desc(PracticeRecord.created_at) if sort_by == "desc" else PracticeRecord.created_at.asc()
+    order_col = desc(PracticeRecord.created_at) if sort_by == "desc" else asc(PracticeRecord.created_at)
     stmt = stmt.order_by(order_col).offset(skip).limit(limit)
     result = await db.execute(stmt)
     
-    return result.scalars().all(), total or 0
+    return result.scalars().all(), total
 
 async def get_records_with_question_details(db: AsyncSession, *, user_id: int, user_answer_keyword: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeRecord]:
     """模糊与关联查询"""

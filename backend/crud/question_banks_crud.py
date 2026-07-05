@@ -37,16 +37,17 @@ async def get_multi_question_banks(
     if conditions:
         stmt = stmt.where(*conditions)
         
-    # 聚合总数
+    # 🌟 修复：采用最稳妥的 execute + scalar 写法
     count_stmt = select(func.count(QuestionBank.id)).select_from(QuestionBank).where(*conditions) if conditions else select(func.count(QuestionBank.id)).select_from(QuestionBank)
-    total = await db.scalar(count_stmt)
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
 
     # 排序与分页
     order_col = desc(QuestionBank.created_at) if sort_by == "desc" else asc(QuestionBank.created_at)
     stmt = stmt.order_by(order_col).offset(skip).limit(limit)
     
     result = await db.execute(stmt)
-    return result.scalars().all(), total or 0
+    return result.scalars().all(), total
 
 async def update_question_bank(db: AsyncSession, *, bank_id: int, update_data: Dict[str, Any]):
     """单条更改：支持局部更新"""
