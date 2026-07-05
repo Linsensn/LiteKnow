@@ -1,0 +1,86 @@
+# backend/crud/crud_bank_questions.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, func, desc
+from typing import List, Optional
+from models.bank_questions import BankQuestion
+
+
+class CRUDBankQuestion:
+
+    # 1. 单条查询（自动过滤逻辑删除）
+    async def get(self, db: AsyncSession, question_id: int) -> Optional[BankQuestion]:
+        stmt = select(BankQuestion).where(
+            BankQuestion.id == question_id,
+            BankQuestion.is_deleted == False
+        )
+        result = await db.execute(stmt)
+        return result.scalar_first()
+
+    # 2. 分页多条件查询
+    async def get_multi(
+        self, db: AsyncSession, *, skip: int = 0, limit: int = 20,
+        bank_id: Optional[int] = None, keyword: Optional[str] = None,
+        difficulty: Optional[str] = None
+    ) -> List[BankQuestion]:
+        stmt = select(BankQuestion).where(BankQuestion.is_deleted == False)
+
+        if bank_id:
+            stmt = stmt.where(BankQuestion.bank_id == bank_id)
+        if difficulty:
+            stmt = stmt.where(BankQuestion.difficulty_level == difficulty)
+        if keyword:
+            stmt = stmt.where(BankQuestion.content.ilike(f"%{keyword}%"))
+
+        stmt = stmt.order_by(desc(BankQuestion.created_at)).offset(skip).limit(limit)
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    # 3. 统计符合条件的总记录数（配合分页）
+    async def count(
+        self, db: AsyncSession, *, bank_id: Optional[int] = None,
+        keyword: Optional[str] = None, difficulty: Optional[str] = None
+    ) -> int:
+        stmt = select(func.count(BankQuestion.id)).where(BankQuestion.is_deleted == False)
+
+        if bank_id:
+            stmt = stmt.where(BankQuestion.bank_id == bank_id)
+        if difficulty:
+            stmt = stmt.where(BankQuestion.difficulty_level == difficulty)
+        if keyword:
+            stmt = stmt.where(BankQuestion.content.ilike(f"%{keyword}%"))
+
+        result = await db.execute(stmt)
+        return result.scalar_one()
+
+    # 4. 单条新增
+    async def create(self, db: AsyncSession, *, obj_in: dict) -> BankQuestion:
+        db_obj = BankQuestion(**obj_in)
+        db.add(db_obj)
+        await db.flush()
+        return db_obj
+
+    # 5. 批量新增
+    async def create_multi(self, db: AsyncSession, *, objects_in: List[dict]) -> int:
+        db_objs = [BankQuestion(**obj) for obj in objects_in]
+        db.add_all(db_objs)
+        await db.flush()
+        return len(db_objs)
+
+    # 6. 局部更新
+    async def update(self, db: AsyncSession, *, question_id: int, update_data: dict):
+        stmt = update(BankQuestion).where(
+            BankQuestion.id == question_id,
+            BankQuestion.is_deleted == False
+        ).values(**update_data)
+        await db.execute(stmt)
+
+    # 7. 逻辑删除
+    async def delete_logical(self, db: AsyncSession, *, question_id: int):
+        stmt = update(BankQuestion).where(
+            BankQuestion.id == question_id,
+            BankQuestion.is_deleted == False
+        ).values(is_deleted=True)
+        await db.execute(stmt)
+
+
+bank_question = CRUDBankQuestion()

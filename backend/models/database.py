@@ -11,3 +11,4 @@ class BaseModel(Base):
     # 结合 SQL 规范，设定时间默认值与自动更新逻辑
     created_at = Column(DateTime, default=func.now(), comment='创建时间')
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), comment='更新时间')
+   
