@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_practice_records import practice_record
-from crud.crud_practice_sessions import practice_session
-from crud.crud_wrong_questions import wrong_question
+from crud.practice_records_crud import practice_record
+from crud.practice_sessions_crud import practice_session
+from crud.wrong_questions_crud import wrong_question
 
 class PracticeRecordService:
     async def submit_answer(

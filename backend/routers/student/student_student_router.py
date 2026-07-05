@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from utils.deps import get_current_user 
 from utils.response import success 
-from schemas.schemas_user import WeChatLogin, UserUpdate, UserOut 
+from schemas.user_schemas import WeChatLogin, UserUpdate, UserOut 
 from services import user_service
-from crud import crud_user
+from crud import user_crud
 from models.users import User
 
 router = APIRouter(tags=["Student/Users"])
@@ -29,5 +29,5 @@ def update_my_profile(
     current_user: User = Depends(get_current_user) 
 ):
     update_dict = update_data.model_dump(exclude_unset=True) 
-    updated_user = crud_user.update_user(db, db_user=current_user, update_data=update_dict)
+    updated_user = user_crud.update_user(db, db_user=current_user, update_data=update_dict)
     return success(data=UserOut.model_validate(updated_user).model_dump(), message="资料更新成功") 
