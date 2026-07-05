@@ -28,6 +28,7 @@ services:
 
   # FastAPI 后端服务
   backend:
+    image: linssen85012/liteknow-backend:latest
     build:
       context: ./backend     # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
       dockerfile: Dockerfile
