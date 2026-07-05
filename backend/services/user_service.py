@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 from utils.exceptions import CustomAPIException, ErrorCode 
 from utils.security import create_access_token
-from crud import crud_user
+from crud import user_crud
 
 # 微信小程序配置（生产环境建议放入 .env）
 WX_APPID = "your_appid_here"
@@ -30,9 +30,9 @@ async def wechat_login_service(db: Session, code: str):
         )
         
     # 2. 查询用户，不存在则注册
-    user = crud_user.get_user_by_openid(db, openid)
+    user = user_crud.get_user_by_openid(db, openid)
     if not user:
-        user = crud_user.create_user(db, openid, role='student')
+        user = user_crud.create_user(db, openid, role='student')
         
     # 3. 签发 JWT Token
     access_token = create_access_token(subject=user.id) #

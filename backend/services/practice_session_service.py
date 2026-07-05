@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_practice_sessions import practice_session
+from crud.practice_sessions_crud import practice_session
+from utils.exceptions import CustomAPIException, ErrorCode
 import random
 
 class PracticeSessionService:
@@ -18,12 +19,15 @@ class PracticeSessionService:
             return new_session
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise CustomAPIException(
+                code=ErrorCode.PRACTICE_SESSION_CREATE_FAILED,
+                data={"error_detail": str(e)}
+            )
 
     async def get_session_detail(self, db: AsyncSession, session_id: int, user_id: int):
         session = await practice_session.get(db=db, id=session_id)
         if not session or session.user_id != user_id:
-            raise HTTPException(status_code=404, detail="会话不存在或无权限")
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
         return session
 
 ps_service = PracticeSessionService()

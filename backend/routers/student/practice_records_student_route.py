@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
 from utils.deps import get_current_user
 from services.practice_record_service import pr_service
+from utils.response import success
 
 router = APIRouter(prefix="/practice-records", tags=["Student - Practice Records"])
 
@@ -31,4 +32,5 @@ async def submit_question_answer(
         question_content=question_content, 
         current_index=current_index
     )
-    return result
+    # 使用 success 封装返回信息
+    return success(data=result, message="答题记录提交成功")

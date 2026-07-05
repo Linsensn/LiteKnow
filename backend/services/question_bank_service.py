@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_question_banks import question_bank
+from crud.question_banks_crud import question_bank
+from utils.exceptions import CustomAPIException, ErrorCode
 
 class QuestionBankService:
     async def create_bank(self, db: AsyncSession, current_user: dict, bank_in: dict):
@@ -10,7 +11,10 @@ class QuestionBankService:
             return new_bank
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise CustomAPIException(
+                code=ErrorCode.QUESTION_BANK_CREATE_FAILED,
+                data={"error_detail": str(e)}
+            )
 
     async def get_banks(self, db: AsyncSession, current_user: dict, keyword: str, page: int, page_size: int):
         # 权限逻辑：管理员(admin)传 None 查看全量，学生(student)传自己的 ID
@@ -28,6 +32,9 @@ class QuestionBankService:
             await db.commit()
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=f"删除失败: {str(e)}")
+            raise CustomAPIException(
+                code=ErrorCode.QUESTION_BANK_DELETE_FAILED,
+                data={"error_detail": str(e)}
+            )
 
 qb_service = QuestionBankService()

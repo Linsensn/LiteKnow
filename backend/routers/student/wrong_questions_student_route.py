@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
 from utils.deps import get_current_user
 from services.wrong_question_service import wq_service
+from utils.response import success
 
 router = APIRouter(prefix="/wrong-questions", tags=["Student - Wrong Questions"])
 
@@ -17,9 +18,10 @@ async def list_my_wrong_questions(
     """
     [学生端] 分页获取我的错题本记录
     """
-    return await wq_service.get_my_wrong_questions(
+    result = await wq_service.get_my_wrong_questions(
         db=db, user_id=current_student["id"], keyword=keyword, page=page, page_size=page_size
     )
+    return success(data=result, message="获取错题本成功")
 
 @router.put("/{wq_id}/analysis")
 async def supplement_my_analysis(
@@ -34,7 +36,7 @@ async def supplement_my_analysis(
     await wq_service.update_my_analysis(
         db=db, wq_id=wq_id, user_id=current_student["id"], my_analysis=my_analysis
     )
-    return {"message": "个人解析已保存"}
+    return success(message="个人解析已保存")
 
 @router.delete("/{wq_id}")
 async def remove_wrong_question(
@@ -46,4 +48,4 @@ async def remove_wrong_question(
     [学生端] 掌握该错题后，将其从错题本中移除
     """
     await wq_service.remove_wrong_question(db=db, wq_id=wq_id, user_id=current_student["id"])
-    return {"message": "已成功移出错题本"}
+    return success(message="已成功移出错题本")

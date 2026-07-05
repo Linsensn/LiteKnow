@@ -32,6 +32,16 @@ class ErrorCode(int, Enum):
     # 业务通用
     BUSINESS_PARAM_ERROR = 20001
     METHOD_NOT_ALLOW = 20003
+    DATA_NOT_FOUND = 20004
+    DB_OPERATION_FAILED = 20005
+    
+    # 题库与练习业务特定错误 (201xx)
+    PRACTICE_RECORD_SUBMIT_FAILED = 20101
+    PRACTICE_SESSION_CREATE_FAILED = 20102
+    QUESTION_BANK_CREATE_FAILED = 20103
+    QUESTION_BANK_DELETE_FAILED = 20104
+    WRONG_QUESTION_UPDATE_FAILED = 20105
+    WRONG_QUESTION_DELETE_FAILED = 20106
     
     # AI 与任务
     AI_SERVICE_BUSY = 30001
@@ -46,6 +56,15 @@ ERROR_MESSAGES = {
     
     ErrorCode.BUSINESS_PARAM_ERROR: "业务级参数格式错误",
     ErrorCode.METHOD_NOT_ALLOW: "请求方法不支持",
+    ErrorCode.DATA_NOT_FOUND: "请求的数据不存在或无权限访问",
+    ErrorCode.DB_OPERATION_FAILED: "数据库操作失败，请稍后重试",
+    
+    ErrorCode.PRACTICE_RECORD_SUBMIT_FAILED: "提交答题记录失败，请检查网络后重试",
+    ErrorCode.PRACTICE_SESSION_CREATE_FAILED: "创建练习会话失败，请稍后重试",
+    ErrorCode.QUESTION_BANK_CREATE_FAILED: "创建题库失败，请稍后重试",
+    ErrorCode.QUESTION_BANK_DELETE_FAILED: "批量删除题库失败",
+    ErrorCode.WRONG_QUESTION_UPDATE_FAILED: "更新错题解析失败",
+    ErrorCode.WRONG_QUESTION_DELETE_FAILED: "移除错题失败",
     
     ErrorCode.AI_SERVICE_BUSY: "大模型推荐服务暂不可用",
     ErrorCode.AI_VALIDATION_FAILED: "大模型语义解析失败",

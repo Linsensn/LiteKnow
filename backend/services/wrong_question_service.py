@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_wrong_questions import wrong_question
+from crud.wrong_questions_crud import wrong_question
+from utils.exceptions import CustomAPIException, ErrorCode
 
 class WrongQuestionService:
     async def get_my_wrong_questions(self, db: AsyncSession, user_id: int, keyword: str, page: int, page_size: int):
@@ -15,7 +16,10 @@ class WrongQuestionService:
             await db.commit()
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise CustomAPIException(
+                code=ErrorCode.WRONG_QUESTION_UPDATE_FAILED,
+                data={"error_detail": str(e)}
+            )
 
     async def remove_wrong_question(self, db: AsyncSession, wq_id: int, user_id: int):
         try:
@@ -23,6 +27,9 @@ class WrongQuestionService:
             await db.commit()
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise CustomAPIException(
+                code=ErrorCode.WRONG_QUESTION_DELETE_FAILED,
+                data={"error_detail": str(e)}
+            )
 
 wq_service = WrongQuestionService()

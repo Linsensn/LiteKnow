@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_practice_records import practice_record
-from crud.crud_practice_sessions import practice_session
-from crud.crud_wrong_questions import wrong_question
+from crud.practice_records_crud import practice_record
+from crud.practice_sessions_crud import practice_session
+from crud.wrong_questions_crud import wrong_question
+from utils.exceptions import CustomAPIException, ErrorCode
 
 class PracticeRecordService:
     async def submit_answer(
@@ -37,6 +38,9 @@ class PracticeRecordService:
             return {"is_correct": is_correct}
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=str(e))
+            raise CustomAPIException(
+                code=ErrorCode.PRACTICE_RECORD_SUBMIT_FAILED,
+                data={"error_detail": str(e)}
+            )
 
 pr_service = PracticeRecordService()
