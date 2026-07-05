@@ -6,6 +6,7 @@ class WrongQuestion(BaseModel):
     __tablename__ = "wrong_questions"
     
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, comment='关联用户ID')
+    question_id = Column(Integer, ForeignKey("bank_questions.id", ondelete="SET NULL"), comment='关联的原题ID，方便追溯跳转')
     question_content = Column(Text, nullable=False, comment='题目完整文本')
     source_image_url = Column(String(255), comment='原始拍照图片链接')
     user_answer = Column(String(255), comment='用户错误答案')

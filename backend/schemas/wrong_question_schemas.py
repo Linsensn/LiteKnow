@@ -4,6 +4,7 @@ from datetime import datetime
 
 # 请求：单条/批量外部导入错题
 class WrongQuestionImport(BaseModel):
+    question_id: Optional[int] = Field(None, description="关联的题库原题ID")
     question_content: str = Field(..., description="题目完整文本")
     source_image_url: Optional[str] = Field(None, description="原始拍照图片链接")
     user_answer: Optional[str] = Field(None, description="用户错误答案")
@@ -28,6 +29,7 @@ class BatchDeleteWrongQuestionsReq(BaseModel):
 class WrongQuestionOut(BaseModel):
     id: int
     user_id: int
+    question_id: Optional[int] = Field(None, description="关联的原题ID，可跳转追溯")
     question_content: str
     source_image_url: Optional[str]
     user_answer: Optional[str]

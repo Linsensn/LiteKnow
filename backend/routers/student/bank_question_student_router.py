@@ -1,0 +1,33 @@
+# backend/routers/student/bank_questions_student_route.py
+from fastapi import APIRouter, Depends, Query, Path
+from sqlalchemy.ext.asyncio import AsyncSession
+from config.database import get_db
+from utils.deps import get_current_user
+from services.bank_question_service import bq_service
+
+router = APIRouter(prefix="/questions", tags=["Student - 题库浏览"])
+
+
+@router.get("", summary="学生端分页浏览题库题目")
+async def student_list_questions(
+    bank_id: int = Query(..., description="必须指定题库ID"),
+    difficulty: str = Query(None, description="按难度筛选"),
+    keyword: str = Query(None, description="题干模糊搜索"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    return await bq_service.get_question_page(
+        db=db, bank_id=bank_id, difficulty=difficulty, keyword=keyword,
+        page=page, page_size=page_size
+    )
+
+
+@router.get("/{question_id}", summary="查看单道题目详情")
+async def student_get_question(
+    question_id: int = Path(..., description="题目ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    return await bq_service.get_question(db, question_id=question_id)

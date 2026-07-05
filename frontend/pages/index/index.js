@@ -15,6 +15,23 @@ Page({
     });
   },
 
+  // ✨ 页面跳转统一处理函数
+  navigateTo(e) {
+    // 从点击事件中提取 wxml 里配置的 data-url
+    const url = e.currentTarget.dataset.url;
+    
+    if (url) {
+      wx.navigateTo({
+        url: url,
+        fail: (err) => {
+          console.error('跳转失败:', err);
+          // 如果对应的页面还没在 app.json 里注册，或者文件不存在，给个友好的提示
+          wx.showToast({ title: '功能开发中', icon: 'none' });
+        }
+      });
+    }
+  },
+
   onChooseAvatar(e) {
     this.setData({ tempAvatar: e.detail.avatarUrl });
   },
