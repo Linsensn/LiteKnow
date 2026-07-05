@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, desc, func, or_
+from sqlalchemy import select, update, delete, desc, asc, func, or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.mysql import insert
 from models.practice_sessions import PracticeSession
@@ -28,7 +28,6 @@ async def get_multi_sessions(
     search_keyword: Optional[str] = None, skip: int = 0, limit: int = 20, sort_by: str = "desc"
 ) -> Tuple[List[PracticeSession], int]:
     """分页、多条件、模糊搜索(针对模式)、关联查询(题库)与聚合总数"""
-    # 关联题库(bank)以便前端直接展示题库名
     stmt = select(PracticeSession).options(joinedload(PracticeSession.bank))
     conditions = []
     
@@ -37,22 +36,22 @@ async def get_multi_sessions(
     if status is not None:
         conditions.append(PracticeSession.status == status)
     if search_keyword:
-        # 模糊查询：练习模式
         conditions.append(PracticeSession.practice_mode.like(f"%{search_keyword}%"))
         
     if conditions:
         stmt = stmt.where(*conditions)
         
-    # 聚合查询总数
+    # 🌟 修复：采用最稳妥的 execute + scalar 写法
     count_stmt = select(func.count(PracticeSession.id)).select_from(PracticeSession).where(*conditions) if conditions else select(func.count(PracticeSession.id)).select_from(PracticeSession)
-    total = await db.scalar(count_stmt)
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
     
     # 排序与分页
-    order_col = desc(PracticeSession.created_at) if sort_by == "desc" else PracticeSession.created_at.asc()
+    order_col = desc(PracticeSession.created_at) if sort_by == "desc" else asc(PracticeSession.created_at)
     stmt = stmt.order_by(order_col).offset(skip).limit(limit)
     
     result = await db.execute(stmt)
-    return result.scalars().all(), total or 0
+    return result.scalars().all(), total
 
 async def update_session(db: AsyncSession, *, id: int, obj_in: dict):
     """单条更改"""

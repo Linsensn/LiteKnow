@@ -31,16 +31,20 @@ async def get_multi_wrong_questions(
     if keyword:
         stmt = stmt.where(WrongQuestion.question_content.ilike(f"%{keyword}%"))
         
+    # 构建统计总数的语句
     count_stmt = select(func.count(WrongQuestion.id)).select_from(WrongQuestion).where(WrongQuestion.user_id == user_id)
     if keyword:
         count_stmt = count_stmt.where(WrongQuestion.question_content.ilike(f"%{keyword}%"))
-    total = await db.scalar(count_stmt)
+        
+    # 🌟 修复：采用最稳妥的 execute + scalar 写法
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
 
     order_col = desc(WrongQuestion.created_at) if sort_by == "desc" else asc(WrongQuestion.created_at)
     stmt = stmt.order_by(order_col).offset(skip).limit(limit)
     
     result = await db.execute(stmt)
-    return result.scalars().all(), total or 0
+    return result.scalars().all(), total
 
 async def update_wrong_question(db: AsyncSession, *, id: int, user_id: int, update_data: Dict[str, Any]):
     """单条更改"""
