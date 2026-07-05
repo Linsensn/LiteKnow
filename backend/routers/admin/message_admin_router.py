@@ -6,11 +6,13 @@ from config.database import get_db
 from utils.deps import get_admin_user
 from utils.response import success
 from services.message_service import msg_service
+from schemas.common import ResponseModel, PageResult
+from schemas.message_schema import MessageResponse
 
 router = APIRouter(prefix="/messages", tags=["Admin - 消息审计"])
  
 
-@router.get("", summary="管理员分页查询全站消息")
+@router.get("", summary="管理员分页查询全站消息", response_model=ResponseModel[PageResult[MessageResponse]])
 async def admin_list_messages(
     session_id: Optional[int] = Query(None, description="按会话ID筛选"),
     page: int = Query(1, ge=1, description="页码"),
@@ -24,7 +26,7 @@ async def admin_list_messages(
     return success(data=data)
 
 
-@router.get("/{message_id}", summary="查询单条消息详情")
+@router.get("/{message_id}", summary="查询单条消息详情", response_model=ResponseModel[MessageResponse])
 async def admin_get_message(
     message_id: int = Path(..., description="消息ID"),
     db: AsyncSession = Depends(get_db),
@@ -32,7 +34,6 @@ async def admin_get_message(
 ):
     message = await msg_service.get_message(db, message_id=message_id)
     return success(data=message)
-
 
 @router.delete("/{message_id}", summary="管理员强制删除消息")
 async def admin_delete_message(

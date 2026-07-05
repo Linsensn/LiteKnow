@@ -21,24 +21,30 @@ class WrongQuestionService:
 
     async def update_my_analysis(self, db: AsyncSession, wq_id: int, user_id: int, my_analysis: str):
         try:
-            await wrong_questions_crud.update_wrong_question(db=db, id=wq_id, user_id=user_id, update_data={"my_analysis": my_analysis})
+            # 捕获并返回 rowcount
+            rowcount = await wrong_questions_crud.update_wrong_question(db=db, id=wq_id, user_id=user_id, update_data={"my_analysis": my_analysis})
             db.commit()
+            return rowcount
         except Exception as e:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.WRONG_QUESTION_UPDATE_FAILED, data={"error_detail": str(e)})
 
     async def remove_wrong_question(self, db: AsyncSession, wq_id: int, user_id: int):
         try:
-            await wrong_questions_crud.delete_wrong_question(db=db, id=wq_id, user_id=user_id)
+            # 捕获并返回 rowcount
+            rowcount = await wrong_questions_crud.delete_wrong_question(db=db, id=wq_id, user_id=user_id)
             db.commit()
+            return rowcount
         except Exception as e:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.WRONG_QUESTION_DELETE_FAILED, data={"error_detail": str(e)})
 
     async def bulk_remove_wrong_questions(self, db: AsyncSession, wq_ids: list[int], user_id: int):
         try:
-            await wrong_questions_crud.delete_multi_wrong_questions(db=db, ids=wq_ids, user_id=user_id)
+            # 捕获并返回 rowcount
+            rowcount = await wrong_questions_crud.delete_multi_wrong_questions(db=db, ids=wq_ids, user_id=user_id)
             db.commit()
+            return rowcount
         except Exception as e:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})

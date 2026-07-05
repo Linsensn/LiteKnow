@@ -5,8 +5,10 @@ from typing import Optional
 from config.database import get_db
 from utils.deps import get_current_user
 from utils.response import success
+from utils.exceptions import CustomAPIException, ErrorCode
 from utils.local_storage import save_file_local
 from services.attachment_service import att_service
+from schemas.common import ResponseModel, PageResult
 from schemas.attachment_schema import AttachmentResponse
 
 router = APIRouter(prefix="/attachments", tags=["Student - 资源管理"])
@@ -15,7 +17,7 @@ ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"]
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-@router.post("/upload", summary="学生上传附件")
+@router.post("/upload", summary="学生上传附件", response_model=ResponseModel[AttachmentResponse])
 async def upload_attachment(
     file: UploadFile = File(...),
     message_id: Optional[int] = None,
@@ -24,12 +26,14 @@ async def upload_attachment(
 ):
     # 1. 校验文件类型
     if file.content_type not in ALLOWED_TYPES:
-        return success(code=400, message="不支持的文件类型")
+        raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="不支持的文件类型")
+    
     
     # 2. 读取并校验文件大小
     file_bytes = await file.read()
     if len(file_bytes) > MAX_FILE_SIZE:
-        return success(code=400, message="文件大小不能超过10MB")
+        raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="文件大小不能超过10MB")
+    
     
     # 3. 本地存储
     file_path = save_file_local(
@@ -47,13 +51,10 @@ async def upload_attachment(
         message_id=message_id
     )
     
-    return success(
-        data=AttachmentResponse.model_validate(new_attachment).model_dump(),
-        message="上传成功"
-    )
+    return success(data=new_attachment, message="上传成功")
 
 
-@router.get("", summary="分页获取我的附件列表")
+@router.get("", summary="分页获取我的附件列表", response_model=ResponseModel[PageResult[AttachmentResponse]])
 async def get_my_attachments(
     file_type: Optional[str] = Query(None, description="按类型筛选，如 image/jpeg"),
     page: int = Query(1, ge=1, description="页码"),
@@ -66,7 +67,6 @@ async def get_my_attachments(
         file_type=file_type, page=page, page_size=page_size
     )
     return success(data=data)
-
 
 @router.delete("/{attachment_id}", summary="删除我的附件")
 async def delete_my_attachment(

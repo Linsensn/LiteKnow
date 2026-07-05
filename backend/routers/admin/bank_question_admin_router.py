@@ -2,15 +2,17 @@
 from fastapi import APIRouter, Depends, Query, Body, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+from utils.response import success
+from schemas.common import ResponseModel, PageResult
 from config.database import get_db
 from utils.deps import get_admin_user
 from services.bank_question_service import bq_service
-from schemas.bank_question_schema import QuestionCreate, QuestionUpdate
+from schemas.bank_question_schema import QuestionCreate, QuestionUpdate, QuestionResponse
 
 router = APIRouter(prefix="/questions", tags=["Admin - 题目管理"])
 
-
-@router.get("", summary="分页查询题目列表")
+ 
+@router.get("", summary="分页查询题目列表", response_model=ResponseModel[PageResult[QuestionResponse]])
 async def admin_list_questions(
     bank_id: int = Query(None, description="按题库ID筛选"),
     difficulty: str = Query(None, description="按难度筛选: easy/medium/hard"),
@@ -20,28 +22,31 @@ async def admin_list_questions(
     db: AsyncSession = Depends(get_db),
     current_admin: dict = Depends(get_admin_user)
 ):
-    return await bq_service.get_question_page(
+    data = await bq_service.get_question_page(
         db=db, bank_id=bank_id, difficulty=difficulty, keyword=keyword,
         page=page, page_size=page_size
     )
+    return success(data=data)
 
 
-@router.get("/{question_id}", summary="查询单条题目详情")
+@router.get("/{question_id}", summary="查询单条题目详情", response_model=ResponseModel[QuestionResponse])
 async def admin_get_question(
     question_id: int = Path(..., description="题目ID"),
     db: AsyncSession = Depends(get_db),
     current_admin: dict = Depends(get_admin_user)
 ):
-    return await bq_service.get_question(db, question_id=question_id)
+    data = await bq_service.get_question(db, question_id=question_id)
+    return success(data=data)
 
 
-@router.post("", summary="单条录入题目")
+@router.post("", summary="单条录入题目", response_model=ResponseModel[QuestionResponse])
 async def admin_create_question(
     question_in: QuestionCreate,
     db: AsyncSession = Depends(get_db),
     current_admin: dict = Depends(get_admin_user)
 ):
-    return await bq_service.create_question(db, obj_in=question_in)
+    data = await bq_service.create_question(db, obj_in=question_in)
+    return success(data=data, message="题目创建成功")
 
 
 @router.post("/batch", summary="批量导入题目")
@@ -51,18 +56,18 @@ async def admin_create_questions_batch(
     current_admin: dict = Depends(get_admin_user)
 ):
     count = await bq_service.create_question_batch(db, objects_in=questions_in)
-    return {"imported_count": count}
+    return success(data={"imported_count": count}, message="批量导入完成")
 
 
-@router.put("/{question_id}", summary="修改题目信息")
+@router.put("/{question_id}", summary="修改题目信息", response_model=ResponseModel[QuestionResponse])
 async def admin_update_question(
     question_id: int = Path(..., description="题目ID"),
     question_in: QuestionUpdate = Body(..., description="更新内容"),
     db: AsyncSession = Depends(get_db),
     current_admin: dict = Depends(get_admin_user)
 ):
-    return await bq_service.update_question(db, question_id=question_id, obj_in=question_in)
-
+    data = await bq_service.update_question(db, question_id=question_id, obj_in=question_in)
+    return success(data=data, message="题目信息已更新")
 
 @router.delete("/{question_id}", summary="逻辑删除题目")
 async def admin_delete_question(
@@ -71,4 +76,4 @@ async def admin_delete_question(
     current_admin: dict = Depends(get_admin_user)
 ):
     await bq_service.delete_question(db, question_id=question_id)
-    return {"message": "删除成功"}
+    return success(message="删除成功") 

@@ -1,9 +1,9 @@
 # backend/services/bank_question_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
+from utils.exceptions import CustomAPIException, ErrorCode
 from crud.bank_questions_crud import bank_question
 from schemas.bank_question_schema import QuestionCreate, QuestionUpdate
-
+from schemas.common import PageResult
 
 class BankQuestionService:
 
@@ -11,7 +11,7 @@ class BankQuestionService:
     async def get_question(self, db: AsyncSession, question_id: int):
         question = await bank_question.get(db, question_id=question_id)
         if not question:
-            raise HTTPException(status_code=404, detail="题目不存在")
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
         return question
 
     # 2. 分页查询题目列表（管理员/学生通用）
@@ -28,7 +28,12 @@ class BankQuestionService:
             db, bank_id=bank_id, keyword=keyword, difficulty=difficulty,
             skip=skip, limit=page_size
         )
-        return {"total": total, "items": items}
+        return PageResult(
+            list=items,
+            total=total,
+            page=page,
+            page_size=page_size
+        )
 
     # 3. 单条创建题目
     async def create_question(self, db: AsyncSession, obj_in: QuestionCreate):
@@ -39,7 +44,8 @@ class BankQuestionService:
             return new_question
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=f"创建失败: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED)
+
 
     # 4. 批量导入题目
     async def create_question_batch(self, db: AsyncSession, objects_in: list[QuestionCreate]):
@@ -50,7 +56,7 @@ class BankQuestionService:
             return count
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=f"批量导入失败: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED)
 
     # 5. 更新题目信息
     async def update_question(self, db: AsyncSession, question_id: int, obj_in: QuestionUpdate):
@@ -63,7 +69,7 @@ class BankQuestionService:
             return await self.get_question(db, question_id=question_id)
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=f"更新失败: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 6. 逻辑删除题目
     async def delete_question(self, db: AsyncSession, question_id: int):
@@ -73,7 +79,7 @@ class BankQuestionService:
             await db.commit()
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=400, detail=f"删除失败: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED)
 
 
 bq_service = BankQuestionService()
