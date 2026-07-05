@@ -11,7 +11,6 @@ from services.wrong_question_service import wq_service
 from crud import wrong_questions_crud
 from utils.response import success
 
-# 严格遵守 common 契约
 from schemas.common import ResponseModel, PageResult
 from schemas.wrong_question_schemas import (
     WrongQuestionUpdate, WrongQuestionOut, BatchDeleteWrongQuestionsReq,
@@ -25,18 +24,18 @@ router = APIRouter(prefix="/wrong-questions", tags=["Student - Wrong Questions"]
 async def create_single_wrong_question(
     data: WrongQuestionImport, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 单条手动新增错题"""
+    """[基础] 不走系统答题，学生手动自行创建一条错题记录"""
     obj_in = data.model_dump()
     result = await wrong_questions_crud.create_wrong_question(db=db, obj_in=obj_in, user_id=current_student["id"])
     await db.commit()
     audit_logger.info(f"Student {current_student['id']} manually created wrong question {result.id}")
-    return success(data=WrongQuestionOut.model_validate(result).model_dump(), message="错题新增成功")
+    return success(data=WrongQuestionOut.model_validate(result), message="错题新增成功")
 
 @router.post("/bulk-import", response_model=ResponseModel[dict])
 async def import_wrong_questions(
     data: List[WrongQuestionImport], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量新增错题"""
+    """[基础] 从外部数组批量导入历史积攒的错题"""
     dict_data = [item.model_dump() for item in data]
     count = await wq_service.bulk_import_wrong_questions(db=db, user_id=current_student["id"], questions_data=dict_data)
     audit_logger.info(f"Student {current_student['id']} batch imported {count} wrong questions")
@@ -50,19 +49,25 @@ async def list_my_wrong_questions(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 分页与模糊搜索错题本"""
+    """[查询] 分页浏览自己的错题本（支持对题干内容进行模糊检索），严格使用 PageResult"""
     result = await wq_service.get_my_wrong_questions(
         db=db, user_id=current_student["id"], keyword=keyword, page=page, page_size=page_size, sort_by=sort_by
     )
-    items_data = [WrongQuestionOut.model_validate(item).model_dump() for item in result["items"]]
-    page_data = {"list": items_data, "total": result["total"], "page": page, "page_size": page_size}
+    items_data = [WrongQuestionOut.model_validate(item) for item in result["items"]]
+    
+    page_data = PageResult(
+        list=items_data, 
+        total=result["total"], 
+        page=page, 
+        page_size=page_size
+    )
     return success(data=page_data, message="获取错题本成功")
 
 @router.get("/tree", response_model=ResponseModel[List[dict]])
 async def get_wrong_questions_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 树形查询：基于收录的年月维度对错题进行分组"""
+    """[查询] 树形归类：按照存入错题本的年月维度生成多级错题包"""
     items, _ = await wrong_questions_crud.get_multi_wrong_questions(db=db, user_id=current_student["id"], limit=1000)
     list_data = [WrongQuestionOut.model_validate(i).model_dump() for i in items]
     
@@ -80,15 +85,15 @@ async def get_wrong_questions_tree(
 async def get_wrong_question_detail(
     wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 单条详情查询"""
+    """[查询] 精确查看某一错题的详细内容及双向解析（系统解析与个人反思）"""
     wq = await wq_service.get_wrong_question_detail(db=db, wq_id=wq_id, user_id=current_student["id"])
-    return success(data=WrongQuestionOut.model_validate(wq).model_dump())
+    return success(data=WrongQuestionOut.model_validate(wq))
 
 @router.put("/{wq_id}", response_model=ResponseModel[dict])
 async def update_single_wrong_question(
     data: WrongQuestionUpdate, wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 单条更改（含错题解析更新）"""
+    """[基础] 编辑错题内容，包括填写或修改 my_analysis 字段体会"""
     await wrong_questions_crud.update_wrong_question(
         db=db, id=wq_id, user_id=current_student["id"], update_data=data.model_dump(exclude_unset=True)
     )
@@ -100,7 +105,7 @@ async def update_single_wrong_question(
 async def batch_update_wrong_questions(
     data: BatchUpdateWrongQuestionsReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量更改错题信息"""
+    """[基础] 批量修改多个错题的信息"""
     await wrong_questions_crud.update_multi_wrong_questions(
         db=db, ids=data.ids, user_id=current_student["id"], update_data=data.update_data.model_dump(exclude_unset=True)
     )
@@ -112,7 +117,7 @@ async def batch_update_wrong_questions(
 async def remove_multi_wrong_questions(
     payload: BatchDeleteWrongQuestionsReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量移出已掌握的错题"""
+    """[业务] 批量掌握：一次性将多个不再犯错的题目移出错题本"""
     await wq_service.bulk_remove_wrong_questions(db=db, wq_ids=payload.ids, user_id=current_student["id"])
     audit_logger.warning(f"Student {current_student['id']} batch removed wrong questions {payload.ids}")
     return success(message=f"成功移出 {len(payload.ids)} 道错题")
@@ -121,7 +126,7 @@ async def remove_multi_wrong_questions(
 async def remove_wrong_question(
     wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 单条删除"""
+    """[业务] 标记掌握：将单条记录从错题本除名"""
     await wq_service.remove_wrong_question(db=db, wq_id=wq_id, user_id=current_student["id"])
     audit_logger.warning(f"Student {current_student['id']} removed wrong question {wq_id}")
     return success(message="已成功移出错题本")
@@ -130,7 +135,7 @@ async def remove_wrong_question(
 async def export_wrong_questions(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 数据导出 (CSV)"""
+    """[业务] 支持将错题本导出为 CSV 以便离线打印复习"""
     csv_data = await wq_service.export_wrong_questions_to_csv(db=db, user_id=current_student["id"])
     audit_logger.info(f"Student {current_student['id']} exported wrong questions to CSV")
     return StreamingResponse(
@@ -142,7 +147,7 @@ async def export_wrong_questions(
 async def import_wrong_questions_csv(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 数据导入 (CSV)"""
+    """[业务] 接受 CSV 附件并自动解析至数据库内的错题本"""
     await wq_service.import_wrong_questions_from_csv(db=db, user_id=current_student["id"], file=file)
     audit_logger.info(f"Student {current_student['id']} imported wrong questions from {file.filename}")
     return success(message="错题数据导入完成")

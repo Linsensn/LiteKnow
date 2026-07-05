@@ -10,9 +10,7 @@ from utils.deps import get_current_user
 from utils.response import success, fail
 from utils.exceptions import ErrorCode
 
-# 引入组长定义的通用契约 (严格遵守，不修改)
 from schemas.common import ResponseModel, PageResult
-
 from services.practice_session_service import ps_service
 from crud import practice_sessions_crud
 from schemas.practice_session_schemas import (
@@ -20,28 +18,26 @@ from schemas.practice_session_schemas import (
     PracticeSessionDetailOut, BatchDeleteSessionReq, BatchUpdateSessionReq, StatusToggleReq
 )
 
-# 操作日志审计
 audit_logger = logging.getLogger("liteknow.audit")
-
 router = APIRouter(prefix="/practice-sessions", tags=["Student - Practice Sessions"])
 
 @router.post("", response_model=ResponseModel[PracticeSessionOut])
 async def start_practice_session(
     data: PracticeSessionCreate, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 发起一次新的练习会话"""
+    """[业务] 发起一次新的练习会话，并生成题号序列"""
     result = await ps_service.start_new_session(
         db=db, user_id=current_student["id"], bank_id=data.bank_id, 
         mode=data.practice_mode, question_sequence=data.question_sequence
     )
     audit_logger.info(f"User {current_student['id']} started new session {result.id}")
-    return success(data=PracticeSessionOut.model_validate(result).model_dump(), message="练习会话创建成功")
+    return success(data=PracticeSessionOut.model_validate(result), message="练习会话创建成功")
 
 @router.post("/batch", response_model=ResponseModel[dict])
 async def create_batch_sessions(
     data: List[PracticeSessionCreate], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量新增练习会话"""
+    """[基础] 批量创建练习会话"""
     objs_in = [{"user_id": current_student["id"], "last_viewed_index": 0, "status": "ongoing", **item.model_dump()} for item in data]
     await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
     await db.commit()
@@ -57,27 +53,31 @@ async def get_sessions_list(
     limit: int = Query(20, le=100, description="每页返回数量，最大100"),
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 分页、多条件组合查询、关联查询"""
+    """[查询] 关联题库分页获取会话列表，严格使用 PageResult"""
     sessions, total = await practice_sessions_crud.get_multi_sessions(
         db=db, user_id=current_student["id"], status=status, search_keyword=keyword, 
         skip=skip, limit=limit, sort_by=sort_by
     )
     
-    # 格式化关联数据并应用 PageResult 契约
     list_data = []
     for item in sessions:
         dump_data = PracticeSessionOut.model_validate(item).model_dump()
         dump_data["bank_name"] = item.bank.bank_name if hasattr(item, 'bank') and item.bank else "未知题库"
-        list_data.append(dump_data)
+        list_data.append(PracticeSessionDetailOut(**dump_data))
         
-    page_data = {"list": list_data, "total": total, "page": (skip // limit) + 1, "page_size": limit}
+    page_data = PageResult(
+        list=list_data, 
+        total=total, 
+        page=(skip // limit) + 1, 
+        page_size=limit
+    )
     return success(data=page_data)
 
 @router.get("/tree", response_model=ResponseModel[List[dict]])
 async def get_practice_sessions_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 树形查询：将会话按状态(status)进行分组树形展示"""
+    """[查询] 树形查询：将历史会话按 ongoing/completed 状态进行分组"""
     sessions, _ = await practice_sessions_crud.get_multi_sessions(db=db, user_id=current_student["id"], limit=1000)
     list_data = [PracticeSessionOut.model_validate(s).model_dump() for s in sessions]
     
@@ -92,15 +92,15 @@ async def get_practice_sessions_tree(
 async def get_practice_session_progress(
     session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[查询] 单条详情：常用于恢复进度"""
+    """[查询] 恢复中断的进度，查看单条会话信息"""
     result = await ps_service.get_session_detail(db=db, session_id=session_id, user_id=current_student["id"])
-    return success(data=PracticeSessionOut.model_validate(result).model_dump())
+    return success(data=PracticeSessionOut.model_validate(result))
 
 @router.put("/{session_id}", response_model=ResponseModel[dict])
 async def update_single_session(
     data: PracticeSessionUpdate, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 单条更改"""
+    """[基础] 修改单条会话信息"""
     await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
     await db.commit()
     audit_logger.info(f"User {current_student['id']} updated session {session_id}")
@@ -110,7 +110,7 @@ async def update_single_session(
 async def update_batch_sessions(
     data: BatchUpdateSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量更改"""
+    """[基础] 批量修改会话"""
     await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
     await db.commit()
     audit_logger.info(f"User {current_student['id']} batch updated sessions {data.ids}")
@@ -120,8 +120,7 @@ async def update_batch_sessions(
 async def submit_practice_session(
     payload: StatusToggleReq, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 状态切换：主动交卷 (结束会话)"""
-    # 如果 payload 传入的 status == 'completed'，这相当于提交试卷
+    """[业务] 强制结束会话/主动交卷"""
     await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=0, status=payload.status)
     await db.commit()
     audit_logger.info(f"User {current_student['id']} toggled status of session {session_id} to {payload.status}")
@@ -131,7 +130,7 @@ async def submit_practice_session(
 async def delete_single_session(
     session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 单条物理删除"""
+    """[基础] 删除单条记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
     await db.commit()
     audit_logger.warning(f"User {current_student['id']} deleted session {session_id}")
@@ -141,7 +140,7 @@ async def delete_single_session(
 async def delete_batch_sessions(
     payload: BatchDeleteSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[基础] 批量物理删除"""
+    """[基础] 批量删除记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
     await db.commit()
     audit_logger.warning(f"User {current_student['id']} batch deleted {len(payload.ids)} sessions")
@@ -151,7 +150,7 @@ async def delete_batch_sessions(
 async def export_sessions(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 数据导出 (CSV)"""
+    """[业务] 导出历史会话数据为 CSV"""
     csv_data = await ps_service.export_sessions_to_csv(db=db, user_id=current_student["id"])
     audit_logger.info(f"User {current_student['id']} exported practice sessions")
     return StreamingResponse(
@@ -163,7 +162,7 @@ async def export_sessions(
 async def import_sessions(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
-    """[业务] 数据导入 (CSV)"""
+    """[业务] 从 CSV 导入历史会话"""
     await ps_service.import_sessions_from_csv(db=db, user_id=current_student["id"], file=file)
     audit_logger.info(f"User {current_student['id']} imported sessions from {file.filename}")
     return success(message="数据导入完成")
