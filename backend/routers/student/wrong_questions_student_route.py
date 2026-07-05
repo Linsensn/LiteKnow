@@ -12,7 +12,7 @@ from schemas.wrong_question_schemas import (
     WrongQuestionImport
 )
 
-router = APIRouter(prefix="/wrong-questions", tags=["Student - Wrong Questions"])
+router = APIRouter(prefix="/wrong-questions", tags=["Student/Wrong Questions"])
 
 @router.get("", response_model=dict)
 async def list_my_wrong_questions(

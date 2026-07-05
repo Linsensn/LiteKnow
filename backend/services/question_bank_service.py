@@ -19,7 +19,7 @@ class QuestionBankService:
             
         # 学生端越权校验（Admin可看所有）
         if current_user.get("role") != "admin" and bank.user_id != current_user["id"]:
-            raise CustomAPIException(code=ErrorCode.PERMISSION_DENIED, data={"detail": "无权访问此题库"})
+            raise CustomAPIException(code=ErrorCode.RESOURCE_ACCESS_DENIED, data={"detail": "无权访问此题库"})
         return bank
 
     async def get_banks(self, db: AsyncSession, current_user: dict, keyword: str, page: int, page_size: int):

@@ -28,12 +28,14 @@ class ErrorCode(int, Enum):
     USER_NOT_FOUND = 10002
     USER_ALREADY_EXISTS = 10003
     ROLE_PERMISSION_DENIED = 10004
+    RESOURCE_ACCESS_DENIED = 10005  # 新增：数据资源级越权访问拦截 (例如：访问不属于自己的题库)
     
     # 业务通用
     BUSINESS_PARAM_ERROR = 20001
     METHOD_NOT_ALLOW = 20003
     DATA_NOT_FOUND = 20004
     DB_OPERATION_FAILED = 20005
+    DATABASE_ERROR = 20006
     
     # 题库与练习业务特定错误 (201xx)
     PRACTICE_RECORD_SUBMIT_FAILED = 20101
@@ -42,6 +44,7 @@ class ErrorCode(int, Enum):
     QUESTION_BANK_DELETE_FAILED = 20104
     WRONG_QUESTION_UPDATE_FAILED = 20105
     WRONG_QUESTION_DELETE_FAILED = 20106
+    WRONG_QUESTION_CREATE_FAILED = 20107
     
     # AI 与任务
     AI_SERVICE_BUSY = 30001
@@ -53,11 +56,13 @@ ERROR_MESSAGES = {
     ErrorCode.USER_NOT_FOUND: "找不到该用户档案",
     ErrorCode.USER_ALREADY_EXISTS: "用户信息已存在，请勿重复注册",
     ErrorCode.ROLE_PERMISSION_DENIED: "越权操作，需要管理员权限",
+    ErrorCode.RESOURCE_ACCESS_DENIED: "越权访问：您无权操作或查看此数据资源", # 新增对应的错误描述
     
     ErrorCode.BUSINESS_PARAM_ERROR: "业务级参数格式错误",
     ErrorCode.METHOD_NOT_ALLOW: "请求方法不支持",
     ErrorCode.DATA_NOT_FOUND: "请求的数据不存在或无权限访问",
     ErrorCode.DB_OPERATION_FAILED: "数据库操作失败，请稍后重试",
+    ErrorCode.DATABASE_ERROR: "系统底层数据库交互异常，请联系管理员",
     
     ErrorCode.PRACTICE_RECORD_SUBMIT_FAILED: "提交答题记录失败，请检查网络后重试",
     ErrorCode.PRACTICE_SESSION_CREATE_FAILED: "创建练习会话失败，请稍后重试",
@@ -65,6 +70,7 @@ ERROR_MESSAGES = {
     ErrorCode.QUESTION_BANK_DELETE_FAILED: "批量删除题库失败",
     ErrorCode.WRONG_QUESTION_UPDATE_FAILED: "更新错题解析失败",
     ErrorCode.WRONG_QUESTION_DELETE_FAILED: "移除错题失败",
+    ErrorCode.WRONG_QUESTION_CREATE_FAILED: "新增或导入错题失败",
     
     ErrorCode.AI_SERVICE_BUSY: "大模型推荐服务暂不可用",
     ErrorCode.AI_VALIDATION_FAILED: "大模型语义解析失败",
