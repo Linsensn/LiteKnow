@@ -19,7 +19,7 @@ from schemas.practice_session_schemas import (
 )
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/practice-sessions", tags=["Student - Practice Sessions"])
+router = APIRouter(prefix="/practice-sessions", tags=["Student/Practice Sessions"])
 
 @router.post("", response_model=ResponseModel[PracticeSessionOut])
 async def start_practice_session(

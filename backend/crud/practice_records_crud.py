@@ -78,7 +78,8 @@ async def get_multi_records(
 
 async def get_records_with_question_details(db: AsyncSession, *, user_id: int, user_answer_keyword: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeRecord]:
     """模糊与关联查询"""
-    stmt = select(PracticeRecord).options(joinedload(PracticeRecord.question)).where(PracticeRecord.user_id == user_id)
+    # 移除了无效的 .options(joinedload(PracticeRecord.question))
+    stmt = select(PracticeRecord).where(PracticeRecord.user_id == user_id)
     if user_answer_keyword:
         stmt = stmt.where(PracticeRecord.user_answer.like(f"%{user_answer_keyword}%"))
     stmt = stmt.order_by(desc(PracticeRecord.created_at)).offset(skip).limit(limit)

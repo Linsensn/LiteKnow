@@ -18,7 +18,7 @@ from schemas.wrong_question_schemas import (
 )
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/wrong-questions", tags=["Student - Wrong Questions"])
+router = APIRouter(prefix="/wrong-questions", tags=["Student/Wrong Questions"])
 
 @router.post("", response_model=ResponseModel[WrongQuestionOut])
 async def create_single_wrong_question(
