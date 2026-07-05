@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
-from crud.practice_sessions_crud import practice_session
+from crud import practice_sessions_crud
 from utils.exceptions import CustomAPIException, ErrorCode
 import random
 
@@ -12,7 +11,7 @@ class PracticeSessionService:
             random.shuffle(sequence)
             
         try:
-            new_session = await practice_session.create(
+            new_session = await practice_sessions_crud.create_practice_session(
                 db=db, user_id=user_id, bank_id=bank_id, practice_mode=mode, question_sequence=sequence
             )
             await db.commit()
@@ -25,7 +24,7 @@ class PracticeSessionService:
             )
 
     async def get_session_detail(self, db: AsyncSession, session_id: int, user_id: int):
-        session = await practice_session.get(db=db, id=session_id)
+        session = await practice_sessions_crud.get_practice_session(db=db, id=session_id)
         if not session or session.user_id != user_id:
             raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
         return session

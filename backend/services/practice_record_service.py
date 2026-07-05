@@ -1,8 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
-from crud.practice_records_crud import practice_record
-from crud.practice_sessions_crud import practice_session
-from crud.wrong_questions_crud import wrong_question
+from crud import practice_records_crud, practice_sessions_crud, wrong_questions_crud
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class PracticeRecordService:
@@ -17,7 +14,7 @@ class PracticeRecordService:
         
         try:
             # 1. Upsert 答题卡记录
-            await practice_record.upsert(
+            await practice_records_crud.upsert_practice_record(
                 db=db, session_id=session_id, user_id=user_id, 
                 question_id=question_id, user_answer=user_answer, is_correct=is_correct
             )
@@ -29,11 +26,12 @@ class PracticeRecordService:
                     "user_answer": user_answer,
                     "correct_answer": correct_answer
                 }
-                await wrong_question.create(db=db, obj_in=wq_data, user_id=user_id)
+                await wrong_questions_crud.create_wrong_question(db=db, obj_in=wq_data, user_id=user_id)
                 
             # 3. 更新练习会话最后的停留位置
-            await practice_session.update_progress(db=db, session_id=session_id, last_viewed_index=current_index)
+            await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=current_index)
             
+            # 统一提交整个业务的事务
             await db.commit()
             return {"is_correct": is_correct}
         except Exception as e:

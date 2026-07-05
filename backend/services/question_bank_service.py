@@ -1,12 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
-from crud.question_banks_crud import question_bank
+from crud import question_banks_crud
 from utils.exceptions import CustomAPIException, ErrorCode
+from models.question_banks import QuestionBank
 
 class QuestionBankService:
     async def create_bank(self, db: AsyncSession, current_user: dict, bank_in: dict):
         try:
-            new_bank = await question_bank.create(db=db, obj_in=bank_in, user_id=current_user["id"])
+            new_bank = await question_banks_crud.create_question_bank(db=db, obj_in=bank_in, user_id=current_user["id"])
             await db.commit()
             return new_bank
         except Exception as e:
@@ -21,14 +21,15 @@ class QuestionBankService:
         query_user_id = current_user["id"] if current_user.get("role") != "admin" else None
         skip = (page - 1) * page_size
         
-        total = await question_bank.count(db=db, user_id=query_user_id, keyword=keyword)
-        items = await question_bank.get_multi(db=db, user_id=query_user_id, keyword=keyword, skip=skip, limit=page_size)
+        total = await question_banks_crud.count_question_banks(db=db, user_id=query_user_id, keyword=keyword)
+        items = await question_banks_crud.get_multi_question_banks(db=db, user_id=query_user_id, keyword=keyword, skip=skip, limit=page_size)
         return {"total": total, "items": items}
 
     async def bulk_delete(self, db: AsyncSession, current_user: dict, bank_ids: list[int]):
         query_user_id = current_user["id"] if current_user.get("role") != "admin" else None
         try:
-            await question_bank.delete_multi(db=db, ids=bank_ids, user_id=query_user_id)
+            # 批量操作由 Service 层调用底层的批量语句，并负责 commit
+            await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
             await db.commit()
         except Exception as e:
             await db.rollback()
