@@ -31,7 +31,6 @@ async def get_multi_wrong_questions(
     if keyword:
         stmt = stmt.where(WrongQuestion.question_content.ilike(f"%{keyword}%"))
         
-    # 构建并执行统计总数的语句
     count_stmt = select(func.count(WrongQuestion.id)).select_from(WrongQuestion).where(WrongQuestion.user_id == user_id)
     if keyword:
         count_stmt = count_stmt.where(WrongQuestion.question_content.ilike(f"%{keyword}%"))
@@ -39,33 +38,36 @@ async def get_multi_wrong_questions(
     count_res = db.execute(count_stmt)
     total = count_res.scalar() or 0
 
-    # 构建并执行列表查询的语句
     order_col = desc(WrongQuestion.created_at) if sort_by == "desc" else asc(WrongQuestion.created_at)
     stmt = stmt.order_by(order_col).offset(skip).limit(limit)
     
     result = db.execute(stmt)
     return result.scalars().all(), total
 
-async def update_wrong_question(db: AsyncSession, *, id: int, user_id: int, update_data: Dict[str, Any]):
+async def update_wrong_question(db: AsyncSession, *, id: int, user_id: int, update_data: Dict[str, Any]) -> int:
     """单条更改"""
     if not update_data:
-        return
+        return 0
     stmt = update(WrongQuestion).where(WrongQuestion.id == id, WrongQuestion.user_id == user_id).values(**update_data)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
     
-async def update_multi_wrong_questions(db: AsyncSession, *, ids: List[int], user_id: int, update_data: Dict[str, Any]):
+async def update_multi_wrong_questions(db: AsyncSession, *, ids: List[int], user_id: int, update_data: Dict[str, Any]) -> int:
     """批量更改"""
     if not update_data:
-        return
+        return 0
     stmt = update(WrongQuestion).where(WrongQuestion.id.in_(ids), WrongQuestion.user_id == user_id).values(**update_data)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def delete_wrong_question(db: AsyncSession, *, id: int, user_id: int):
+async def delete_wrong_question(db: AsyncSession, *, id: int, user_id: int) -> int:
     """单条删除"""
     stmt = delete(WrongQuestion).where(WrongQuestion.id == id, WrongQuestion.user_id == user_id)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def delete_multi_wrong_questions(db: AsyncSession, *, ids: List[int], user_id: int):
+async def delete_multi_wrong_questions(db: AsyncSession, *, ids: List[int], user_id: int) -> int:
     """批量删除"""
     stmt = delete(WrongQuestion).where(WrongQuestion.id.in_(ids), WrongQuestion.user_id == user_id)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount

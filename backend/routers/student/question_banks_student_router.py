@@ -87,34 +87,34 @@ async def get_my_question_bank_detail(
 async def update_my_question_bank(
     data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    await qb_service.update_bank(db=db, current_user=current_student, bank_id=bank_id, update_data=data.model_dump())
+    updated_count = await qb_service.update_bank(db=db, current_user=current_student, bank_id=bank_id, update_data=data.model_dump())
     audit_logger.info(f"Student {current_student.id} updated bank {bank_id}")
-    return success(message="题库信息更新成功")
+    return success(message=f"题库信息更新成功，影响 {updated_count or 0} 个")
 
 @router.put("/batch/update", response_model=ResponseModel[dict])
 async def batch_update_my_banks(
     data: BatchUpdateBankReq, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    await question_banks_crud.update_multi_banks(db=db, ids=data.ids, update_data=data.update_data.model_dump(exclude_unset=True), user_id=current_student.id)
+    updated_count = await question_banks_crud.update_multi_banks(db=db, ids=data.ids, update_data=data.update_data.model_dump(exclude_unset=True), user_id=current_student.id)
     db.commit()
     audit_logger.info(f"Student {current_student.id} batch updated banks {data.ids}")
-    return success(message=f"成功更新 {len(data.ids)} 个题库")
+    return success(message=f"成功更新 {updated_count} 个题库")
 
 @router.delete("/bulk", response_model=ResponseModel[dict])
 async def student_bulk_delete_question_banks(
     data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=data.bank_ids)
+    deleted_count = await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=data.bank_ids)
     audit_logger.warning(f"Student {current_student.id} batch deleted banks {data.bank_ids}")
-    return success(message=f"成功批量删除 {len(data.bank_ids)} 个题库")
+    return success(message=f"成功删除 {deleted_count or 0} 个题库")
 
 @router.delete("/{bank_id}", response_model=ResponseModel[dict])
 async def student_delete_single_bank(
     bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=[bank_id])
+    deleted_count = await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=[bank_id])
     audit_logger.warning(f"Student {current_student.id} deleted bank {bank_id}")
-    return success(message="题库删除成功")
+    return success(message=f"题库删除成功，影响 {deleted_count or 0} 个")
 
 @router.get("/data/export")
 async def export_my_banks(

@@ -96,25 +96,26 @@ async def get_practice_session_progress(
     result = await ps_service.get_session_detail(db=db, session_id=session_id, user_id=current_student.id)
     return success(data=PracticeSessionOut.model_validate(result))
 
-@router.put("/{session_id}", response_model=ResponseModel[dict])
-async def update_single_session(
-    data: PracticeSessionUpdate, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
-):
-    """[基础] 修改单条会话信息"""
-    await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
-    db.commit()
-    audit_logger.info(f"User {current_student.id} updated session {session_id}")
-    return success(message="会话更新成功")
-
 @router.put("/batch", response_model=ResponseModel[dict])
 async def update_batch_sessions(
     data: BatchUpdateSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量修改会话"""
-    await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
+    # 接收真实的受影响行数
+    updated_count = await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
     db.commit()
     audit_logger.info(f"User {current_student.id} batch updated sessions {data.ids}")
-    return success(message=f"成功更新 {len(data.ids)} 条会话")
+    return success(message=f"成功更新 {updated_count} 条会话")
+
+@router.put("/{session_id}", response_model=ResponseModel[dict])
+async def update_single_session(
+    data: PracticeSessionUpdate, session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+):
+    """[基础] 修改单条会话信息"""
+    updated_count = await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
+    db.commit()
+    audit_logger.info(f"User {current_student.id} updated session {session_id}")
+    return success(message=f"会话更新成功，影响 {updated_count} 条")
 
 @router.patch("/{session_id}/status", response_model=ResponseModel[dict])
 async def submit_practice_session(
@@ -126,25 +127,26 @@ async def submit_practice_session(
     audit_logger.info(f"User {current_student.id} toggled status of session {session_id} to {payload.status}")
     return success(message=f"状态已更新为 {payload.status}")
 
-@router.delete("/{session_id}", response_model=ResponseModel[dict])
-async def delete_single_session(
-    session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
-):
-    """[基础] 删除单条记录"""
-    await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
-    db.commit()
-    audit_logger.warning(f"User {current_student.id} deleted session {session_id}")
-    return success(message="删除成功")
-
 @router.delete("/batch", response_model=ResponseModel[dict])
 async def delete_batch_sessions(
     payload: BatchDeleteSessionReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     """[基础] 批量删除记录"""
-    await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
+    # 接收真实的受影响行数
+    deleted_count = await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
     db.commit()
-    audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} sessions")
-    return success(message=f"成功删除 {len(payload.ids)} 条会话")
+    audit_logger.warning(f"User {current_student.id} batch deleted {deleted_count} sessions")
+    return success(message=f"成功删除 {deleted_count} 条会话")
+
+@router.delete("/{session_id}", response_model=ResponseModel[dict])
+async def delete_single_session(
+    session_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+):
+    """[基础] 删除单条记录"""
+    deleted_count = await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
+    db.commit()
+    audit_logger.warning(f"User {current_student.id} deleted session {session_id}")
+    return success(message=f"成功删除 {deleted_count} 条会话")
 
 @router.get("/export/csv")
 async def export_sessions(

@@ -28,20 +28,23 @@ async def upsert_practice_record(db: AsyncSession, *, session_id: int, user_id: 
     )
     db.execute(stmt)
 
-async def update_record(db: AsyncSession, *, id: int, obj_in: dict) -> None:
+async def update_record(db: AsyncSession, *, id: int, obj_in: dict) -> int:
     """单条更改"""
     stmt = update(PracticeRecord).where(PracticeRecord.id == id).values(**obj_in)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def update_multi_records(db: AsyncSession, *, ids: List[int], obj_in: dict) -> None:
+async def update_multi_records(db: AsyncSession, *, ids: List[int], obj_in: dict) -> int:
     """批量更改"""
     stmt = update(PracticeRecord).where(PracticeRecord.id.in_(ids)).values(**obj_in)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def toggle_record_status(db: AsyncSession, *, id: int, is_correct: bool) -> None:
+async def toggle_record_status(db: AsyncSession, *, id: int, is_correct: bool) -> int:
     """状态切换"""
     stmt = update(PracticeRecord).where(PracticeRecord.id == id).values(is_correct=is_correct)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
 async def get_practice_record(db: AsyncSession, id: int) -> Optional[PracticeRecord]:
     """单条查询"""
@@ -78,7 +81,6 @@ async def get_multi_records(
 
 async def get_records_with_question_details(db: AsyncSession, *, user_id: int, user_answer_keyword: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeRecord]:
     """模糊与关联查询"""
-    # 移除了无效的 .options(joinedload(PracticeRecord.question))
     stmt = select(PracticeRecord).where(PracticeRecord.user_id == user_id)
     if user_answer_keyword:
         stmt = stmt.where(PracticeRecord.user_answer.like(f"%{user_answer_keyword}%"))
@@ -105,7 +107,8 @@ async def get_session_statistics(db: AsyncSession, *, session_id: int) -> dict:
         "accuracy_rate": round(correct / total, 4) if total > 0 else 0.0
     }
 
-async def delete_records_by_ids(db: AsyncSession, *, ids: List[int]):
+async def delete_records_by_ids(db: AsyncSession, *, ids: List[int]) -> int:
     """单条/批量物理删除"""
     stmt = delete(PracticeRecord).where(PracticeRecord.id.in_(ids))
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount

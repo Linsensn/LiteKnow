@@ -48,24 +48,24 @@ async def admin_update_question_bank(
     data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """管理员直接修改指定题库的属性（无视归属校验）"""
-    await qb_service.update_bank(db=db, current_user=current_admin, bank_id=bank_id, update_data=data.model_dump())
+    updated_count = await qb_service.update_bank(db=db, current_user=current_admin, bank_id=bank_id, update_data=data.model_dump())
     audit_logger.info(f"Admin {current_admin.id} force updated bank {bank_id}")
-    return success(message="全局题库信息更新成功")
+    return success(message=f"全局题库信息更新成功，影响 {updated_count or 0} 个")
 
 @router.delete("/bulk", response_model=ResponseModel[dict], summary="管理员批量删除题库")
 async def admin_bulk_delete_question_banks(
     data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """批量删除指定的题库，用于管理员强制清理"""
-    await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=data.bank_ids)
+    deleted_count = await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=data.bank_ids)
     audit_logger.warning(f"Admin {current_admin.id} force batch deleted banks {data.bank_ids}")
-    return success(message="全局批量删除成功")
+    return success(message=f"全局批量删除成功，共删除 {deleted_count or 0} 个题库")
 
 @router.delete("/{bank_id}", response_model=ResponseModel[dict], summary="管理员删除单个题库")
 async def admin_delete_single_bank(
     bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """删除指定ID的题库，内部复用批量删除逻辑"""
-    await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=[bank_id])
+    deleted_count = await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=[bank_id])
     audit_logger.warning(f"Admin {current_admin.id} force deleted bank {bank_id}")
-    return success(message="全局题库删除成功")
+    return success(message=f"全局题库删除成功，共删除 {deleted_count or 0} 个题库")

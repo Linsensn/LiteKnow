@@ -47,33 +47,37 @@ async def get_multi_question_banks(
     result = db.execute(stmt)
     return result.scalars().all(), total
 
-async def update_question_bank(db: AsyncSession, *, bank_id: int, update_data: Dict[str, Any]):
+async def update_question_bank(db: AsyncSession, *, bank_id: int, update_data: Dict[str, Any]) -> int:
     """单条更改：支持局部更新"""
     if not update_data:
-        return
+        return 0
     stmt = update(QuestionBank).where(QuestionBank.id == bank_id).values(**update_data)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def update_multi_banks(db: AsyncSession, *, ids: List[int], update_data: Dict[str, Any], user_id: Optional[int] = None):
+async def update_multi_banks(db: AsyncSession, *, ids: List[int], update_data: Dict[str, Any], user_id: Optional[int] = None) -> int:
     """批量更改：支持权限拦截"""
     if not update_data:
-        return
+        return 0
     stmt = update(QuestionBank).where(QuestionBank.id.in_(ids))
     if user_id is not None:
         stmt = stmt.where(QuestionBank.user_id == user_id)
     stmt = stmt.values(**update_data)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def update_bank_total_questions(db: AsyncSession, *, bank_id: int, increment: int):
+async def update_bank_total_questions(db: AsyncSession, *, bank_id: int, increment: int) -> int:
     """原子更新题库下的题目总数（题目增删时调用）"""
     stmt = update(QuestionBank).where(QuestionBank.id == bank_id).values(
         total_questions=QuestionBank.total_questions + increment
     )
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
 
-async def delete_banks_by_ids(db: AsyncSession, *, ids: List[int], user_id: Optional[int] = None):
+async def delete_banks_by_ids(db: AsyncSession, *, ids: List[int], user_id: Optional[int] = None) -> int:
     """批量/单条物理删除：带权限校验"""
     stmt = delete(QuestionBank).where(QuestionBank.id.in_(ids))
     if user_id is not None:
         stmt = stmt.where(QuestionBank.user_id == user_id)
-    db.execute(stmt)
+    result = db.execute(stmt)
+    return result.rowcount
