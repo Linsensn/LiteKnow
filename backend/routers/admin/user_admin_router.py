@@ -9,11 +9,7 @@ from schemas.user_schemas import UserUpdate, UserOut
 from crud import user_crud
 from models.users import User
 
-# 全局注入 get_admin_user 拦截器，确保下方所有接口都需要管理员权限
-router = APIRouter(
-    prefix="/users", 
-    tags=["Admin/Users"]
-)
+router = APIRouter(prefix="/users", tags=["Admin/Users"])
 
 @router.get("/", summary="分页获取所有用户列表")
 def read_users(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)): 
