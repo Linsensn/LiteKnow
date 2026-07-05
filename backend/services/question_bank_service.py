@@ -10,10 +10,10 @@ class QuestionBankService:
         try:
             # 修复：改为 current_user.id
             new_bank = await question_banks_crud.create_question_bank(db=db, obj_in=bank_in, user_id=current_user.id)
-            await db.commit()
+            db.commit()
             return new_bank
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED, data={"error_detail": str(e)})
 
     async def get_bank_detail(self, db: AsyncSession, current_user, bank_id: int):
@@ -46,9 +46,9 @@ class QuestionBankService:
             return
         try:
             await question_banks_crud.update_question_bank(db=db, bank_id=bank_id, update_data=update_dict)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
     async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int]):
@@ -57,9 +57,9 @@ class QuestionBankService:
         query_user_id = current_user.id if user_role != "admin" else None
         try:
             await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED, data={"error_detail": str(e)})
 
     async def export_banks_to_csv(self, db: AsyncSession, current_user) -> str:
@@ -90,6 +90,6 @@ class QuestionBankService:
         if objs_in:
             # 修复：改为 current_user.id
             await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_user.id)
-            await db.commit()
+            db.commit()
 
 qb_service = QuestionBankService()

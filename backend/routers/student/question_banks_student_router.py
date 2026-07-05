@@ -36,7 +36,7 @@ async def create_batch_question_banks(
 ):
     objs_in = [item.model_dump() for item in data]
     await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_student.id)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"Student {current_student.id} batch created {len(objs_in)} banks")
     return success(message=f"成功批量创建 {len(objs_in)} 个题库")
 
@@ -96,7 +96,7 @@ async def batch_update_my_banks(
     data: BatchUpdateBankReq, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     await question_banks_crud.update_multi_banks(db=db, ids=data.ids, update_data=data.update_data.model_dump(exclude_unset=True), user_id=current_student.id)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"Student {current_student.id} batch updated banks {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 个题库")
 

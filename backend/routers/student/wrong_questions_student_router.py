@@ -27,7 +27,7 @@ async def create_single_wrong_question(
     """[基础] 不走系统答题，学生手动自行创建一条错题记录"""
     obj_in = data.model_dump()
     result = await wrong_questions_crud.create_wrong_question(db=db, obj_in=obj_in, user_id=current_student.id)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"Student {current_student.id} manually created wrong question {result.id}")
     return success(data=WrongQuestionOut.model_validate(result), message="错题新增成功")
 
@@ -97,7 +97,7 @@ async def update_single_wrong_question(
     await wrong_questions_crud.update_wrong_question(
         db=db, id=wq_id, user_id=current_student.id, update_data=data.model_dump(exclude_unset=True)
     )
-    await db.commit()
+    db.commit()
     audit_logger.info(f"Student {current_student.id} updated wrong question {wq_id}")
     return success(message="错题更新成功")
 
@@ -109,7 +109,7 @@ async def batch_update_wrong_questions(
     await wrong_questions_crud.update_multi_wrong_questions(
         db=db, ids=data.ids, user_id=current_student.id, update_data=data.update_data.model_dump(exclude_unset=True)
     )
-    await db.commit()
+    db.commit()
     audit_logger.info(f"Student {current_student.id} batch updated wrong questions {data.ids}")
     return success(message=f"成功批量更新 {len(data.ids)} 道错题")
 

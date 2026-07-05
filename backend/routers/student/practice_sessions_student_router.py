@@ -40,7 +40,7 @@ async def create_batch_sessions(
     """[基础] 批量创建练习会话"""
     objs_in = [{"user_id": current_student.id, "last_viewed_index": 0, "status": "ongoing", **item.model_dump()} for item in data]
     await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} batch created {len(objs_in)} sessions")
     return success(message=f"批量新增 {len(objs_in)} 条成功")
 
@@ -102,7 +102,7 @@ async def update_single_session(
 ):
     """[基础] 修改单条会话信息"""
     await practice_sessions_crud.update_session(db=db, id=session_id, obj_in=data.model_dump(exclude_unset=True))
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} updated session {session_id}")
     return success(message="会话更新成功")
 
@@ -112,7 +112,7 @@ async def update_batch_sessions(
 ):
     """[基础] 批量修改会话"""
     await practice_sessions_crud.update_multi_sessions(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} batch updated sessions {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 条会话")
 
@@ -122,7 +122,7 @@ async def submit_practice_session(
 ):
     """[业务] 强制结束会话/主动交卷"""
     await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=0, status=payload.status)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} toggled status of session {session_id} to {payload.status}")
     return success(message=f"状态已更新为 {payload.status}")
 
@@ -132,7 +132,7 @@ async def delete_single_session(
 ):
     """[基础] 删除单条记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=[session_id])
-    await db.commit()
+    db.commit()
     audit_logger.warning(f"User {current_student.id} deleted session {session_id}")
     return success(message="删除成功")
 
@@ -142,7 +142,7 @@ async def delete_batch_sessions(
 ):
     """[基础] 批量删除记录"""
     await practice_sessions_crud.delete_sessions_by_ids(db=db, ids=payload.ids)
-    await db.commit()
+    db.commit()
     audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} sessions")
     return success(message=f"成功删除 {len(payload.ids)} 条会话")
 

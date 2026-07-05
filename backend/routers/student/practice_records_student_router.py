@@ -45,7 +45,7 @@ async def create_record(
     obj_in = data.model_dump()
     obj_in["user_id"] = current_student.id
     record = await practice_records_crud.create_practice_record(db=db, obj_in=obj_in)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} manually created record {record.id}")
     return success(data=PracticeRecordDetailOut.model_validate(record))
 
@@ -56,7 +56,7 @@ async def create_batch_records(
     """[基础] 批量新增答题记录（适用于离线答题后一次性同步）"""
     objs_in = [{"user_id": current_student.id, **item.model_dump()} for item in data]
     await practice_records_crud.create_multi_records(db=db, objs_in=objs_in)
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} batch created {len(objs_in)} records")
     return success(message=f"批量新增 {len(objs_in)} 条成功")
 
@@ -116,7 +116,7 @@ async def update_single_record(
 ):
     """[基础] 修改单条记录内容"""
     await practice_records_crud.update_record(db=db, id=record_id, obj_in=data.model_dump(exclude_unset=True))
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} updated record {record_id}")
     return success(message="记录更新成功")
 
@@ -126,7 +126,7 @@ async def update_batch_records(
 ):
     """[基础] 批量修改多条记录内容"""
     await practice_records_crud.update_multi_records(db=db, ids=data.ids, obj_in=data.update_data.model_dump(exclude_unset=True))
-    await db.commit()
+    db.commit()
     audit_logger.info(f"User {current_student.id} batch updated records {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 条记录")
 
@@ -136,7 +136,7 @@ async def toggle_record_status(
 ):
     """[业务] 切换正误状态，通常用于人工重新批改"""
     await practice_records_crud.toggle_record_status(db=db, id=record_id, is_correct=payload.is_correct)
-    await db.commit() 
+    db.commit() 
     audit_logger.info(f"User {current_student.id} toggled status for record {record_id} to {payload.is_correct}")
     return success(message="状态更新成功")
 
@@ -146,7 +146,7 @@ async def delete_single_record(
 ):
     """[基础] 物理删除单条记录"""
     await practice_records_crud.delete_records_by_ids(db=db, ids=[record_id])
-    await db.commit()
+    db.commit()
     audit_logger.warning(f"User {current_student.id} deleted record {record_id}")
     return success(message="删除成功")
 
@@ -156,7 +156,7 @@ async def delete_batch_records(
 ):
     """[基础] 批量物理删除记录"""
     await practice_records_crud.delete_records_by_ids(db=db, ids=payload.ids)
-    await db.commit()
+    db.commit()
     audit_logger.warning(f"User {current_student.id} batch deleted {len(payload.ids)} records")
     return success(message=f"成功删除 {len(payload.ids)} 条记录")
 
