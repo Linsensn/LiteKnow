@@ -10,6 +10,19 @@ class PracticeRecordSubmit(BaseModel):
     correct_answer: str = Field(..., description="正确答案")
     question_content: str = Field(..., description="题干快照，用于错题本冗余展示")
     current_index: int = Field(..., description="该题目在序列中的位置索引，用于记录进度")
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_id": 1024,
+                "question_id": 5050,
+                "user_answer": "B",
+                "correct_answer": "C",
+                "question_content": "TCP协议的三次握手中，第二次握手发送的标志位是？",
+                "current_index": 5
+            }
+        }
+    )
 
 # 请求：单条新增
 class PracticeRecordCreate(BaseModel):
@@ -19,28 +32,87 @@ class PracticeRecordCreate(BaseModel):
     is_correct: Optional[bool] = Field(default=None, description="是否正确")
     user_answer: Optional[str] = Field(default=None, description="用户作答内容")
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_id": 1024,
+                "question_id": 5050,
+                "is_completed": True,
+                "is_correct": False,
+                "user_answer": "B"
+            }
+        }
+    )
+
 # 请求：单条/批量更改
 class PracticeRecordUpdate(BaseModel):
     is_completed: Optional[bool] = None
     is_correct: Optional[bool] = None
     user_answer: Optional[str] = None
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "is_completed": True,
+                "is_correct": True,
+                "user_answer": "C"
+            }
+        }
+    )
+
 # 请求：批量更新包裹
 class BatchUpdateReq(BaseModel):
     ids: List[int] = Field(..., description="需要更新的记录ID列表")
     update_data: PracticeRecordUpdate = Field(..., description="统一更新的数据源")
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "ids": [101, 102, 103],
+                "update_data": {
+                    "is_completed": True,
+                    "is_correct": True,
+                    "user_answer": "A"
+                }
+            }
+        }
+    )
+
 # 请求：批量删除
 class BatchDeleteReq(BaseModel):
     ids: List[int] = Field(..., description="需要删除的记录ID列表")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "ids": [101, 102, 103]
+            }
+        }
+    )
 
 # 请求：状态切换
 class StatusToggleReq(BaseModel):
     is_correct: bool = Field(..., description="更新后的正误状态")
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "is_correct": True
+            }
+        }
+    )
+
 # 响应：提交结果反馈
 class SubmitResultOut(BaseModel):
     is_correct: bool
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "is_correct": False
+            }
+        }
+    )
 
 # 响应：单条答题记录详情
 class PracticeRecordDetailOut(BaseModel):
@@ -53,4 +125,18 @@ class PracticeRecordDetailOut(BaseModel):
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": 9527,
+                "session_id": 1024,
+                "question_id": 5050,
+                "is_completed": True,
+                "is_correct": False,
+                "user_answer": "B",
+                "created_at": "2026-07-05T21:30:00",
+                "updated_at": "2026-07-05T21:35:00"
+            }
+        }
+    )
