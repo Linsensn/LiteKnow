@@ -5,7 +5,7 @@ r"""
 
 from fastapi import APIRouter, Depends
 # 修改这里的导入文件名
-from . import question_banks_admin_route, user_admin_router, sessions_admin_route
+from . import question_banks_admin_router, sessions_admin_router, user_admin_router
 from utils.deps import get_current_user, get_admin_user
 
 # 创建专门针对 admin 模块的总 Router
@@ -26,9 +26,10 @@ from . import (
 # admin_router.include_router(admin_admin_router.router)
 admin_router.include_router(bank_question_admin_router.router)
 admin_router.include_router(user_admin_router.router)
-admin_router.include_router(question_banks_admin_route.router)
+
 admin_router.include_router(favorite_admin_router.router)
 admin_router.include_router(attachment_admin_router.router)
 admin_router.include_router(message_admin_router.router)
-admin_router.include_router(sessions_admin_route.router)
+admin_router.include_router(sessions_admin_router.router)
+admin_router.include_router(question_banks_admin_router.router)
 

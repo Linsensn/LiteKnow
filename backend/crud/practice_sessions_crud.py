@@ -1,81 +1,78 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, desc, func
+from sqlalchemy import select, update, delete, desc, func, or_
 from sqlalchemy.orm import joinedload
+from sqlalchemy.dialects.mysql import insert
 from models.practice_sessions import PracticeSession
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-async def create_practice_session(db: AsyncSession, *, user_id: int, bank_id: int, practice_mode: str, question_sequence: list) -> PracticeSession:
-    """创建练习会话：初始化 JSON 格式的题目序列和起始状态"""
-    db_obj = PracticeSession(
-        user_id=user_id,
-        bank_id=bank_id,
-        practice_mode=practice_mode,
-        question_sequence=question_sequence,
-        last_viewed_index=0,
-        status="ongoing"
-    )
+async def create_practice_session(db: AsyncSession, *, obj_in: dict) -> PracticeSession:
+    """单条新增"""
+    db_obj = PracticeSession(**obj_in)
     db.add(db_obj)
     await db.flush()
     return db_obj
 
+async def create_multi_sessions(db: AsyncSession, *, objs_in: List[dict]):
+    """批量新增"""
+    stmt = insert(PracticeSession).values(objs_in)
+    await db.execute(stmt)
+
 async def get_practice_session(db: AsyncSession, id: int) -> Optional[PracticeSession]:
-    """单条查询：获取会话详情，常用于恢复练习进度"""
+    """单条查询"""
     stmt = select(PracticeSession).where(PracticeSession.id == id)
     result = await db.execute(stmt)
     return result.scalar_first()
 
-async def get_multi_sessions(db: AsyncSession, *, user_id: Optional[int] = None, status: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeSession]:
-    """分页查询：查询历史会话列表，支持通过状态过滤"""
-    stmt = select(PracticeSession)
+async def get_multi_sessions(
+    db: AsyncSession, *, user_id: Optional[int] = None, status: Optional[str] = None, 
+    search_keyword: Optional[str] = None, skip: int = 0, limit: int = 20, sort_by: str = "desc"
+) -> Tuple[List[PracticeSession], int]:
+    """分页、多条件、模糊搜索(针对模式)、关联查询(题库)与聚合总数"""
+    # 关联题库(bank)以便前端直接展示题库名
+    stmt = select(PracticeSession).options(joinedload(PracticeSession.bank))
     conditions = []
+    
     if user_id is not None:
         conditions.append(PracticeSession.user_id == user_id)
     if status is not None:
         conditions.append(PracticeSession.status == status)
-    if conditions:
-        stmt = stmt.where(*conditions)
-    stmt = stmt.order_by(desc(PracticeSession.created_at)).offset(skip).limit(limit)
-    result = await db.execute(stmt)
-    return result.scalars().all()
-
-async def get_sessions_with_bank_details(db: AsyncSession, *, user_id: int, status: Optional[str] = None, skip: int = 0, limit: int = 20) -> List[PracticeSession]:
-    """关联查询：获取会话列表及关联的题库信息（用于前端展示历史记录）"""
-    # 假设 PracticeSession 模型中定义了 relationship("QuestionBank", backref="sessions") 命名为 bank
-    stmt = select(PracticeSession).options(joinedload(PracticeSession.bank)).where(PracticeSession.user_id == user_id)
-    if status:
-        stmt = stmt.where(PracticeSession.status == status)
+    if search_keyword:
+        # 模糊查询：练习模式
+        conditions.append(PracticeSession.practice_mode.like(f"%{search_keyword}%"))
         
-    stmt = stmt.order_by(desc(PracticeSession.created_at)).offset(skip).limit(limit)
-    result = await db.execute(stmt)
-    return result.scalars().all()
-
-async def count_sessions(db: AsyncSession, *, user_id: Optional[int] = None, status: Optional[str] = None) -> int:
-    """聚合查询：统计符合条件的练习会话总数，用于分页计算"""
-    stmt = select(func.count(PracticeSession.id))
-    conditions = []
-    if user_id is not None:
-        conditions.append(PracticeSession.user_id == user_id)
-    if status is not None:
-        conditions.append(PracticeSession.status == status)
     if conditions:
         stmt = stmt.where(*conditions)
+        
+    # 聚合查询总数
+    count_stmt = select(func.count(PracticeSession.id)).select_from(PracticeSession).where(*conditions) if conditions else select(func.count(PracticeSession.id)).select_from(PracticeSession)
+    total = await db.scalar(count_stmt)
+    
+    # 排序与分页
+    order_col = desc(PracticeSession.created_at) if sort_by == "desc" else PracticeSession.created_at.asc()
+    stmt = stmt.order_by(order_col).offset(skip).limit(limit)
+    
     result = await db.execute(stmt)
-    return result.scalar_one()
+    return result.scalars().all(), total or 0
+
+async def update_session(db: AsyncSession, *, id: int, obj_in: dict):
+    """单条更改"""
+    stmt = update(PracticeSession).where(PracticeSession.id == id).values(**obj_in)
+    await db.execute(stmt)
+
+async def update_multi_sessions(db: AsyncSession, *, ids: List[int], obj_in: dict):
+    """批量更改"""
+    stmt = update(PracticeSession).where(PracticeSession.id.in_(ids)).values(**obj_in)
+    await db.execute(stmt)
 
 async def update_session_progress(db: AsyncSession, *, session_id: int, last_viewed_index: int, status: str = None):
-    """状态更新：局部更新会话的查看进度或交卷状态"""
+    """局部状态/进度更新"""
     values = {"last_viewed_index": last_viewed_index}
     if status:
         values["status"] = status
     stmt = update(PracticeSession).where(PracticeSession.id == session_id).values(**values)
     await db.execute(stmt)
 
-async def update_session_status(db: AsyncSession, *, session_id: int, status: str):
-    """单独切换会话状态（如：强制交卷）"""
-    stmt = update(PracticeSession).where(PracticeSession.id == session_id).values(status=status)
-    await db.execute(stmt)
-
 async def delete_sessions_by_ids(db: AsyncSession, *, ids: List[int]):
-    """批量条件删除：通过 ID 列表进行原生批量删除"""
+    """单条/批量物理删除"""
     stmt = delete(PracticeSession).where(PracticeSession.id.in_(ids))
     await db.execute(stmt)
