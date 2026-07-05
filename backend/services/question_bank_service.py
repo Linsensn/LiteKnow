@@ -10,10 +10,10 @@ class QuestionBankService:
         try:
             # 修复：改为 current_user.id
             new_bank = await question_banks_crud.create_question_bank(db=db, obj_in=bank_in, user_id=current_user.id)
-            await db.commit()
+            db.commit()
             return new_bank
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_CREATE_FAILED, data={"error_detail": str(e)})
 
     async def get_bank_detail(self, db: AsyncSession, current_user, bank_id: int):
@@ -39,27 +39,31 @@ class QuestionBankService:
         )
         return {"total": total, "items": items}
 
-    async def update_bank(self, db: AsyncSession, current_user, bank_id: int, update_data: dict):
+    async def update_bank(self, db: AsyncSession, current_user, bank_id: int, update_data: dict) -> int:
         await self.get_bank_detail(db=db, current_user=current_user, bank_id=bank_id)
         update_dict = {k: v for k, v in update_data.items() if v is not None}
         if not update_dict:
-            return
+            return 0  # 如果没有需要更新的字段，直接返回 0
         try:
-            await question_banks_crud.update_question_bank(db=db, bank_id=bank_id, update_data=update_dict)
-            await db.commit()
+            # 捕获 CRUD 层返回的 rowcount
+            rowcount = await question_banks_crud.update_question_bank(db=db, bank_id=bank_id, update_data=update_dict)
+            db.commit()
+            return rowcount  # 将受影响行数返回给 Router 层
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
-    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int]):
+    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int]) -> int:
         # 修复：改为对象属性调用
         user_role = getattr(current_user, 'role', None)
         query_user_id = current_user.id if user_role != "admin" else None
         try:
-            await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
-            await db.commit()
+            # 捕获 CRUD 层返回的 rowcount
+            rowcount = await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
+            db.commit()
+            return rowcount  # 将受影响行数返回给 Router 层
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED, data={"error_detail": str(e)})
 
     async def export_banks_to_csv(self, db: AsyncSession, current_user) -> str:
@@ -90,6 +94,6 @@ class QuestionBankService:
         if objs_in:
             # 修复：改为 current_user.id
             await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_user.id)
-            await db.commit()
+            db.commit()
 
 qb_service = QuestionBankService()

@@ -21,10 +21,10 @@ class PracticeSessionService:
                 "last_viewed_index": 0, "status": "ongoing"
             }
             new_session = await practice_sessions_crud.create_practice_session(db=db, obj_in=obj_in)
-            await db.commit()
+            db.commit()
             return new_session
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.PRACTICE_SESSION_CREATE_FAILED, data={"error_detail": str(e)})
 
     async def get_session_detail(self, db: AsyncSession, session_id: int, user_id: int):
@@ -39,9 +39,9 @@ class PracticeSessionService:
         await self.get_session_detail(db=db, session_id=session_id, user_id=user_id) 
         try:
             await practice_sessions_crud.update_session_progress(db=db, session_id=session_id, last_viewed_index=0, status="completed")
-            await db.commit()
+            db.commit()
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
     async def export_sessions_to_csv(self, db: AsyncSession, user_id: int) -> str:
@@ -72,6 +72,6 @@ class PracticeSessionService:
             })
         if objs_in:
             await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
-            await db.commit()
+            db.commit()
 
 ps_service = PracticeSessionService()
