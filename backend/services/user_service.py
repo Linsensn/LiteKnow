@@ -22,6 +22,7 @@ async def wechat_login_service(db: Session, code: str):
     async with httpx.AsyncClient() as client:
         resp = await client.get(wx_url)
         wx_data = resp.json()
+        print(">>> 微信接口完整返回:", wx_data) # 临时添加这行代码
         
     openid = wx_data.get("openid")
     if not openid:
