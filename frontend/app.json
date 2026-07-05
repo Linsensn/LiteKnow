@@ -10,7 +10,12 @@
     "pages/bankList/bankList",
     "pages/bankDetail/bankDetail",
     "pages/favorites/favorites",
-    "pages/history/history"
+    "pages/history/history",
+    "pages/adminDashboard/adminDashboard",
+    "pages/adminUsers/adminUsers",
+    "pages/adminBanks/adminBanks",
+    "pages/adminSessions/adminSessions",
+    "pages/profileEdit/profileEdit"
   ],
   "window": {
     "navigationBarTextStyle": "black",

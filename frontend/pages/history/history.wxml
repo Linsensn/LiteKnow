@@ -1,12 +1,34 @@
 <view class="container">
-  <view class="list-wrapper" wx:if="{{list.length > 0}}">
-    <view class="item-card" wx:for="{{list}}" wx:key="id">
-      <view class="item-title">{{item.title}}</view>
-      <view class="item-meta">{{item.created_at}}</view>
-    </view>
-  </view>
   
-  <view class="empty-state" wx:else>
-    <text>暂无记录</text>
+  <block wx:if="{{sessionList.length > 0}}">
+    <view class="history-list">
+      <view class="history-card" wx:for="{{sessionList}}" wx:key="id">
+        <view class="card-header">
+          <view class="task-type">{{item.task_type || '通用任务'}}</view>
+          <view class="create-time">{{item.created_at}}</view>
+        </view>
+        
+        <view class="card-body">
+          <view class="content-preview">{{item.keyword || '暂无内容摘要...'}}</view>
+        </view>
+        
+        <view class="card-footer">
+          <text class="status-text {{item.status === 'completed' ? 'text-green' : 'text-gray'}}">{{item.status || '已完成'}}</text>
+          <view class="action-btn">查看详情 ></view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="loading-status">
+      <text wx:if="{{isLoading}}">努力加载中...</text>
+      <text wx:elif="{{!hasMore}}">没有更多记录啦 ~</text>
+    </view>
+  </block>
+
+  <view class="empty-state" wx:if="{{sessionList.length === 0 && !isLoading}}">
+    <text class="empty-icon">📭</text>
+    <text class="empty-text">您还没有历史学习记录哦</text>
+    <text class="empty-subtext">快去工作台开启一次 AI 辅导吧</text>
   </view>
+
 </view>

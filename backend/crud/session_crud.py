@@ -24,26 +24,33 @@ def get_session_by_id(db: DBSession, session_id: int) -> Session | None:
     """【单条查询】与【关联查询】(joinedload 级联拉取 user)"""
     return db.query(Session).options(joinedload(Session.user)).filter(Session.id == session_id, Session.is_deleted == False).first()
 
-def get_sessions(
+def get_sessions_paginated(
     db: DBSession, skip: int = 0, limit: int = 20, 
     user_id: int = None, keyword: str = None, task_type: str = None
 ):
-    """【分页查询】+【多条件组合查询】+【模糊查询】"""
+    """返回 (总条数, 当前页数据列表)"""
+    # 关联查询：使用 joinedload 提前加载 user 信息以避免 N+1 问题
     query = db.query(Session).options(joinedload(Session.user)).filter(Session.is_deleted == False)
     
     if user_id:
-        query = query.filter(Session.user_id == user_id)  
+        query = query.filter(Session.user_id == user_id)
     if task_type:
-        query = query.filter(Session.task_type == task_type)  
+        query = query.filter(Session.task_type == task_type)
     if keyword:
-        query = query.filter(Session.title.like(f"%{keyword}%")) # 模糊查询[cite: 26]
+        query = query.filter(Session.title.like(f"%{keyword}%"))
         
-    # 【排序】按时间倒序
-    return query.order_by(Session.created_at.desc()).offset(skip).limit(limit).all()
+    total = query.count()
+    sessions = query.order_by(Session.created_at.desc()).offset(skip).limit(limit).all()
+    return total, sessions
 
 def get_sessions_tree(db: DBSession, user_id: int) -> list[Session]:
-    """【树形查询】获取顶层节点，具体的树组装通常在 Service 层或前端完成"""
-    return db.query(Session).filter(Session.user_id == user_id, Session.parent_id == None, Session.is_deleted == False).all()
+    """树形查询：基于 parent_id 提取"""
+    # 这里仅演示提取顶层（parent_id == None）。实际项目中可通过 SQLAlchemy 的 CTE 递归查询或在内存中组装 children
+    return db.query(Session).filter(
+        Session.user_id == user_id, 
+        Session.parent_id == None, 
+        Session.is_deleted == False
+    ).all()
 
 # --- 3. 更新与状态切换 ---
 def update_session(db: DBSession, db_obj: Session, update_data: dict) -> Session:
