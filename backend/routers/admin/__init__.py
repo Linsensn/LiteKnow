@@ -15,7 +15,7 @@ admin_router = APIRouter(dependencies=[Depends(get_admin_user)] )
 from . import (
     user_admin_router,
     # admin_admin_router,
-    question_banks_admin_route,
+    question_banks_admin_router,
     bank_question_admin_router,
     favorite_admin_router,
     attachment_admin_router,
@@ -32,4 +32,3 @@ admin_router.include_router(attachment_admin_router.router)
 admin_router.include_router(message_admin_router.router)
 admin_router.include_router(sessions_admin_router.router)
 admin_router.include_router(question_banks_admin_router.router)
-
