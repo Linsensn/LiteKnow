@@ -1,4 +1,3 @@
-
 services:
   # MySQL 数据库服务
   mysql:
@@ -10,10 +9,10 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
-      - "3307:3306"  # 把宿主机的 3307 映射到容器的 3306
+      - "3307:3306" # 把宿主机的 3307 映射到容器的 3306
     volumes:
-      - mysql_data:/var/lib/mysql  # 数据持久化，避免每次重启数据库清空数据
-    healthcheck:      # 健康检查，确保后端等数据库完全启动后再连接
+      - mysql_data:/var/lib/mysql # 数据持久化，避免每次重启数据库清空数据
+    healthcheck: # 健康检查，确保后端等数据库完全启动后再连接
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
@@ -30,19 +29,19 @@ services:
   backend:
     image: linssen85012/liteknow-backend:latest
     build:
-      context: ./backend     # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
+      context: ./backend # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
       dockerfile: Dockerfile
     container_name: liteknow-backend-dev
     restart: always
     env_file:
       - .env
     ports:
-      - "8000:8000"          # 对外暴露 API 端口
+      - "8000:8000" # 对外暴露 API 端口
     volumes:
-      - ./backend:/app       # 挂载本地后端代码到容器内，实现代码保存即热重载
+      - ./backend:/app # 挂载本地后端代码到容器内，实现代码保存即热重载
     depends_on:
       mysql:
-        condition: service_healthy  # 等待 MySQL 健康检查通过后再启动后端
+        condition: service_healthy # 等待 MySQL 健康检查通过后再启动后端
       redis:
         condition: service_started
     # 修改为 app.main:app，指向 app 目录下的 main.py

@@ -13,4 +13,4 @@ class AttachmentResponse(BaseModel):
     extracted_text: Optional[str] = Field(None, description="OCR或PDF解析出的纯文本")
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True) 

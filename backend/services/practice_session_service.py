@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from crud.crud_practice_sessions import practice_session
+from crud.practice_sessions_crud import practice_session
 import random
 
 class PracticeSessionService:
