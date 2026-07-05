@@ -11,6 +11,8 @@ from services.question_bank_service import qb_service
 from crud import question_banks_crud
 from utils.response import success
 
+# 引入 User 模型作为正确的类型提示
+from models.users import User
 from schemas.common import ResponseModel, PageResult
 from schemas.question_bank_schemas import (
     QuestionBankCreate, QuestionBankUpdate, QuestionBankOut, 
@@ -18,26 +20,24 @@ from schemas.question_bank_schemas import (
 )
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/question-banks", tags=["Student - Question Banks"])
+router = APIRouter(prefix="/question-banks", tags=["Student/Question Banks"])
 
 @router.post("", response_model=ResponseModel[QuestionBankOut])
 async def create_my_question_bank(
-    data: QuestionBankCreate, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: QuestionBankCreate, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 创建专属题库"""
     result = await qb_service.create_bank(db=db, current_user=current_student, bank_in=data.model_dump())
-    audit_logger.info(f"Student {current_student['id']} created bank {result.id}")
+    audit_logger.info(f"Student {current_student.id} created bank {result.id}")
     return success(data=QuestionBankOut.model_validate(result), message="题库创建成功")
 
 @router.post("/batch", response_model=ResponseModel[dict])
 async def create_batch_question_banks(
-    data: List[QuestionBankCreate], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: List[QuestionBankCreate], db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 批量创建专属题库"""
     objs_in = [item.model_dump() for item in data]
-    await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_student["id"])
-    await db.commit()
-    audit_logger.info(f"Student {current_student['id']} batch created {len(objs_in)} banks")
+    await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_student.id)
+    db.commit()
+    audit_logger.info(f"Student {current_student.id} batch created {len(objs_in)} banks")
     return success(message=f"成功批量创建 {len(objs_in)} 个题库")
 
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]])
@@ -46,9 +46,8 @@ async def list_my_question_banks(
     sort_by: str = Query("desc", description="排序：asc或desc"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[查询] 模糊搜索我的题库列表，严格使用 PageResult"""
     result = await qb_service.get_banks(db=db, current_user=current_student, keyword=keyword, page=page, page_size=page_size, sort_by=sort_by)
     items_data = [QuestionBankOut.model_validate(item) for item in result["items"]]
     
@@ -62,10 +61,9 @@ async def list_my_question_banks(
 
 @router.get("/tree", response_model=ResponseModel[List[dict]])
 async def get_banks_tree(
-    db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[查询] 树形归类：按照创建题库的时间（年-月）生成多级视图"""
-    banks, _ = await question_banks_crud.get_multi_question_banks(db=db, user_id=current_student["id"], limit=1000)
+    banks, _ = await question_banks_crud.get_multi_question_banks(db=db, user_id=current_student.id, limit=1000)
     list_data = [QuestionBankOut.model_validate(b).model_dump() for b in banks]
     
     for b in list_data:
@@ -80,66 +78,59 @@ async def get_banks_tree(
 
 @router.get("/{bank_id}", response_model=ResponseModel[QuestionBankOut])
 async def get_my_question_bank_detail(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[查询] 获取自己的特定题库详细信息"""
     bank = await qb_service.get_bank_detail(db=db, current_user=current_student, bank_id=bank_id)
     return success(data=QuestionBankOut.model_validate(bank))
 
 @router.put("/{bank_id}", response_model=ResponseModel[dict])
 async def update_my_question_bank(
-    data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: QuestionBankUpdate, bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 修改题库描述或名称"""
     await qb_service.update_bank(db=db, current_user=current_student, bank_id=bank_id, update_data=data.model_dump())
-    audit_logger.info(f"Student {current_student['id']} updated bank {bank_id}")
+    audit_logger.info(f"Student {current_student.id} updated bank {bank_id}")
     return success(message="题库信息更新成功")
 
 @router.put("/batch/update", response_model=ResponseModel[dict])
 async def batch_update_my_banks(
-    data: BatchUpdateBankReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: BatchUpdateBankReq, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 批量修改题库的基础信息"""
-    await question_banks_crud.update_multi_banks(db=db, ids=data.ids, update_data=data.update_data.model_dump(exclude_unset=True), user_id=current_student["id"])
-    await db.commit()
-    audit_logger.info(f"Student {current_student['id']} batch updated banks {data.ids}")
+    await question_banks_crud.update_multi_banks(db=db, ids=data.ids, update_data=data.update_data.model_dump(exclude_unset=True), user_id=current_student.id)
+    db.commit()
+    audit_logger.info(f"Student {current_student.id} batch updated banks {data.ids}")
     return success(message=f"成功更新 {len(data.ids)} 个题库")
 
 @router.delete("/bulk", response_model=ResponseModel[dict])
 async def student_bulk_delete_question_banks(
-    data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 批量删除自己的题库"""
     await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=data.bank_ids)
-    audit_logger.warning(f"Student {current_student['id']} batch deleted banks {data.bank_ids}")
+    audit_logger.warning(f"Student {current_student.id} batch deleted banks {data.bank_ids}")
     return success(message=f"成功批量删除 {len(data.bank_ids)} 个题库")
 
 @router.delete("/{bank_id}", response_model=ResponseModel[dict])
 async def student_delete_single_bank(
-    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    bank_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[基础] 单条删除题库"""
     await qb_service.bulk_delete(db=db, current_user=current_student, bank_ids=[bank_id])
-    audit_logger.warning(f"Student {current_student['id']} deleted bank {bank_id}")
+    audit_logger.warning(f"Student {current_student.id} deleted bank {bank_id}")
     return success(message="题库删除成功")
 
 @router.get("/data/export")
 async def export_my_banks(
-    db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[业务] 将名下题库列表导出为 CSV"""
     csv_data = await qb_service.export_banks_to_csv(db=db, current_user=current_student)
-    audit_logger.info(f"Student {current_student['id']} exported banks to CSV")
+    audit_logger.info(f"Student {current_student.id} exported banks to CSV")
     return StreamingResponse(
         iter([csv_data.encode("utf-8-sig")]), media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=my_question_banks_{current_student['id']}.csv"}
+        headers={"Content-Disposition": f"attachment; filename=my_question_banks_{current_student.id}.csv"}
     )
 
 @router.post("/data/import", response_model=ResponseModel[dict])
 async def import_my_banks(
-    file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
-    """[业务] 从 CSV 文件快速生成空题库框架"""
     await qb_service.import_banks_from_csv(db=db, current_user=current_student, file=file)
-    audit_logger.info(f"Student {current_student['id']} imported banks from {file.filename}")
+    audit_logger.info(f"Student {current_student.id} imported banks from {file.filename}")
     return success(message="题库导入完成")
