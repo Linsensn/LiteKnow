@@ -7,7 +7,10 @@ redis
 
 alembic
 pydantic-settings
+pydantic-settings
 loguru
 python-jose
 httpx
 passlib
+
+python-multipart>=0.0.9
