@@ -90,5 +90,42 @@ class LLMClient:
             logger.error(f"LLM 非流式调用异常: {str(e)}")
             return f"LLM 调用异常: {str(e)}"
 
+    async def async_call_chat_stream(
+        self, system_prompt: str, messages: list[dict]
+    ) -> AsyncGenerator[str, None]:
+        """
+        带历史上下文的流式对话。
+        适用于：知识精讲等需要多轮对话记忆的场景。
+
+        Args:
+            system_prompt: 系统角色设定
+            messages: 历史对话列表 [
+                {"role": "user", "content": "..."},
+                {"role": "assistant", "content": "..."}
+            ]
+        """
+        if not self.enabled or not self.client:
+            yield "大模型未配置或未启用。"
+            return
+
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    *messages
+                ],
+                temperature=0.7,
+                stream=True
+            )
+
+            async for chunk in response:
+                delta_content = chunk.choices[0].delta.content
+                if delta_content:
+                    yield delta_content
+
+        except Exception as e:
+            logger.error(f"LLM 对话流式调用异常: {str(e)}")
+            yield f"\n[服务异常: {str(e)}]"
 # 实例化单例，整个项目只需 from utils.llm_client import llm_client 即可调用
 llm_client = LLMClient()

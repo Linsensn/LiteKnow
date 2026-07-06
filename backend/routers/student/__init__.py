@@ -10,6 +10,7 @@ student_router = APIRouter()
 # 修改这里的导入文件名
 from . import (
     ai_summary_router,
+    explain_router,  
     practice_records_student_router,
     practice_sessions_student_router,
     question_banks_student_router,
@@ -34,4 +35,4 @@ student_router.include_router(wrong_questions_student_router.router, dependencie
 student_router.include_router(practice_sessions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(ai_summary_router.router, dependencies=[Depends(get_current_user)])
-
+student_router.include_router(explain_router.router, dependencies=[Depends(get_current_user)])  
