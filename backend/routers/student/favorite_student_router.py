@@ -6,7 +6,7 @@ from config.database import get_db
 from utils.deps import get_current_user
 from utils.response import success
 from schemas.common import ResponseModel, PageResult
-from schemas.favorites import (
+from schemas.favorite_schema import (
     FavoriteResponse,
     FavoriteUpdate,
     FavoriteContentOperateReq,

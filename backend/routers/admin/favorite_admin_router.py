@@ -6,7 +6,7 @@ from config.database import get_db
 from utils.deps import get_admin_user
 from utils.response import success
 from schemas.common import ResponseModel, PageResult
-from schemas.favorites import FavoriteResponse, FavoriteAdminBatchDeleteReq
+from schemas.favorite_schema import FavoriteResponse, FavoriteAdminBatchDeleteReq
 from services.favorite_service import fav_service
 
 router = APIRouter(prefix="/favorites", tags=["Admin - 收藏管理"])
