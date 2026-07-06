@@ -126,7 +126,15 @@ class CRUDFavorite:
         result = db.execute(stmt)
         db.flush()
         return result.rowcount
-
+    
+    # 【补充】12. 管理端：批量删除收藏夹（无用户归属校验）
+    # 权限由路由层依赖注入保证，仅管理员可调用，直接按ID列表删除
+    async def delete_by_ids_admin(self, db: AsyncSession, *, ids: List[int]) -> int:
+        stmt = delete(Favorite).where(Favorite.id.in_(ids))
+        result = db.execute(stmt)
+        db.flush()
+        return result.rowcount
+    
     # 12. 管理端：收藏夹热度排行
     # 按收藏内容数量倒序排序，支持按收藏类型筛选，用于运营分析
     async def get_top_favorites(self, db: AsyncSession, limit: int = 10, content_type: Optional[str] = None):
