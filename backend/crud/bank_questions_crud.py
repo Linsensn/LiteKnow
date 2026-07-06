@@ -1,17 +1,16 @@
 # backend/crud/crud_bank_questions.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func, desc
+from sqlalchemy import select, update, func, desc,delete
 from typing import List, Optional
 from models.bank_questions import BankQuestion
 
 
 class CRUDBankQuestion:
 
-    # 1. 单条查询（自动过滤逻辑删除）
+    # 1. 单条查询
     async def get(self, db: AsyncSession, question_id: int) -> Optional[BankQuestion]:
         stmt = select(BankQuestion).where(
             BankQuestion.id == question_id,
-            BankQuestion.is_deleted == False
         )
         result = db.execute(stmt)
         return result.scalar_first()
@@ -22,7 +21,6 @@ class CRUDBankQuestion:
         bank_id: Optional[int] = None, keyword: Optional[str] = None,
         difficulty: Optional[str] = None
     ) -> List[BankQuestion]:
-        stmt = select(BankQuestion).where(BankQuestion.is_deleted == False)
 
         if bank_id:
             stmt = stmt.where(BankQuestion.bank_id == bank_id)
@@ -40,7 +38,6 @@ class CRUDBankQuestion:
         self, db: AsyncSession, *, bank_id: Optional[int] = None,
         keyword: Optional[str] = None, difficulty: Optional[str] = None
     ) -> int:
-        stmt = select(func.count(BankQuestion.id)).where(BankQuestion.is_deleted == False)
 
         if bank_id:
             stmt = stmt.where(BankQuestion.bank_id == bank_id)
@@ -70,17 +67,12 @@ class CRUDBankQuestion:
     async def update(self, db: AsyncSession, *, question_id: int, update_data: dict):
         stmt = update(BankQuestion).where(
             BankQuestion.id == question_id,
-            BankQuestion.is_deleted == False
         ).values(**update_data)
         db.execute(stmt)
 
-    # 7. 逻辑删除
-    async def delete_logical(self, db: AsyncSession, *, question_id: int):
-        stmt = update(BankQuestion).where(
-            BankQuestion.id == question_id,
-            BankQuestion.is_deleted == False
-        ).values(is_deleted=True)
+     # 7. 物理删除
+    async def delete(self, db: AsyncSession, *, question_id: int):
+        stmt = delete(BankQuestion).where(BankQuestion.id == question_id)
         db.execute(stmt)
-
 
 bank_question = CRUDBankQuestion()
