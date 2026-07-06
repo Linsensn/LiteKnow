@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from config.database import SessionLocal
+from fastapi.openapi.utils import get_openapi
 
 from config.settings import settings
 from config.logger_config import setup_logger
@@ -20,7 +21,7 @@ from models.messages import Message
 from models.practice_records import PracticeRecord
 from models.practice_sessions import PracticeSession
 from models.question_banks import QuestionBank
-from models.sessions import Session
+from models.sessions import Session as SessionModel
 from models.users import User
 from models.wrong_questions import WrongQuestion
 from models.database import Base
@@ -83,7 +84,32 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 # 将路由挂载到 FastAPI 实例上
 from routers import root_router
-app.include_router(root_router, prefix="/api/v1", tags=["API v1"])
+app.include_router(root_router, prefix="/api/v1")
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    # 1. 生成标准的 OpenAPI schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        openapi_version=app.openapi_version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # 2. 遍历所有路由，强制删除端点级别的 security 配置
+    if "paths" in openapi_schema:
+        for path_url, path_item in openapi_schema["paths"].items():
+            for method, operation in path_item.items():
+                if isinstance(operation, dict) and "security" in operation:
+                    del operation["security"]  # 核心：删除独立鉴权标签
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 def init_db_data(db: Session):
     """初始化数据库种子数据"""
@@ -113,7 +139,7 @@ def init_db_data(db: Session):
 
             # 4. 插入会话数据 (依赖 users)
             for session_data in SEED_SESSIONS:
-                db.add(Session(**session_data))
+                db.add(SessionModel(**session_data))
             db.commit()
             logger.info("  -  会话数据 (sessions) 初始化完成")
 
