@@ -21,7 +21,7 @@ class CRUDBankQuestion:
         bank_id: Optional[int] = None, keyword: Optional[str] = None,
         difficulty: Optional[str] = None
     ) -> List[BankQuestion]:
-
+        stmt = select(BankQuestion)
         if bank_id:
             stmt = stmt.where(BankQuestion.bank_id == bank_id)
         if difficulty:
@@ -38,7 +38,7 @@ class CRUDBankQuestion:
         self, db: AsyncSession, *, bank_id: Optional[int] = None,
         keyword: Optional[str] = None, difficulty: Optional[str] = None
     ) -> int:
-
+        stmt = select(func.count(BankQuestion.id))
         if bank_id:
             stmt = stmt.where(BankQuestion.bank_id == bank_id)
         if difficulty:
