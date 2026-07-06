@@ -41,10 +41,10 @@ async def import_wrong_questions(
 
 @router.get("/list", response_model=ResponseModel[PageResult[WrongQuestionOut]])
 async def list_my_wrong_questions(
-    keyword: str = Query(None, description="搜索错题内容"),
-    sort_by: str = Query("desc", description="排序：asc或desc"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    keyword: str = Query(None, description="搜索错题内容", examples=["TSP遗传算法缺陷修复"]),
+    sort_by: str = Query("desc", description="排序：asc或desc", examples=["desc"]),
+    page: int = Query(1, ge=1, description="页码", examples=[1]),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量", examples=[20]),
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     result = await wq_service.get_my_wrong_questions(
@@ -74,7 +74,7 @@ async def get_wrong_questions_tree(
 
 @router.get("/{wq_id}", response_model=ResponseModel[WrongQuestionOut])
 async def get_wrong_question_detail(
-    wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     wq = await wq_service.get_wrong_question_detail(db=db, wq_id=wq_id, user_id=current_student.id)
     return success(data=WrongQuestionOut.model_validate(wq))
@@ -92,7 +92,7 @@ async def batch_update_wrong_questions(
 
 @router.put("/{wq_id}", response_model=ResponseModel[dict])
 async def update_single_wrong_question(
-    data: WrongQuestionUpdate, wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    data: WrongQuestionUpdate, wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     updated_count = await wrong_questions_crud.update_wrong_question(
         db=db, id=wq_id, user_id=current_student.id, update_data=data.model_dump(exclude_unset=True)
@@ -112,7 +112,7 @@ async def remove_multi_wrong_questions(
 
 @router.delete("/{wq_id}", response_model=ResponseModel[dict])
 async def remove_wrong_question(
-    wq_id: int = Path(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
+    wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     deleted_count = await wq_service.remove_wrong_question(db=db, wq_id=wq_id, user_id=current_student.id)
     audit_logger.warning(f"Student {current_student.id} removed wrong question {wq_id}")
