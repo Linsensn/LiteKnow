@@ -1,5 +1,5 @@
 # backend/routers/student/messages_student_route.py
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
 from utils.deps import get_current_user
@@ -20,6 +20,19 @@ async def get_session_messages(
     data = [MessageResponse.model_validate(item).model_dump() for item in items]
     return success(data=data)
 
+@router.get("", summary="获取指定会话的历史消息（按 session_id 查询参数）")
+async def get_session_messages_by_query(
+    session_id: int = Query(..., description="会话ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    """
+    根据 session_id 查询参数获取历史聊天记录，用于前端恢复对话上下文。
+    返回格式: { "code": 200, "success": true, "data": { "list": [...] } }
+    """
+    items = await msg_service.get_session_messages(db, session_id=session_id)
+    messages = [MessageResponse.model_validate(item).model_dump() for item in items]
+    return success(data={"list": messages})
 
 @router.post("", summary="写入单条消息")
 async def create_message(

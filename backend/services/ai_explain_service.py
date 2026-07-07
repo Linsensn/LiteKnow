@@ -1,10 +1,10 @@
-# backend/services/explain_service.py
+# backend/services/ai_explain_service.py
 """
 @Desc    : 知识精讲服务 — 多轮对话式答疑
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
+from utils.exceptions import CustomAPIException, ErrorCode
 import logging
 import json
 
@@ -12,9 +12,9 @@ from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 from utils.llm_client import llm_client
 
-logger = logging.getLogger("liteknow.explain")
+logger = logging.getLogger("liteknow.ai_explain")
 
-class ExplainService:
+class AIExplainService:
     def __init__(self):
         self.system_prompt = (
             "你是一位耐心、专业的学科教师。请用通俗易懂的语言解答学生提出的问题。\n"
@@ -56,7 +56,7 @@ class ExplainService:
                 messages=chat_history
             )
 
-            # 5. SSE 代理生成器（与摘要服务一致）
+            # 5. SSE 代理生成器
             async def proxy_generator():
                 full_ai_content = ""
                 async for chunk in llm_generator:
@@ -81,9 +81,13 @@ class ExplainService:
 
             return proxy_generator()
 
+        except CustomAPIException:
+            raise
         except Exception as e:
             logger.error(f"知识精讲生成失败: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"知识精讲请求失败: {str(e)}")
+            raise CustomAPIException(
+                code=ErrorCode.AI_SERVICE_BUSY,
+                message=f"知识精讲请求失败: {str(e)}"
+            )
 
-
-explain_service = ExplainService()
+ai_explain_service = AIExplainService()

@@ -12,33 +12,85 @@ class FavoriteBase(BaseModel):
 
 class FavoriteCreate(FavoriteBase):
     """系统内部创建收藏夹使用，学生端不暴露创建接口"""
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "content_type": "question",
+                "cover_image_url": "https://oss.example.com/covers/xxx.jpg",
+                "source_session": 1024
+            }
+        }
+    )
+
 
 
 class FavoriteUpdate(BaseModel):
     cover_image_url: Optional[str] = Field(None, description="收藏夹封面/缩略图")
-
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "cover_image_url": "https://oss.example.com/covers/new_cover.jpg"
+            }
+        }
+    )
 
 class FavoriteResponse(FavoriteBase):
-    id: int
-    user_id: int
+    id: int = Field(..., description="收藏夹ID")
+    user_id: int = Field(..., description="所属用户ID")
     content_ids: List[int] = Field(..., description="收藏夹内的内容ID数组")
-    created_at: datetime
-    updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+    created_at: datetime = Field(..., description="创建时间")
+    updated_at: datetime = Field(..., description="更新时间")
 
+    
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": 1,
+                "user_id": 8848,
+                "content_type": "question",
+                "cover_image_url": "https://oss.example.com/covers/xxx.jpg",
+                "source_session": 1024,
+                "content_ids": [5001, 5002, 5003],
+                "created_at": "2026-07-05T21:30:00",
+                "updated_at": "2026-07-05T22:00:00"
+            }
+        }
+    )
 
 # 切换收藏/单条内容操作请求体
 class FavoriteContentOperateReq(BaseModel):
     content_type: str = Field(..., description="收藏夹类型: 题目/摘要")
     content_id: int = Field(..., description="要添加/移除的内容ID")
-
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "content_type": "question",
+                "content_id": 5001
+            }
+        }
+    )
 
 # 批量移除内容请求体
 class FavoriteBatchRemoveReq(BaseModel):
     content_ids: List[int] = Field(..., description="要移除的内容ID列表")
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "content_ids": [5001, 5002, 5003]
+            }
+        }
+    )
 
 # 管理端批量删除收藏夹请求体
 class FavoriteAdminBatchDeleteReq(BaseModel):
     ids: List[int] = Field(..., description="要删除的收藏夹ID列表")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "ids": [1, 2, 3]
+            }
+        }
+    )
