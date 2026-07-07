@@ -20,7 +20,9 @@ from schemas.wrong_question_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/wrong-questions", tags=["Student/Wrong Questions"])
 
-@router.post("", response_model=ResponseModel[WrongQuestionOut])
+router = APIRouter(tags=["Student/Wrong Questions"])
+
+@router.post("", response_model=ResponseModel[WrongQuestionOut], summary="新增单道错题")
 async def create_single_wrong_question(
     data: WrongQuestionImport, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -30,7 +32,7 @@ async def create_single_wrong_question(
     audit_logger.info(f"Student {current_student.id} manually created wrong question {result.id}")
     return success(data=WrongQuestionOut.model_validate(result), message="错题新增成功")
 
-@router.post("/bulk-import", response_model=ResponseModel[dict])
+@router.post("/bulk-import", response_model=ResponseModel[dict], summary="批量导入错题")
 async def import_wrong_questions(
     data: List[WrongQuestionImport], db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -39,7 +41,7 @@ async def import_wrong_questions(
     audit_logger.info(f"Student {current_student.id} batch imported {count} wrong questions")
     return success(message=f"成功导入 {count} 道错题")
 
-@router.get("/list", response_model=ResponseModel[PageResult[WrongQuestionOut]])
+@router.get("/list", response_model=ResponseModel[PageResult[WrongQuestionOut]], summary="分页获取错题本列表")
 async def list_my_wrong_questions(
     keyword: str = Query(None, description="搜索错题内容", examples=["TSP遗传算法缺陷修复"]),
     sort_by: str = Query("desc", description="排序：asc或desc", examples=["desc"]),
@@ -55,7 +57,7 @@ async def list_my_wrong_questions(
     page_data = PageResult(list=items_data, total=result["total"], page=page, page_size=page_size)
     return success(data=page_data, message="获取错题本成功")
 
-@router.get("/tree", response_model=ResponseModel[List[dict]])
+@router.get("/tree", response_model=ResponseModel[List[dict]], summary="获取按月份分组的错题树")
 async def get_wrong_questions_tree(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -72,14 +74,14 @@ async def get_wrong_questions_tree(
     ]
     return success(data=tree_data)
 
-@router.get("/{wq_id}", response_model=ResponseModel[WrongQuestionOut])
+@router.get("/{wq_id}", response_model=ResponseModel[WrongQuestionOut], summary="获取单条错题详情")
 async def get_wrong_question_detail(
     wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     wq = await wq_service.get_wrong_question_detail(db=db, wq_id=wq_id, user_id=current_student.id)
     return success(data=WrongQuestionOut.model_validate(wq))
 
-@router.put("/batch", response_model=ResponseModel[dict])
+@router.put("/batch", response_model=ResponseModel[dict], summary="批量更新错题")
 async def batch_update_wrong_questions(
     data: BatchUpdateWrongQuestionsReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -90,7 +92,7 @@ async def batch_update_wrong_questions(
     audit_logger.info(f"Student {current_student.id} batch updated wrong questions {data.ids}")
     return success(message=f"成功批量更新 {updated_count} 道错题")
 
-@router.put("/{wq_id}", response_model=ResponseModel[dict])
+@router.put("/{wq_id}", response_model=ResponseModel[dict], summary="更新单条错题")
 async def update_single_wrong_question(
     data: WrongQuestionUpdate, wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -101,16 +103,15 @@ async def update_single_wrong_question(
     audit_logger.info(f"Student {current_student.id} updated wrong question {wq_id}")
     return success(message=f"错题更新成功，影响 {updated_count} 条")
 
-@router.delete("/bulk", response_model=ResponseModel[dict])
+@router.delete("/bulk", response_model=ResponseModel[dict], summary="批量移出错题")
 async def remove_multi_wrong_questions(
     payload: BatchDeleteWrongQuestionsReq, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
     deleted_count = await wq_service.bulk_remove_wrong_questions(db=db, wq_ids=payload.ids, user_id=current_student.id)
     audit_logger.warning(f"Student {current_student.id} batch removed wrong questions {payload.ids}")
-    # 兼容若 Service 无返回值的情况
     return success(message=f"成功移出 {deleted_count or 0} 道错题")
 
-@router.delete("/{wq_id}", response_model=ResponseModel[dict])
+@router.delete("/{wq_id}", response_model=ResponseModel[dict], summary="移出单条错题")
 async def remove_wrong_question(
     wq_id: int = Path(..., description="错题ID", examples=[9527]), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -118,7 +119,7 @@ async def remove_wrong_question(
     audit_logger.warning(f"Student {current_student.id} removed wrong question {wq_id}")
     return success(message=f"已成功移出 {deleted_count or 0} 道错题")
 
-@router.get("/data/export")
+@router.get("/data/export", summary="导出错题为CSV")
 async def export_wrong_questions(
     db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
@@ -129,7 +130,7 @@ async def export_wrong_questions(
         headers={"Content-Disposition": f"attachment; filename=wrong_questions_{current_student.id}.csv"}
     )
 
-@router.post("/data/import", response_model=ResponseModel[dict])
+@router.post("/data/import", response_model=ResponseModel[dict], summary="从CSV导入错题")
 async def import_wrong_questions_csv(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):

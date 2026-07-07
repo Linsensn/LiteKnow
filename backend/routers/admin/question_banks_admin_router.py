@@ -15,6 +15,8 @@ from schemas.question_bank_schemas import QuestionBankOut, QuestionBankUpdate, B
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/admin/question-banks", tags=["Admin - Question Banks"])
 
+router = APIRouter(tags=["Admin/Question Banks"])
+
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]], summary="管理员分页搜索全局题库")
 async def admin_list_question_banks(
     keyword: str = Query(None, description="模糊搜索题库名或描述", examples=["MQTT通信与ThingsBoard平台配置"]),
