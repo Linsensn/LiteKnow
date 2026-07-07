@@ -15,34 +15,44 @@ from utils.llm_client import llm_client
 logger = logging.getLogger("liteknow.ai_quiz")
 
 class AIQuizService:
-    def __init__(self):
-        self.system_prompt = (
-            "你是一个严谨且专业的出题专家。请仔细阅读用户提供的课文要点，自主生成3到5道单项选择题。"
+    def _build_dynamic_prompt(self, count: int, difficulty: str, types_str: str) -> str:
+        """根据用户需求动态生成 Prompt"""
+        return (
+            f"你是一个严谨且专业的出题专家。请仔细阅读用户提供的课文要点，自主生成 {count} 道题目。\n"
+            f"题目整体难度应控制在：{difficulty}（easy=简单, medium=中等, hard=困难）。\n"
+            f"允许生成的题型包括：{types_str}（single_choice=单选, multi_choice=多选, true_false=判断, essay=简答/应用题）。请根据知识点合理分配题型。\n"
             "要求：\n"
-            "1. 必须以严格的 JSON 对象格式输出，不要包含任何 Markdown 标记或多余的解释文本。\n"
-            "2. 你的输出必须完全符合以下 JSON 结构，严格遵守字段的数据类型规范：\n"
+            "1. 必须以严格的 JSON 对象格式输出，不要包含任何 Markdown 标记。\n"
+            "2. 你的输出必须完全符合以下 JSON 结构：\n"
             "{\n"
             '  "questions": [\n'
             "    {\n"
-            '      "chapter_name": "根据课本内容提取的简短章节名称",\n'
-            '      "question_type": "single_choice",\n'
-            '      "difficulty_level": "medium",\n'
+            '      "chapter_name": "简短章节名称",\n'
+            '      "question_type": "这里填具体的题型（如 essay）",\n'
+            '      "difficulty_level": "当前题目的难度",\n'
             '      "content": "题干内容",\n'
-            '      "options_json": [\n'
-            '        {"id": "A", "content": "第一个选项的具体内容"},\n'
-            '        {"id": "B", "content": "第二个选项的具体内容"},\n'
-            '        {"id": "C", "content": "第三个选项的具体内容"},\n'
-            '        {"id": "D", "content": "第四个选项的具体内容"}\n'
-            '      ],\n'
-            '      "correct_answer": ["A"],\n'
-            '      "ai_analysis": "在此进行详细解析。你必须自己校验这道题正确答案的合理性，解释为什么该选项正确，并说明其他选项为什么错误。"\n'
+            '      "options_json": [ '
+            '         {"id": "A", "content": "选项内容"} '
+            '      ], // 如果是简答题或判断题，此数组必须为空 []\n'
+            '      "correct_answer": ["A", "B"], // 简答题填关键得分点，判断题填 ["正确"] 或 ["错误"]\n'
+            '      "ai_analysis": "详细解析"\n'
             "    }\n"
             "  ]\n"
             "}"
         )
-
+    
     async def generate_and_save_quiz(
-        self, db: AsyncSession, user_id: int, session_id: int, bank_name: str, user_content: str
+        self, 
+        db: AsyncSession, 
+        user_id: int, 
+        session_id: int, 
+        bank_name: str, 
+        user_content: str,
+        model_name: str = None, 
+        question_count: int = 5,
+        difficulty: str = "medium",
+        question_types: str = "single_choice",
+        target_bank_id: int = None
     ) -> dict:
         try:
             # 1. 记录用户的输入
@@ -54,11 +64,13 @@ class AIQuizService:
             )
             await msg_service.create_message(db, obj_in=user_msg_in)
 
-            # 2. 调用大模型
+            # 2. 动态构建系统提示词并调用大模型
+            dynamic_prompt = self._build_dynamic_prompt(question_count, difficulty, question_types)
             ai_response_text = await llm_client.async_call_llm(
-                system_prompt=self.system_prompt,
+                system_prompt=dynamic_prompt,
                 user_prompt=user_content,
-                response_format="json_object"
+                response_format="json_object",
+                target_model=model_name
             )
 
             # 3. 解析JSON数据
@@ -73,26 +85,45 @@ class AIQuizService:
             if not questions:
                 raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI未能生成有效的题目。")
 
-            # 4. 创建题库
-            new_bank = QuestionBank(
-                user_id=user_id,
-                bank_name=bank_name,
-                description="由AI自主分析课文内容后生成的智能测验，已自动完成答案合理性校验。",
-                total_questions=len(questions)
-            )
-            db.add(new_bank)
-            await db.flush()
+            # ================= 4. 追加模式的核心实现 =================
+            if target_bank_id:
+                # 追加模式：验证目标题库是否存在，且是否属于当前用户
+                # 这里需要你确保 models 里有 QuestionBank 并在上方 import
+                from sqlalchemy import select
+                result = db.execute(
+                    select(QuestionBank).where(QuestionBank.id == target_bank_id, QuestionBank.user_id == user_id)
+                )
+                existing_bank = result.scalars().first()
+                if not existing_bank:
+                    raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="指定的题库不存在或无权限追加")
+                
+                # 更新老题库的总题数
+                existing_bank.total_questions += len(questions)
+                bank_id = existing_bank.id
+                db.add(existing_bank)
+            else:
+                # 新建模式
+                new_bank = QuestionBank(
+                    user_id=user_id,
+                    bank_name=bank_name,
+                    description=f"AI生成的测试题（难度:{difficulty}）",
+                    total_questions=len(questions)
+                )
+                db.add(new_bank)
+                db.flush() # 这里确保你传进来的 db 是 AsyncSession
+                bank_id = new_bank.id
 
-            # 5. 批量存入题目
+            # 5. 批量存入题目 (将原本的 new_bank.id 替换为最终决定的 bank_id)
             bank_questions_to_insert = [
                 BankQuestion(
-                    bank_id=new_bank.id,
+                    bank_id=bank_id, 
                     chapter_name="AI智能提取",
-                    question_type="single_choice",
-                    difficulty_level="medium",
+                    question_type=q.get("question_type", "single_choice"),
+                    difficulty_level=q.get("difficulty_level", difficulty),
                     content=q.get("content", ""),
                     options_json=q.get("options_json", []),
-                    correct_answer=q.get("correct_answer", ""),
+                    # 注意：如果大模型把答案弄成了字符串，这里统一转成JSON字符串存入
+                    correct_answer=json.dumps(q.get("correct_answer", []), ensure_ascii=False) if isinstance(q.get("correct_answer"), list) else q.get("correct_answer", ""),
                     ai_analysis=q.get("ai_analysis", "")
                 ) for q in questions
             ]
@@ -107,20 +138,21 @@ class AIQuizService:
             )
             await msg_service.create_message(db, obj_in=ai_msg_in)
             
-            await db.commit()
+            db.commit()
 
             # 返回纯净的业务数据字典，交由 Router 去包装
             return {
-                "bank_id": new_bank.id,
-                "total_questions": len(questions)
+                "bank_id": bank_id,
+                "added_questions": len(questions),
+                "is_append": target_bank_id is not None
             }
 
         except CustomAPIException as ce:
             # 捕获已知业务异常直接向上抛出
-            await db.rollback()
+            db.rollback()
             raise ce
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             logger.error(f"测验生成与落库失败: {str(e)}")
             # 拦截未知异常，统一转为业务异常
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED, message=f"智能测验处理失败: {str(e)}")

@@ -14,6 +14,17 @@ class AttachmentService:
             raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
         return attachment
 
+    async def get_attachment_by_id(self, db: AsyncSession, att_id: int, user_id: int):
+        """
+        根据 ID 和 用户ID 获取附件（附带权限校验）
+        """
+        attachment = await attachment_crud.get(db, attachment_id=att_id) 
+        
+        if not attachment or attachment.user_id != user_id:
+            return None
+            
+        return attachment
+
     # 2. 分页获取附件列表（通用，通过 user_id 控制权限范围）
     async def get_attachment_page(
         self, db: AsyncSession, *, user_id: int = None,
@@ -50,6 +61,7 @@ class AttachmentService:
             return new_attachment
         except Exception as e:
             db.rollback()
+            print(f"！！！数据库插入失败的真正原因：{str(e)} ！！！") # 看控制台打印的这行字
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 4. 删除附件（学生端需校验归属权）
