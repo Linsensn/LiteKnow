@@ -25,6 +25,16 @@ services:
     ports:
       - "6379:6379"
 
+  ocr:
+    build:
+      context: ./ocr # 指向我们刚才新建的 ocr 文件夹
+      dockerfile: Dockerfile
+    container_name: liteknow-ocr-dev
+    restart: always
+    ports:
+      - "9003:9003" # rapidocr_api 默认端口是 9003
+
+
   # FastAPI 后端服务
   backend:
     image: linssen85012/liteknow-backend:latest
