@@ -11,7 +11,7 @@ class CRUDAttachment:
         """单条查询：获取附件详情"""
         stmt = select(Attachment).where(Attachment.id == attachment_id)
         result = db.execute(stmt)
-        return result.scalar_first()
+        return result.scalars().first() 
 
     async def get_multi_attachments(
         self, db: AsyncSession, *, user_id: Optional[int] = None,
@@ -68,7 +68,7 @@ class CRUDAttachment:
             stmt = stmt.where(Attachment.file_type.ilike(f"%{file_type}%"))
 
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar_one() or 0
 
     # 4. 带用户归属创建
     async def create_with_owner(

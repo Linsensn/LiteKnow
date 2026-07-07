@@ -1,6 +1,6 @@
 # backend/schemas/favorites.py
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Any 
 from datetime import datetime
 
 
@@ -94,3 +94,68 @@ class FavoriteAdminBatchDeleteReq(BaseModel):
             }
         }
     )
+
+# ──────────── 收藏状态查询 ────────────
+
+class FavoriteStatusResponse(BaseModel):
+    """单条内容收藏状态"""
+    is_favorited: bool = Field(..., description="是否已收藏")
+    folder_id: Optional[int] = Field(None, description="所属收藏夹ID")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "is_favorited": True,
+                "folder_id": 1
+            }
+        }
+    )
+
+class BatchFavStatusRequest(BaseModel):
+    """批量查询收藏状态请求"""
+    content_type: str = Field(..., description="收藏类型: question/summary/knowledge")
+    content_ids: List[int] = Field(..., description="要查询状态的内容ID列表")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "content_type": "question",
+                "content_ids": [5001, 5002, 5003]
+            }
+        }
+    )
+
+class BatchFavStatusResponse(BaseModel):
+    """批量查询收藏状态响应"""
+    status_map: dict[str, bool] = Field(..., description="内容ID → 是否收藏")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "status_map": {"5001": True, "5002": False, "5003": True}
+            }
+        }
+    )
+
+class FolderContentsResponse(BaseModel):
+    """收藏夹内容详情（含解析后的具体内容）"""
+    folder: FavoriteResponse = Field(..., description="收藏夹元信息")
+    contents: List[Any] = Field(default=[], description="内容列表（按content_type返回对应结构）")
+    total: int = Field(..., description="内容总数")
+    page: int = Field(1, description="当前页码")
+    page_size: int = Field(20, description="每页数量")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "folder": {
+                    "id": 1, "content_type": "question", "content_ids": [5001, 5002],
+                    "cover_image_url": "...", "created_at": "2026-07-05T21:30:00"
+                },
+                "contents": [
+                    {"id": 5001, "content": "1+1等于几？", "question_type": "single_choice"}
+                ],
+                "total": 2, "page": 1, "page_size": 20
+            }
+        }
+    )   

@@ -14,7 +14,7 @@ class CRUDFavorite:
         if user_id:
             stmt = stmt.where(Favorite.user_id == user_id)
         result = db.execute(stmt)
-        return result.scalar_first()
+        return result.scalars().first() 
 
     # 2. 按收藏类型获取用户的对应收藏夹
     # 用于收藏切换时自动定位默认夹，每个用户每类仅一个收藏夹
@@ -26,7 +26,7 @@ class CRUDFavorite:
             Favorite.content_type == content_type
         )
         result = db.execute(stmt)
-        return result.scalar_first()
+        return result.scalars().first() 
 
     # 3. 学生端：分页获取用户收藏夹列表
     # 支持按收藏类型筛选，按创建时间倒序排列

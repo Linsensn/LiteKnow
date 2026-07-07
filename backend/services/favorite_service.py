@@ -109,9 +109,75 @@ class FavoriteService:
                 message=str(e)
             )
 
+# ──────────── 收藏状态查询 ────────────
+
+    # 6. 检查单条内容是否已收藏
+    async def check_favorite_status(
+        self, db: AsyncSession, user_id: int, content_type: str, content_id: int
+    ) -> dict:
+        """查单个内容收藏状态，前端用于详情页星星显示"""
+        folder = await favorite_crud.get_by_type(db, user_id=user_id, content_type=content_type)
+        if not folder:
+            return {"is_favorited": False, "folder_id": None}
+        return {
+            "is_favorited": content_id in (folder.content_ids or []),
+            "folder_id": folder.id
+        }
+
+    # 7. 批量检查收藏状态
+    async def batch_check_status(
+        self, db: AsyncSession, user_id: int, content_type: str, content_ids: List[int]
+    ) -> dict:
+        """批量查收藏状态，前端用于列表页批量标星"""
+        folder = await favorite_crud.get_by_type(db, user_id=user_id, content_type=content_type)
+        if not folder:
+            return {str(cid): False for cid in content_ids}
+        fav_set = set(folder.content_ids or [])
+        return {str(cid): cid in fav_set for cid in content_ids}
+
+    # 8. 获取收藏夹内容详情（按 content_type 分发查对应表）
+    async def get_folder_contents(
+        self, db: AsyncSession, user_id: int, folder_id: int,
+        page: int = 1, page_size: int = 20
+    ) -> dict:
+        """把 content_ids 解析成具体内容返回"""
+        folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
+        if not folder:
+            raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="收藏夹不存在")
+
+        content_ids = folder.content_ids or []
+        total = len(content_ids)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_ids = content_ids[start:end]
+
+        # 按 content_type 分发到不同业务表
+        if not page_ids:
+            items = []
+        elif folder.content_type == "question":
+            from crud.bank_questions_crud import get_bank_questions_by_ids
+            items = await get_bank_questions_by_ids(db, ids=page_ids)
+            items = [q.model_dump() for q in items]
+        elif folder.content_type == "summary":
+            from crud.messages_crud import msg_crud
+            items = await msg_crud.get_by_ids(db, ids=page_ids)
+            items = [m.model_dump() for m in items]
+        else:
+            # knowledge 或其他类型暂不支持
+            items = []
+
+        return {
+            "folder": folder,
+            "contents": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size
+        }
+    
+
     # ==================== 管理端方法 ====================
 
-    # 6. 管理端：全量分页查询收藏夹
+    # 管理端：全量分页查询收藏夹
     async def get_folders_admin(
         self, db: AsyncSession, *, page: int = 1, page_size: int = 20,
         content_type: Optional[str] = None, user_id: Optional[int] = None
