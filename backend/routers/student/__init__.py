@@ -1,4 +1,3 @@
-
 r"""
 @Desc    : 微信小程序学生端模块路由初始化
 """
@@ -7,10 +6,10 @@ from fastapi import APIRouter, Depends
 from utils.deps import get_current_user, get_admin_user
 student_router = APIRouter()
 
-# 修改这里的导入文件名
+# 1. 在这里导入 ai_bank_router
 from . import (
     ai_summary_router,
-    explain_router,  
+    ai_bank_router,           # <-- 新增这一行：导入你的智能测验/题库路由
     practice_records_student_router,
     practice_sessions_student_router,
     question_banks_student_router,
@@ -35,4 +34,6 @@ student_router.include_router(wrong_questions_student_router.router, dependencie
 student_router.include_router(practice_sessions_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(ai_summary_router.router, dependencies=[Depends(get_current_user)])
-student_router.include_router(explain_router.router, dependencies=[Depends(get_current_user)])  
+
+# 2. 在这里挂载 ai_bank_router
+student_router.include_router(ai_bank_router.router, dependencies=[Depends(get_current_user)]) # <-- 新增这一行：挂载你的路由
