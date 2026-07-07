@@ -1,16 +1,30 @@
 import csv
-import json
+import random
 from io import StringIO
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
 from crud import practice_sessions_crud
+from models.bank_questions import BankQuestion
 from utils.exceptions import CustomAPIException, ErrorCode
-import random
 
 class PracticeSessionService:
     async def start_new_session(self, db: AsyncSession, user_id: int, bank_id: int, mode: str, is_options_shuffled: bool, question_sequence: list):
         """核心业务：创建会话（根据模式混淆题目顺序）"""
-        sequence = question_sequence.copy()
+        sequence = question_sequence.copy() if question_sequence else []
+        
+        # 核心逻辑：如果前端传了空序列，后端根据 bank_id 主动查询所有题目ID
+        if not sequence:
+            stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
+            result = await db.execute(stmt)
+            sequence = list(result.scalars().all())
+            
+        # 如果题库确实没题，直接抛错拦截
+        if not sequence:
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "该题库下暂时没有题目哦"})
+
+        # 处理随机模式
         if mode == "random":
             random.shuffle(sequence)
             

@@ -7,7 +7,7 @@ class PracticeSessionCreate(BaseModel):
     bank_id: int = Field(..., description="要练习的题库ID")
     practice_mode: str = Field(..., description="练习模式：sequential, random, mock 等")
     is_options_shuffled: Optional[bool] = Field(default=False, description="是否开启选项乱序(防作弊/提高难度)")
-    question_sequence: List[int] = Field(..., description="初始题号列表序列")
+    question_sequence: List[int] = Field(default_factory=list, description="初始题号列表序列（可不传，由后端自动生成）")
 
     model_config = ConfigDict(
         json_schema_extra={
