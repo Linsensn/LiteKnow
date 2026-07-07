@@ -17,7 +17,7 @@ class PracticeSessionService:
         # 核心逻辑：如果前端传了空序列，后端根据 bank_id 主动查询所有题目ID
         if not sequence:
             stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
-            result = await db.execute(stmt)
+            result = db.execute(stmt)
             sequence = list(result.scalars().all())
             
         # 如果题库确实没题，直接抛错拦截
