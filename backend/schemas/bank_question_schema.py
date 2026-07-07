@@ -11,7 +11,7 @@ class QuestionBase(BaseModel):
     difficulty_level: str = Field("medium", description="难度: easy/medium/hard")
     content: str = Field(..., description="题干内容")
     options_json: List[Any] = Field(default=[], description="选项列表，必须是数组格式")
-    correct_answer: str = Field(..., description="正确答案")
+    correct_answer: Any = Field(..., description="正确答案")
     ai_analysis: Optional[str] = None
     my_analysis: Optional[str] = None
 
@@ -26,7 +26,7 @@ class QuestionUpdate(BaseModel):
     difficulty_level: Optional[str] = None
     content: Optional[str] = None
     options_json: Optional[List[Any]] = None
-    correct_answer: Optional[str] = None
+    correct_answer: Optional[Any] = None
     ai_analysis: Optional[str] = None
     my_analysis: Optional[str] = None
 

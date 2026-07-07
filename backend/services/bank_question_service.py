@@ -71,11 +71,11 @@ class BankQuestionService:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
-    # 6. 逻辑删除题目
+    # 6. 删除题目
     async def delete_question(self, db: AsyncSession, question_id: int):
         await self.get_question(db, question_id=question_id)
         try:
-            await bank_question.delete_logical(db, question_id=question_id)
+            await bank_question.delete(db, question_id=question_id)
             db.commit()
         except Exception as e:
             db.rollback()

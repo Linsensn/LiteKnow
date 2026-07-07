@@ -13,7 +13,7 @@ class CRUDBankQuestion:
             BankQuestion.id == question_id,
         )
         result = db.execute(stmt)
-        return result.scalar_first()
+        return result.scalar_one_or_none()
 
     # 2. 分页多条件查询
     async def get_multi(
@@ -33,7 +33,7 @@ class CRUDBankQuestion:
         result = db.execute(stmt)
         return result.scalars().all()
 
-    # 3. 统计符合条件的总记录数（配合分页）
+    # 3. 统计符合条件的总记录数
     async def count(
         self, db: AsyncSession, *, bank_id: Optional[int] = None,
         keyword: Optional[str] = None, difficulty: Optional[str] = None
@@ -75,4 +75,22 @@ class CRUDBankQuestion:
         stmt = delete(BankQuestion).where(BankQuestion.id == question_id)
         db.execute(stmt)
 
+    # 按题目 ID 列表批量查询 
+    # 用于乱序练习时，前端打乱 ID 顺序后批量拉取题目
+    async def get_by_ids(self, db: AsyncSession, *, ids: List[int]) -> List[BankQuestion]:
+        stmt = select(BankQuestion).where(BankQuestion.id.in_(ids))
+        result = db.execute(stmt)
+        return result.scalars().all()
+    
+    # 统计某个题库的题目数量（按题型分组） — 用于展示题库概览
+    async def count_by_bank(self, db: AsyncSession, bank_id: int) -> int:
+        stmt = select(func.count(BankQuestion.id)).where(BankQuestion.bank_id == bank_id)
+        result = db.execute(stmt)
+        return result.scalar_one()
+    
+    # 随机获取 N 道题 — 用于乱序练习模式
+    async def get_random(self, db: AsyncSession, *, bank_id: int, limit: int = 10) -> List[BankQuestion]:
+        stmt = select(BankQuestion).where(BankQuestion.bank_id == bank_id).order_by(func.rand()).limit(limit)
+        result = db.execute(stmt)
+        return result.scalars().all()
 bank_question = CRUDBankQuestion()
