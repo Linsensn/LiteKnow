@@ -8,7 +8,7 @@ import json
 import logging
 
 from config.database import get_db
-from services.explain_service import explain_service
+from backend.services.ai_explain_service import explain_service
 
 logger = logging.getLogger("liteknow.explain_ws")
 
