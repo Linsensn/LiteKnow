@@ -22,7 +22,7 @@ async def parse_text_to_bank(
     调用大模型提取并归一化题目结构，持久化后返回给小程序用于练习渲染。
     """
     # 假设 get_current_user 提供了包含 id 的字典
-    user_id = current_student.id
+    user_id = current_student.get("id")
     
     # 获取 Service 返回的 JSON 结构并直接响应
     return await ai_bank_service.parse_and_save_bank(

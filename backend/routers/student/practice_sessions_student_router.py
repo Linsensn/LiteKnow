@@ -21,8 +21,6 @@ from schemas.practice_session_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/practice-sessions", tags=["Student/Practice Sessions"])
 
-router = APIRouter(tags=["Student/Practice Sessions"])
-
 @router.post("", response_model=ResponseModel[PracticeSessionOut], summary="发起新的练习会话")
 async def start_practice_session(
     data: PracticeSessionCreate, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)

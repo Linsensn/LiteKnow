@@ -20,8 +20,6 @@ from schemas.wrong_question_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/wrong-questions", tags=["Student/Wrong Questions"])
 
-router = APIRouter(tags=["Student/Wrong Questions"])
-
 @router.post("", response_model=ResponseModel[WrongQuestionOut], summary="新增单道错题")
 async def create_single_wrong_question(
     data: WrongQuestionImport, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)

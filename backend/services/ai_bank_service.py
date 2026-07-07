@@ -54,7 +54,7 @@ class AIBankService:
                 INSERT INTO question_banks (user_id, bank_name, description, total_questions, created_at, updated_at) 
                 VALUES (:user_id, :bank_name, :description, :total_questions, NOW(), NOW())
             ''')
-            result = await db.execute(bank_insert_sql, {
+            result = db.execute(bank_insert_sql, {
                 "user_id": user_id,
                 "bank_name": req.bank_name,
                 "description": "由大模型自动识别生成的题库",
@@ -85,7 +85,7 @@ class AIBankService:
                 # 使用 Pydantic 的 model_dump 转字典后进行 JSON 序列化
                 options_to_save = [opt.model_dump() for opt in parsed_q.options] if parsed_q.options else []
 
-                await db.execute(question_insert_sql, {
+                db.execute(question_insert_sql, {
                     "bank_id": bank_id,
                     "question_type": parsed_q.question_type,
                     "difficulty_level": parsed_q.difficulty_level,
@@ -95,7 +95,7 @@ class AIBankService:
                     "ai_analysis": parsed_q.ai_analysis
                 })
             
-            await db.commit()
+            db.commit()
 
             return BankParseResponse(
                 bank_id=bank_id,
@@ -105,7 +105,7 @@ class AIBankService:
             )
 
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             logger.error(f"题库解析并落库失败: {str(e)}")
             raise HTTPException(status_code=500, detail=f"题库处理失败: {str(e)}")
 

@@ -21,8 +21,6 @@ from schemas.question_bank_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/question-banks", tags=["Student/Question Banks"])
 
-router = APIRouter(tags=["Student/Question Banks"])
-
 @router.post("", response_model=ResponseModel[QuestionBankOut], summary="创建新题库")
 async def create_my_question_bank(
     data: QuestionBankCreate, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
