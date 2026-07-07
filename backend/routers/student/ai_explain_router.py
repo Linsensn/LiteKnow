@@ -11,7 +11,7 @@ from config.database import get_db
 from utils.deps import get_current_user
 
 from schemas.ai_explain_schema import ExplainRequest
-from services.ai_explain_service import explain_service
+from services.ai_explain_service import ai_explain_service
 
 router = APIRouter(prefix="/ai/explain", tags=["Student/AI/知识精讲"])
 
@@ -26,7 +26,7 @@ async def explain_stream(
     处理知识精讲请求。
     采用 Server-Sent Events (SSE) 协议返回打字机流式响应。
     """
-    generator = await explain_service.generate_explain_stream(
+    generator = await ai_explain_service.generate_explain_stream(
         db=db,
         session_id=req.session_id,
         question=req.question

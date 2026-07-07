@@ -1,4 +1,4 @@
-# backend/services/explain_service.py
+# backend/services/ai_explain_service.py
 """
 @Desc    : 知识精讲服务 — 多轮对话式答疑
 """
@@ -12,9 +12,9 @@ from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 from utils.llm_client import llm_client
 
-logger = logging.getLogger("liteknow.explain")
+logger = logging.getLogger("liteknow.ai_explain")
 
-class ExplainService:
+class AIExplainService:
     def __init__(self):
         self.system_prompt = (
             "你是一位耐心、专业的学科教师。请用通俗易懂的语言解答学生提出的问题。\n"
@@ -86,4 +86,4 @@ class ExplainService:
             raise HTTPException(status_code=500, detail=f"知识精讲请求失败: {str(e)}")
 
 
-explain_service = ExplainService()
+ai_explain_service = AIExplainService()
