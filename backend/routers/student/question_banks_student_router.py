@@ -11,7 +11,6 @@ from services.question_bank_service import qb_service
 from crud import question_banks_crud
 from utils.response import success
 
-# 引入 User 模型作为正确的类型提示
 from models.users import User
 from schemas.common import ResponseModel, PageResult
 from schemas.question_bank_schemas import (
@@ -22,7 +21,7 @@ from schemas.question_bank_schemas import (
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/question-banks", tags=["Student/Question Banks"])
 
-@router.post("", response_model=ResponseModel[QuestionBankOut])
+@router.post("", response_model=ResponseModel[QuestionBankOut], summary="创建新题库")
 async def create_my_question_bank(
     data: QuestionBankCreate, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -30,7 +29,7 @@ async def create_my_question_bank(
     audit_logger.info(f"Student {current_student.id} created bank {result.id}")
     return success(data=QuestionBankOut.model_validate(result), message="题库创建成功")
 
-@router.post("/batch", response_model=ResponseModel[dict])
+@router.post("/batch", response_model=ResponseModel[dict], summary="批量创建题库")
 async def create_batch_question_banks(
     data: List[QuestionBankCreate], db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -40,7 +39,7 @@ async def create_batch_question_banks(
     audit_logger.info(f"Student {current_student.id} batch created {len(objs_in)} banks")
     return success(message=f"成功批量创建 {len(objs_in)} 个题库")
 
-@router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]])
+@router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]], summary="分页获取题库列表")
 async def list_my_question_banks(
     keyword: str = Query(None, description="模糊搜索题库名或描述", examples=["STM32 GPIO与外设驱动"]),
     sort_by: str = Query("desc", description="排序：asc或desc", examples=["desc"]),
@@ -51,15 +50,10 @@ async def list_my_question_banks(
     result = await qb_service.get_banks(db=db, current_user=current_student, keyword=keyword, page=page, page_size=page_size, sort_by=sort_by)
     items_data = [QuestionBankOut.model_validate(item) for item in result["items"]]
     
-    page_data = PageResult(
-        list=items_data, 
-        total=result["total"], 
-        page=page, 
-        page_size=page_size
-    )
+    page_data = PageResult(list=items_data, total=result["total"], page=page, page_size=page_size)
     return success(data=page_data, message="获取题库列表成功")
 
-@router.get("/tree", response_model=ResponseModel[List[dict]])
+@router.get("/tree", response_model=ResponseModel[List[dict]], summary="获取按月份分组的题库树")
 async def get_banks_tree(
     db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -76,14 +70,14 @@ async def get_banks_tree(
     ]
     return success(data=tree_data)
 
-@router.get("/{bank_id}", response_model=ResponseModel[QuestionBankOut])
+@router.get("/{bank_id}", response_model=ResponseModel[QuestionBankOut], summary="获取单条题库详情")
 async def get_my_question_bank_detail(
     bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
     bank = await qb_service.get_bank_detail(db=db, current_user=current_student, bank_id=bank_id)
     return success(data=QuestionBankOut.model_validate(bank))
 
-@router.put("/{bank_id}", response_model=ResponseModel[dict])
+@router.put("/{bank_id}", response_model=ResponseModel[dict], summary="更新单条题库信息")
 async def update_my_question_bank(
     data: QuestionBankUpdate, bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -91,7 +85,7 @@ async def update_my_question_bank(
     audit_logger.info(f"Student {current_student.id} updated bank {bank_id}")
     return success(message=f"题库信息更新成功，影响 {updated_count or 0} 个")
 
-@router.put("/batch/update", response_model=ResponseModel[dict])
+@router.put("/batch/update", response_model=ResponseModel[dict], summary="批量更新题库信息")
 async def batch_update_my_banks(
     data: BatchUpdateBankReq, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -100,7 +94,7 @@ async def batch_update_my_banks(
     audit_logger.info(f"Student {current_student.id} batch updated banks {data.ids}")
     return success(message=f"成功更新 {updated_count} 个题库")
 
-@router.delete("/bulk", response_model=ResponseModel[dict])
+@router.delete("/bulk", response_model=ResponseModel[dict], summary="批量删除题库")
 async def student_bulk_delete_question_banks(
     data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -108,7 +102,7 @@ async def student_bulk_delete_question_banks(
     audit_logger.warning(f"Student {current_student.id} batch deleted banks {data.bank_ids}")
     return success(message=f"成功删除 {deleted_count or 0} 个题库")
 
-@router.delete("/{bank_id}", response_model=ResponseModel[dict])
+@router.delete("/{bank_id}", response_model=ResponseModel[dict], summary="删除单条题库")
 async def student_delete_single_bank(
     bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -116,7 +110,7 @@ async def student_delete_single_bank(
     audit_logger.warning(f"Student {current_student.id} deleted bank {bank_id}")
     return success(message=f"题库删除成功，影响 {deleted_count or 0} 个")
 
-@router.get("/data/export")
+@router.get("/data/export", summary="导出题库为CSV")
 async def export_my_banks(
     db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):
@@ -127,7 +121,7 @@ async def export_my_banks(
         headers={"Content-Disposition": f"attachment; filename=my_question_banks_{current_student.id}.csv"}
     )
 
-@router.post("/data/import", response_model=ResponseModel[dict])
+@router.post("/data/import", response_model=ResponseModel[dict], summary="从CSV导入题库")
 async def import_my_banks(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db), current_student: User = Depends(get_current_user)
 ):

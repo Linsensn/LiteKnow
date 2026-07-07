@@ -1,4 +1,4 @@
-# backend/crud/crud_messages.py
+# backend/crud/messages_crud.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, asc, desc
 from typing import List, Optional
