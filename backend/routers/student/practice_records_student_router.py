@@ -26,11 +26,17 @@ router = APIRouter(prefix="/practice-records", tags=["Student/Practice Records"]
 async def submit_question_answer(
     data: PracticeRecordSubmit, db: AsyncSession = Depends(get_db), current_student: dict = Depends(get_current_user)
 ):
+    # 修改：新增传入 option_sequence 字段
     result = await pr_service.submit_answer(
-        db=db, user_id=current_student.id, session_id=data.session_id, 
-        question_id=data.question_id, user_answer=data.user_answer, 
-        correct_answer=data.correct_answer, question_content=data.question_content, 
-        current_index=data.current_index
+        db=db, 
+        user_id=current_student.id, 
+        session_id=data.session_id, 
+        question_id=data.question_id, 
+        user_answer=data.user_answer, 
+        correct_answer=data.correct_answer, 
+        question_content=data.question_content, 
+        current_index=data.current_index,
+        option_sequence=data.option_sequence
     )
     audit_logger.info(f"User {current_student.id} submitted question {data.question_id}")
     return success(data=SubmitResultOut(is_correct=result["is_correct"]), message="答题记录提交成功")

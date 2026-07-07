@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, desc, asc, case
+from sqlalchemy import select, update, delete, func, desc, asc, case, cast, String
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.mysql import insert
 from models.practice_records import PracticeRecord
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
 async def create_practice_record(db: AsyncSession, *, obj_in: dict) -> PracticeRecord:
     """单条新增"""
@@ -17,14 +17,18 @@ async def create_multi_records(db: AsyncSession, *, objs_in: List[dict]):
     stmt = insert(PracticeRecord).values(objs_in)
     db.execute(stmt)
 
-async def upsert_practice_record(db: AsyncSession, *, session_id: int, user_id: int, question_id: int, user_answer: str, is_correct: bool):
+async def upsert_practice_record(db: AsyncSession, *, session_id: int, user_id: int, question_id: int, user_answer: Any, is_correct: bool, option_sequence: Optional[List[str]] = None):
     """新增或更新：处理唯一键冲突"""
+    # 增加 option_sequence 字段并修改 user_answer 的类型支持 Any
     stmt = insert(PracticeRecord).values(
         session_id=session_id, user_id=user_id, question_id=question_id,
-        is_completed=True, is_correct=is_correct, user_answer=user_answer
+        is_completed=True, is_correct=is_correct, user_answer=user_answer,
+        option_sequence=option_sequence
     )
+    # 同样在更新语句中加上 option_sequence
     stmt = stmt.on_duplicate_key_update(
-        is_completed=True, is_correct=is_correct, user_answer=user_answer
+        is_completed=True, is_correct=is_correct, user_answer=user_answer,
+        option_sequence=option_sequence
     )
     db.execute(stmt)
 
@@ -83,7 +87,8 @@ async def get_records_with_question_details(db: AsyncSession, *, user_id: int, u
     """模糊与关联查询"""
     stmt = select(PracticeRecord).where(PracticeRecord.user_id == user_id)
     if user_answer_keyword:
-        stmt = stmt.where(PracticeRecord.user_answer.like(f"%{user_answer_keyword}%"))
+        # 修改：因为 user_answer 是 JSON，模糊搜索需要转为 String 避免底层数据库报错
+        stmt = stmt.where(cast(PracticeRecord.user_answer, String).like(f"%{user_answer_keyword}%"))
     stmt = stmt.order_by(desc(PracticeRecord.created_at)).offset(skip).limit(limit)
     result = db.execute(stmt)
     return result.scalars().all()
