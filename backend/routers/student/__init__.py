@@ -36,4 +36,4 @@ student_router.include_router(practice_records_student_router.router, dependenci
 student_router.include_router(ai_summary_router.router, dependencies=[Depends(get_current_user)])
 
 # 2. 在这里挂载 ai_bank_router
-# student_router.include_router(ai_bank_router.router, dependencies=[Depends(get_current_user)]) # <-- 新增这一行：挂载你的路由
+student_router.include_router(ai_bank_router.router, dependencies=[Depends(get_current_user)]) # <-- 新增这一行：挂载你的路由

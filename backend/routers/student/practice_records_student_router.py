@@ -20,7 +20,7 @@ from schemas.practice_record_schemas import (
 )
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/practice-records", tags=["Student/Practice Records"])
+router = APIRouter(prefix="/practice-records", tags=["Student/User/Practice Records"])
 
 @router.post("/submit", response_model=ResponseModel[SubmitResultOut], summary="提交题目作答")
 async def submit_question_answer(
