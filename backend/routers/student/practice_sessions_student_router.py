@@ -27,8 +27,12 @@ async def start_practice_session(
 ):
     """[业务] 发起一次新的练习会话，并生成题号序列"""
     result = await ps_service.start_new_session(
-        db=db, user_id=current_student.id, bank_id=data.bank_id, 
-        mode=data.practice_mode, question_sequence=data.question_sequence
+        db=db, 
+        user_id=current_student.id, 
+        bank_id=data.bank_id, 
+        mode=data.practice_mode, 
+        is_options_shuffled=data.is_options_shuffled, 
+        question_sequence=data.question_sequence
     )
     audit_logger.info(f"User {current_student.id} started new session {result.id}")
     return success(data=PracticeSessionOut.model_validate(result), message="练习会话创建成功")
