@@ -11,7 +11,7 @@ class CRUDMessage:
     async def get(self, db: AsyncSession, message_id: int) -> Optional[Message]:
         stmt = select(Message).where(Message.id == message_id)
         result = db.execute(stmt)
-        return result.scalar_first()
+        return result.scalars().first() 
 
     # 2. 按会话ID查询全部消息（按创建时间正序，还原对话时序）
     async def get_by_session(self, db: AsyncSession, session_id: int) -> List[Message]:
