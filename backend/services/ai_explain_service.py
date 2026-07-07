@@ -4,7 +4,7 @@
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException
+from utils.exceptions import CustomAPIException, ErrorCode
 import logging
 import json
 
@@ -56,7 +56,7 @@ class AIExplainService:
                 messages=chat_history
             )
 
-            # 5. SSE 代理生成器（与摘要服务一致）
+            # 5. SSE 代理生成器
             async def proxy_generator():
                 full_ai_content = ""
                 async for chunk in llm_generator:
@@ -81,9 +81,13 @@ class AIExplainService:
 
             return proxy_generator()
 
+        except CustomAPIException:
+            raise
         except Exception as e:
             logger.error(f"知识精讲生成失败: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"知识精讲请求失败: {str(e)}")
-
+            raise CustomAPIException(
+                code=ErrorCode.AI_SERVICE_BUSY,
+                message=f"知识精讲请求失败: {str(e)}"
+            )
 
 ai_explain_service = AIExplainService()
