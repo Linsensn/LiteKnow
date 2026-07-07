@@ -6,6 +6,7 @@ from datetime import datetime
 class PracticeSessionCreate(BaseModel):
     bank_id: int = Field(..., description="要练习的题库ID")
     practice_mode: str = Field(..., description="练习模式：sequential, random, mock 等")
+    is_options_shuffled: Optional[bool] = Field(default=False, description="是否开启选项乱序(防作弊/提高难度)")
     question_sequence: List[int] = Field(..., description="初始题号列表序列")
 
     model_config = ConfigDict(
@@ -13,6 +14,7 @@ class PracticeSessionCreate(BaseModel):
             "example": {
                 "bank_id": 2001,
                 "practice_mode": "sequential",
+                "is_options_shuffled": False,
                 "question_sequence": [5001, 5002, 5003, 5004, 5005]
             }
         }
@@ -21,6 +23,7 @@ class PracticeSessionCreate(BaseModel):
 # 请求：单条/批量更改会话属性
 class PracticeSessionUpdate(BaseModel):
     practice_mode: Optional[str] = None
+    is_options_shuffled: Optional[bool] = None
     question_sequence: Optional[List[int]] = None
     last_viewed_index: Optional[int] = None
     status: Optional[str] = None
@@ -29,6 +32,7 @@ class PracticeSessionUpdate(BaseModel):
         json_schema_extra={
             "example": {
                 "practice_mode": "random",
+                "is_options_shuffled": True,
                 "question_sequence": [5003, 5001, 5005],
                 "last_viewed_index": 2,
                 "status": "ongoing"
@@ -82,6 +86,7 @@ class PracticeSessionOut(BaseModel):
     user_id: int
     bank_id: int
     practice_mode: str
+    is_options_shuffled: bool
     question_sequence: List[int]
     last_viewed_index: Optional[int]
     status: Optional[str]
@@ -96,6 +101,7 @@ class PracticeSessionOut(BaseModel):
                 "user_id": 8848,
                 "bank_id": 2001,
                 "practice_mode": "sequential",
+                "is_options_shuffled": False,
                 "question_sequence": [5001, 5002, 5003],
                 "last_viewed_index": 1,
                 "status": "ongoing",
@@ -117,6 +123,7 @@ class PracticeSessionDetailOut(PracticeSessionOut):
                 "user_id": 8848,
                 "bank_id": 2001,
                 "practice_mode": "sequential",
+                "is_options_shuffled": True,
                 "question_sequence": [5001, 5002, 5003],
                 "last_viewed_index": 1,
                 "status": "ongoing",

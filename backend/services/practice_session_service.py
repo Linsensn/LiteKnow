@@ -8,7 +8,7 @@ from utils.exceptions import CustomAPIException, ErrorCode
 import random
 
 class PracticeSessionService:
-    async def start_new_session(self, db: AsyncSession, user_id: int, bank_id: int, mode: str, question_sequence: list):
+    async def start_new_session(self, db: AsyncSession, user_id: int, bank_id: int, mode: str, is_options_shuffled: bool, question_sequence: list):
         """核心业务：创建会话（根据模式混淆题目顺序）"""
         sequence = question_sequence.copy()
         if mode == "random":
@@ -16,9 +16,13 @@ class PracticeSessionService:
             
         try:
             obj_in = {
-                "user_id": user_id, "bank_id": bank_id, 
-                "practice_mode": mode, "question_sequence": sequence,
-                "last_viewed_index": 0, "status": "ongoing"
+                "user_id": user_id, 
+                "bank_id": bank_id, 
+                "practice_mode": mode, 
+                "is_options_shuffled": is_options_shuffled,
+                "question_sequence": sequence,
+                "last_viewed_index": 0, 
+                "status": "ongoing"
             }
             new_session = await practice_sessions_crud.create_practice_session(db=db, obj_in=obj_in)
             db.commit()
@@ -49,10 +53,10 @@ class PracticeSessionService:
         sessions, _ = await practice_sessions_crud.get_multi_sessions(db=db, user_id=user_id, limit=1000)
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(["会话ID", "题库名称", "练习模式", "状态", "创建时间"])
+        writer.writerow(["会话ID", "题库名称", "练习模式", "选项乱序", "状态", "创建时间"])
         for s in sessions:
             b_name = s.bank.bank_name if hasattr(s, 'bank') and s.bank else "未知题库"
-            writer.writerow([s.id, b_name, s.practice_mode, s.status, s.created_at.strftime("%Y-%m-%d %H:%M:%S") if s.created_at else ""])
+            writer.writerow([s.id, b_name, s.practice_mode, "是" if s.is_options_shuffled else "否", s.status, s.created_at.strftime("%Y-%m-%d %H:%M:%S") if s.created_at else ""])
         return output.getvalue()
         
     async def import_sessions_from_csv(self, db: AsyncSession, user_id: int, file: UploadFile):
@@ -66,6 +70,7 @@ class PracticeSessionService:
                 "user_id": user_id,
                 "bank_id": int(row.get("题库ID", 0)),
                 "practice_mode": row.get("练习模式", "sequential"),
+                "is_options_shuffled": row.get("选项乱序", "否") == "是",
                 "status": row.get("状态", "ongoing"),
                 "question_sequence": [],
                 "last_viewed_index": 0
