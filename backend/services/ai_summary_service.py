@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 import logging
 import json # 引入 json 用于序列化
+from typing import List
 
 # 引入基础设施服务
 from services.message_service import msg_service
@@ -10,6 +11,7 @@ from schemas.message_schema import MessageCreate
 
 # 引入我们刚才封装好的统一大模型客户端
 from utils.llm_client import llm_client 
+from models.messages import Message 
 
 logger = logging.getLogger("liteknow.ai_summary")
 
@@ -22,9 +24,19 @@ class AISummaryService:
         )
 
     async def generate_text_summary_stream(
-        self, db: AsyncSession, session_id: int, user_content: str
+        self, db: AsyncSession, session_id: int, user_content: str, attachment_ids: List[int] = None
     ):
         try:
+            # 处理附件内容 
+            content_parts = [user_content]
+            if attachment_ids:
+                for att_id in attachment_ids:
+                    att = await att_service.get_attachment(db, att_id=att_id) 
+                    if att and att.extracted_text and att.extracted_text.strip():
+                        content_parts.append(f"【附件内容】:\n{att.extracted_text}")
+            
+            final_user_content = "\n\n".join(content_parts)
+
             # 1. 记录用户的输入到数据库
             user_msg_in = MessageCreate(
                 session_id=session_id,
