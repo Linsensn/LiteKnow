@@ -162,8 +162,9 @@ Page({
     }
   },
 
+  // pages/doPractice/doPractice.js 局部修改：
   async submitPaper() {
-    const { questionSequence, userAnswers } = this.data;
+    const { questionSequence, userAnswers, sessionId } = this.data;
     const answeredCount = Object.keys(userAnswers).length;
     
     if (answeredCount < questionSequence.length) {
@@ -177,17 +178,34 @@ Page({
        if (!confirm) return;
     }
 
-    wx.showLoading({ title: 'AI 批阅中...' });
+    wx.showLoading({ title: 'AI 批阅中...', mask: true });
 
-    setTimeout(() => {
+    // 🌟 核心升级：将前端按 index 存储的答案，转换为以 question_id 为 Key 的字典发给后端
+    const answerPayload = {};
+    questionSequence.forEach((qId, index) => {
+      answerPayload[qId] = userAnswers[index] || []; 
+    });
+
+    try {
+      // 发起真实的交卷请求
+      await util.request(`/api/v1/student/practice-sessions/${sessionId}/submit-paper`, 'POST', {
+        answers: answerPayload
+      });
+
       this.setData({ 
         isSessionSubmitted: true, 
         currentIndex: 0 
       });
+      
+      // 交卷后重新拉取第一题，此时 isSessionSubmitted 为 true，前端会展示答案和解析
       this.fetchCurrentQuestion(); 
       wx.hideLoading();
       wx.showToast({ title: '批阅完成', icon: 'success' });
-    }, 1000);
+      
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: '交卷失败，请重试', icon: 'none' });
+    }
   },
 
   async exitReview() {
