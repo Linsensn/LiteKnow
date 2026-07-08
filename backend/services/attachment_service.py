@@ -4,9 +4,6 @@ from utils.exceptions import CustomAPIException, ErrorCode
 from crud.attachments_crud import attachment_crud
 from schemas.attachment_schema import AttachmentResponse
 from schemas.common import PageResult
-from utils.ocr_client import ocr_client
-import logging    
-logger = logging.getLogger("liteknow.attachment")
 
 class AttachmentService:
 
@@ -15,6 +12,17 @@ class AttachmentService:
         attachment = await attachment_crud.get(db, attachment_id=attachment_id)
         if not attachment:
             raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
+        return attachment
+
+    async def get_attachment_by_id(self, db: AsyncSession, att_id: int, user_id: int):
+        """
+        根据 ID 和 用户ID 获取附件（附带权限校验）
+        """
+        attachment = await attachment_crud.get(db, attachment_id=att_id) 
+        
+        if not attachment or attachment.user_id != user_id:
+            return None
+            
         return attachment
 
     # 2. 分页获取附件列表（通用，通过 user_id 控制权限范围）
@@ -37,30 +45,23 @@ class AttachmentService:
             page_size=page_size
         )
 
+    # 3. 创建附件记录
     async def create_attachment(
         self, db: AsyncSession, *, user_id: int, file_type: str,
         file_url: str, extracted_text: str = None, message_id: int = None
     ):
-        # ★ 新增：如果是图片且未传入 extracted_text，自动运行 OCR
-        if not extracted_text and file_type and file_type.startswith("image/"):
-            ocr_text = ocr_client.ocr_image(file_url)
-            if ocr_text:
-                extracted_text = ocr_text
-                logger.info(
-                    f"OCR 自动识别完成，attachment 路径: {file_url}"
-                )
-
         try:
             new_attachment = await attachment_crud.create_with_owner(
                 db, user_id=user_id, file_type=file_type,
                 file_url=file_url, extracted_text=extracted_text,
                 message_id=message_id
             )
-            await db.commit()
-            await db.refresh(new_attachment)
+            db.commit()
+            db.refresh(new_attachment)
             return new_attachment
         except Exception as e:
-            await db.rollback()
+            db.rollback()
+            print(f"！！！数据库插入失败的真正原因：{str(e)} ！！！") # 看控制台打印的这行字
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED)
 
     # 4. 删除附件（学生端需校验归属权）

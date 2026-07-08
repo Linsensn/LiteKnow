@@ -5,6 +5,7 @@ from config.settings import settings
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from typing import AsyncGenerator
+from langchain_openai import ChatOpenAI
 
 # 配置简单的日志记录
 logger = logging.getLogger("liteknow.llm")
@@ -17,7 +18,13 @@ class LLMClient:
         self.enabled = settings.LLM_ENABLED
         self.api_key = settings.LLM_API_KEY
         self.base_url = settings.LLM_BASE_URL
-        self.model_name = settings.LLM_MODEL_NAME
+
+        # 优先读取系统配置的默认模型，如果没配则降级到智谱
+        self.model_name = getattr(
+            settings, 
+            "LLM_DEFAULT_MODEL", 
+            getattr(settings, "LLM_MODEL_ZHIPU", "THUDM/GLM-Z1-9B-0414")
+        )
 
         self.client = None
         if self.enabled and self.api_key:
@@ -60,17 +67,27 @@ class LLMClient:
             logger.error(f"LLM 流式调用异常: {str(e)}")
             yield f"\n[服务异常: {str(e)}]"
 
-    async def async_call_llm(self, system_prompt: str, user_prompt: str, response_format: str = "text") -> str:
+    async def async_call_llm(
+        self, 
+        system_prompt: str, 
+        user_prompt: str, 
+        response_format: str = "text",
+        target_model: str = None 
+    ) -> str:
         """
         非流式请求 (Blocking/Normal)
         适用于：智能测验、题库整理等需要大模型一次性输出完整 JSON 结构化数据的场景。
         """
+        """非流式请求"""
         if not self.enabled or not self.client:
             return "大模型未配置或未启用。"
+            
+        # 如果调用时没传，就用系统默认的模型
+        actual_model = target_model if target_model else self.model_name
 
         try:
             kwargs = {
-                "model": self.model_name,
+                "model": actual_model, # 使用动态决定的模型
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -90,30 +107,24 @@ class LLMClient:
             logger.error(f"LLM 非流式调用异常: {str(e)}")
             return f"LLM 调用异常: {str(e)}"
 
-    async def async_call_chat_stream(
-        self, system_prompt: str, messages: list[dict]
+    async def async_call_llm_stream(
+        self, 
+        system_prompt: str, 
+        user_prompt: str,
+        target_model: str = None 
     ) -> AsyncGenerator[str, None]:
-        """
-        带历史上下文的流式对话。
-        适用于：知识精讲等需要多轮对话记忆的场景。
-
-        Args:
-            system_prompt: 系统角色设定
-            messages: 历史对话列表 [
-                {"role": "user", "content": "..."},
-                {"role": "assistant", "content": "..."}
-            ]
-        """
         if not self.enabled or not self.client:
             yield "大模型未配置或未启用。"
             return
 
+        actual_model = target_model if target_model else self.model_name
+
         try:
             response = await self.client.chat.completions.create(
-                model=self.model_name,
+                model=actual_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    *messages
+                    {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.7,
                 stream=True
@@ -127,5 +138,23 @@ class LLMClient:
         except Exception as e:
             logger.error(f"LLM 对话流式调用异常: {str(e)}")
             yield f"\n[服务异常: {str(e)}]"
+
+    def get_langchain_chat_model(model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
+        """
+        获取配置好的 LangChain ChatOpenAI 实例
+        """
+        # 优先读取传入的模型，其次读取默认模型
+        actual_model = model_name or getattr(
+            settings, "LLM_DEFAULT_MODEL", 
+            getattr(settings, "LLM_MODEL_ZHIPU", "THUDM/GLM-Z1-9B-0414")
+        )
+        
+        return ChatOpenAI(
+            api_key=settings.LLM_API_KEY,
+            base_url=settings.LLM_BASE_URL,
+            model=actual_model,
+            temperature=temperature,
+            max_retries=2  # 如果网络抖动，允许 LangChain 自动重试 2 次
+        )
 # 实例化单例，整个项目只需 from utils.llm_client import llm_client 即可调用
 llm_client = LLMClient()

@@ -36,7 +36,8 @@ class ErrorCode(int, Enum):
     DATA_NOT_FOUND = 20004
     DB_OPERATION_FAILED = 20005
     DATABASE_ERROR = 20006
-    
+    FILE_OR_IMAGE_VALIDATION_ERROR = 20007
+
     # 题库与练习业务特定错误 (201xx)
     PRACTICE_RECORD_SUBMIT_FAILED = 20101
     PRACTICE_SESSION_CREATE_FAILED = 20102
@@ -64,6 +65,7 @@ ERROR_MESSAGES = {
     ErrorCode.DATA_NOT_FOUND: "请求的数据不存在或无权限访问",
     ErrorCode.DB_OPERATION_FAILED: "数据库操作失败，请稍后重试",
     ErrorCode.DATABASE_ERROR: "系统底层数据库交互异常，请联系管理员",
+    ErrorCode.FILE_OR_IMAGE_VALIDATION_ERROR: "文件或图片内容提取失败，请检查文件格式或清晰度",
     
     ErrorCode.PRACTICE_RECORD_SUBMIT_FAILED: "提交答题记录失败，请检查网络后重试",
     ErrorCode.PRACTICE_SESSION_CREATE_FAILED: "创建练习会话失败，请稍后重试",

@@ -7,17 +7,29 @@ from utils.deps import get_current_user
 from utils.response import success
 from utils.exceptions import CustomAPIException, ErrorCode
 from utils.local_storage import save_file_local
+from utils.ocr_client import parse_local_file
 from services.attachment_service import att_service
 from schemas.common import ResponseModel, PageResult
 from schemas.attachment_schema import AttachmentResponse
 
 router = APIRouter(prefix="/attachments", tags=["Student - 资源管理"])
 
-ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"]
+ALLOWED_TYPES = [
+    "image/jpeg", 
+    "image/png", 
+    "application/pdf",
+    "text/plain",           # .txt
+    "text/markdown",        # .md
+    "text/csv",             # .csv
+    "application/msword",   # .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", # .docx
+    "application/vnd.ms-excel", # .xls
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" # .xlsx
+]
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-@router.post("/upload", summary="学生上传附件", response_model=ResponseModel[AttachmentResponse])
+@router.post("/upload", summary="学生上传附件并自动解析", response_model=ResponseModel[AttachmentResponse])
 async def upload_attachment(
     file: UploadFile = File(...),
     message_id: Optional[int] = None,
@@ -28,12 +40,10 @@ async def upload_attachment(
     if file.content_type not in ALLOWED_TYPES:
         raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="不支持的文件类型")
     
-    
     # 2. 读取并校验文件大小
     file_bytes = await file.read()
     if len(file_bytes) > MAX_FILE_SIZE:
         raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="文件大小不能超过10MB")
-    
     
     # 3. 本地存储
     file_path = save_file_local(
@@ -41,17 +51,24 @@ async def upload_attachment(
         filename=file.filename,
         user_id=current_student.id
     )
+
+    # 自动进行 OCR / 文本提取
+    # 这一步就算解析失败（返回空字符串），也不阻断上传成功
+    extracted_text = await parse_local_file(file_path, file.filename)
     
-    # 4. 写入数据库
+    # 4. 写入数据库，连同提取的文本一起保存
     new_attachment = await att_service.create_attachment(
         db=db,
         user_id=current_student.id,
         file_type=file.content_type,
         file_url=file_path,
-        message_id=message_id
+        message_id=message_id,
+        extracted_text=extracted_text 
     )
     
-    return success(data=new_attachment, message="上传成功")
+    # 5. 根据解析结果返回不同的提示语
+    msg = "上传并解析成功" if extracted_text else "上传成功，但未识别到有效文字（可能是图片不清晰或为空白）"
+    return success(data=new_attachment, message=msg)
 
 
 @router.get("", summary="分页获取我的附件列表", response_model=ResponseModel[PageResult[AttachmentResponse]])
