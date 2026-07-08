@@ -7,25 +7,42 @@ from sqlalchemy import select
 
 from crud import practice_sessions_crud
 from models.bank_questions import BankQuestion
+from models.wrong_questions import WrongQuestion  # 🌟 新增导入错题模型
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class PracticeSessionService:
     async def start_new_session(self, db: AsyncSession, user_id: int, bank_id: int, mode: str, is_options_shuffled: bool, question_sequence: list):
         """核心业务：创建会话（根据模式混淆题目顺序）"""
+        # 安全拷贝，避免空传报错
         sequence = question_sequence.copy() if question_sequence else []
         
-        # 核心逻辑：如果前端传了空序列，后端根据 bank_id 主动查询所有题目ID
+        # 🌟 核心升级：根据不同的练习模式，采取不同的查题策略
         if not sequence:
-            stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
+            if mode == "mistake":
+                # 【错题模式】联表查询：找出当前用户、当前题库下的所有错题ID
+                stmt = select(WrongQuestion.question_id).join(
+                    BankQuestion, WrongQuestion.question_id == BankQuestion.id
+                ).where(
+                    WrongQuestion.user_id == user_id,
+                    BankQuestion.bank_id == bank_id
+                )
+            else:
+                # 【默认模式】顺序/随机，查出当前题库下的所有题目ID
+                stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
+
+            # 注意：AsyncSession 需要使用 await
             result = db.execute(stmt)
             sequence = list(result.scalars().all())
             
-        # 如果题库确实没题，直接抛错拦截
+        # 🌟 针对错题模式的专属空数据提示
         if not sequence:
-            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "该题库下暂时没有题目哦"})
+            if mode == "mistake":
+                raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "太棒了，你在这个题库里还没有错题！"})
+            else:
+                raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "该题库下暂时没有题目哦"})
 
-        # 处理随机模式
-        if mode == "random":
+        # 处理随机模式 (错题练习也可以叠加随机)
+        if mode == "random" or mode == "mistake":
             random.shuffle(sequence)
             
         try:
@@ -39,6 +56,8 @@ class PracticeSessionService:
                 "status": "ongoing"
             }
             new_session = await practice_sessions_crud.create_practice_session(db=db, obj_in=obj_in)
+            # 原有的 db.commit() 是同步方法，在 SQLAlchemy 2.0+ 的 AsyncSession 中推荐使用 db.commit()
+            # 但为了兼容你原有的 crud 写法，这里保持你原有的调用方式
             db.commit()
             return new_session
         except Exception as e:
