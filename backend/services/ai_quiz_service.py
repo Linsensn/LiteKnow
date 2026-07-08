@@ -10,11 +10,13 @@ from models.bank_questions import BankQuestion
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
 from schemas.ai_quiz_schema import QuizOutputData
 from utils.llm_client import llm_client
+from crud.messages_crud import msg_crud 
 
 logger = logging.getLogger("liteknow.ai_quiz")
 
@@ -38,6 +40,16 @@ class AIQuizService:
         )
         await msg_service.create_message(db, obj_in=user_msg_in)
 
+        history_messages = await msg_crud.get_by_session(db, session_id)
+
+        # 将 SQLAlchemy 对象转化为 LangChain 原生消息对象
+        history_langchain_messages = []
+        for msg in history_messages:
+            if msg.role == "user":
+                history_langchain_messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                history_langchain_messages.append(AIMessage(content=msg.content))
+
         parser = PydanticOutputParser(pydantic_object=QuizOutputData)
         
         prompt = ChatPromptTemplate.from_messages([
@@ -45,6 +57,7 @@ class AIQuizService:
                        "题目整体难度应控制在：{difficulty}（easy=简单, medium=中等, hard=困难）。\n"
                        "允许生成的题型包括：{types_str}。请根据知识点合理分配题型。\n\n"
                        "【重要格式要求】:\n{format_instructions}"),
+            *history_langchain_messages, # 将历史消息透传进去，让 AI 记住上下文
             ("user", "课文素材：\n{user_content}")
         ]).partial(format_instructions=parser.get_format_instructions())
         
@@ -54,7 +67,6 @@ class AIQuizService:
         chain = prompt | llm | parser
 
         try:
-            # result 直接就是一个 QuizOutputData 类型的 Python 对象！
             quiz_result: QuizOutputData = await chain.ainvoke({
                 "count": question_count,
                 "difficulty": difficulty,

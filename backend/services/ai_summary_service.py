@@ -8,6 +8,8 @@ from typing import List
 # 引入基础设施服务
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
+from services.attachment_service import att_service # 引入附件服务
+from crud.messages_crud import msg_crud
 
 # 引入我们刚才封装好的统一大模型客户端
 from utils.llm_client import llm_client 
@@ -24,50 +26,55 @@ class AISummaryService:
         )
 
     async def generate_text_summary_stream(
-        self, db: AsyncSession, session_id: int, user_content: str, attachment_ids: List[int] = None
+        self, db: AsyncSession, session_id: int, user_id: int, user_content: str, attachment_ids: List[int] = None
     ):
         try:
-            # 处理附件内容 
+            # ----- 1. 拼接【用户文本 + 附件提取文本】 -----
             content_parts = [user_content]
             if attachment_ids:
                 for att_id in attachment_ids:
-                    att = await att_service.get_attachment(db, att_id=att_id) 
+                    # 传入 user_id 确保权限校验安全
+                    att = await att_service.get_attachment_by_id(db, att_id=att_id, user_id=user_id) 
                     if att and att.extracted_text and att.extracted_text.strip():
                         content_parts.append(f"【附件内容】:\n{att.extracted_text}")
             
             final_user_content = "\n\n".join(content_parts)
 
-            # 1. 记录用户的输入到数据库
+            # ----- 2. 记录用户的**合并后**的输入到数据库 -----
             user_msg_in = MessageCreate(
                 session_id=session_id,
                 role="user",
                 content_type="text",
-                content=user_content
+                content=final_user_content # 这里要记录带附件内容的完整输入
             )
             await msg_service.create_message(db, obj_in=user_msg_in)
 
-            # 2. 调用大模型底层的流式接口
-            llm_generator = llm_client.async_call_llm_stream(
+            history_messages = await msg_crud.get_by_session(db, session_id)
+
+            # 构造符合大模型要求的格式 [{'role': 'user', 'content': '...'}, ...]
+            history_payload = [
+                {"role": msg.role, "content": msg.content} 
+                for msg in history_messages
+            ]
+
+            # ----- 4. 调用大模型的多轮对话流式接口 -----
+            # 使用 async_call_chat_stream 替换 async_call_llm_stream
+            llm_generator = llm_client.async_call_chat_stream(
                 system_prompt=self.system_prompt,
-                user_prompt=user_content
+                messages=history_payload 
             )
 
-            # 3. 构造代理生成器：严格适配小程序的 SSE 格式要求
+            # ----- 5. 构造代理生成器：严格适配小程序的 SSE 格式 -----
             async def proxy_generator():
                 full_ai_content = ""
-                # 逐块消费底层模型的流
                 async for chunk in llm_generator:
                     full_ai_content += chunk
-                    
-                    # 【关键点】包装为标准的 JSON SSE 格式
-                    # 保证中文不被转义，且以 \n\n 结尾，方便前端正则或 split 切割
                     safe_chunk = json.dumps({"content": chunk}, ensure_ascii=False)
                     yield f"data: {safe_chunk}\n\n"
                 
-                # 【关键点】发送流结束的标志，前端借此关闭连接并停止等待
                 yield "data: [DONE]\n\n"
                 
-                # 流输出彻底结束后，持久化 AI 的完整回答到数据库
+                # 流输出彻底结束后，持久化 AI 的完整回答
                 try:
                     ai_msg_in = MessageCreate(
                         session_id=session_id,
@@ -80,7 +87,6 @@ class AISummaryService:
                 except Exception as save_err:
                     logger.error(f"会话 {session_id} AI消息保存失败: {str(save_err)}")
 
-            # 返回这个代理生成器给 Router 消费
             return proxy_generator()
 
         except Exception as e:
