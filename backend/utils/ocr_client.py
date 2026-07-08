@@ -7,6 +7,7 @@ import io
 import pandas as pd
 import docx
 import fitz
+from bs4 import BeautifulSoup
 from fastapi import UploadFile
 from paddleocr import PaddleOCR
 
@@ -102,24 +103,45 @@ def _extract_text_from_word(file_bytes: bytes, file_ext: str) -> str:
     # 2. 如果是旧版 .doc
     elif file_ext == 'doc':
         try:
-            # 将二进制的 .doc 写入一个临时文件，因为 antiword 只能读文件路径
+            # 写入临时文件
             with tempfile.NamedTemporaryFile(suffix='.doc', delete=False) as tmp_file:
                 tmp_file.write(file_bytes)
                 tmp_path = tmp_file.name
             
-            # 调用容器内安装的 antiword 命令提取纯文本
+            # 调用 antiword 提取
             result = subprocess.run(
                 ['antiword', tmp_path], 
                 capture_output=True, 
                 text=True, 
                 check=False
             )
+
+            if "HTML" in result.stderr or "HTML" in result.stdout:
+                try:
+                    logger.info("检测到 HTML 格式伪装，正在启动 BeautifulSoup 兜底解析...")
+                    soup = BeautifulSoup(file_bytes, 'html.parser')
+                    text = soup.get_text(separator='\n')
+                    return text
+                except Exception as html_e:
+                    logger.error(f"HTML 兜底解析也失败了: {str(html_e)}")
+                    # 这里不要 return，继续往下走，看看是不是其他错误
+            
+            # 如果 antiword 确实解析失败但又不是 HTML
+            if result.returncode != 0:
+                logger.error(f"antiword 解析 .doc 失败！退出码: {result.returncode}, 错误信息: {result.stderr}")
+                return ""
+            
+            # 如果 stdout 提取出来是空的
+            if not result.stdout.strip():
+                logger.warning("antiword 解析成功，但提取出的文本为空")
+                return ""
+
             return result.stdout
+            
         except Exception as e:
             logger.error(f".doc 解析失败: {str(e)}")
             return ""
         finally:
-            # 删掉临时文件
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
             
