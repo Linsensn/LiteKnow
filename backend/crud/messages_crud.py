@@ -39,7 +39,7 @@ class CRUDMessage:
         if session_id:
             stmt = stmt.where(Message.session_id == session_id)
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar() or 0
 
     # 5. 新增单条消息
     async def create(self, db: AsyncSession, *, obj_in: dict) -> Message:

@@ -68,7 +68,7 @@ async def upload_attachment(
     
     # 5. 根据解析结果返回不同的提示语
     msg = "上传并解析成功" if extracted_text else "上传成功，但未识别到有效文字（可能是图片不清晰或为空白）"
-    return success(data=new_attachment, message=msg)
+    return success(data=AttachmentResponse.model_validate(new_attachment), message=msg)  # ← 改这行
 
 
 @router.get("", summary="分页获取我的附件列表", response_model=ResponseModel[PageResult[AttachmentResponse]])
@@ -83,6 +83,7 @@ async def get_my_attachments(
         db, user_id=current_student.id,
         file_type=file_type, page=page, page_size=page_size
     )
+    data.list = [AttachmentResponse.model_validate(item) for item in data.list]  # ← 加这行
     return success(data=data)
 
 @router.delete("/{attachment_id}", summary="删除我的附件")

@@ -21,10 +21,7 @@ class BankQuestionService:
         page: int, page_size: int
     ):
         skip = (page - 1) * page_size
-        total = await bank_question.count(
-            db, bank_id=bank_id, keyword=keyword, difficulty=difficulty
-        )
-        items = await bank_question.get_multi(
+        items, total = await bank_question.get_multi(         # ← 元组解包，count 已内含
             db, bank_id=bank_id, keyword=keyword, difficulty=difficulty,
             skip=skip, limit=page_size
         )
