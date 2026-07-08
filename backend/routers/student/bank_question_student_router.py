@@ -5,7 +5,7 @@ from config.database import get_db
 from utils.deps import get_current_user
 from services.bank_question_service import bq_service
 from utils.response import success  
-
+from schemas.bank_question_schema import QuestionResponse
 router = APIRouter(prefix="/questions", tags=["Student - 题库浏览"])
 
 
@@ -23,6 +23,7 @@ async def student_list_questions(
         db=db, bank_id=bank_id, difficulty=difficulty, keyword=keyword,
         page=page, page_size=page_size
     )
+    data.list = [QuestionResponse.model_validate(item) for item in data.list]
     return success(data=data)  
 
 
@@ -33,4 +34,4 @@ async def student_get_question(
     current_student: dict = Depends(get_current_user)
 ):
     data = await bq_service.get_question(db, question_id=question_id)
-    return success(data=data) 
+    return success(data=QuestionResponse.model_validate(data)) 

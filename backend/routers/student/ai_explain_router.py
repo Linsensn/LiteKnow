@@ -39,7 +39,9 @@ async def explain_stream(
     generator = await ai_explain_service.generate_explain_stream(
         db=db,
         session_id=req.session_id,
-        question=req.question
+        question=req.question,
+        user_id=current_student.id,                # ← 新增
+        attachment_ids=req.attachment_ids           # ← 新增
     )
 
     return StreamingResponse(
