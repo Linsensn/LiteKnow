@@ -13,7 +13,6 @@ from utils.exceptions import CustomAPIException, ErrorCode
 class PracticeSessionService:
     async def start_new_session(self, db: AsyncSession, user_id: int, bank_id: int, mode: str, is_options_shuffled: bool, question_sequence: list):
         """核心业务：创建会话（根据模式混淆题目顺序）"""
-        # 安全拷贝，避免空传报错
         sequence = question_sequence.copy() if question_sequence else []
         
         # 🌟 核心升级：根据不同的练习模式，采取不同的查题策略
@@ -30,7 +29,6 @@ class PracticeSessionService:
                 # 【默认模式】顺序/随机，查出当前题库下的所有题目ID
                 stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
 
-            # 注意：AsyncSession 需要使用 await
             result = db.execute(stmt)
             sequence = list(result.scalars().all())
             
@@ -56,8 +54,6 @@ class PracticeSessionService:
                 "status": "ongoing"
             }
             new_session = await practice_sessions_crud.create_practice_session(db=db, obj_in=obj_in)
-            # 原有的 db.commit() 是同步方法，在 SQLAlchemy 2.0+ 的 AsyncSession 中推荐使用 db.commit()
-            # 但为了兼容你原有的 crud 写法，这里保持你原有的调用方式
             db.commit()
             return new_session
         except Exception as e:
@@ -111,5 +107,69 @@ class PracticeSessionService:
         if objs_in:
             await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
             db.commit()
+
+    # 🌟 新增：交卷判题，并自动收录错题 (严格遵守无 await db 操作规范)
+    async def grade_and_submit_session(self, db: AsyncSession, session_id: int, user_id: int, user_answers_map: dict):
+        """核心业务：交卷判题，并自动收录错题"""
+        # 1. 查出会话信息
+        session = await self.get_session_detail(db, session_id, user_id)
+        sequence = session.question_sequence
+
+        if not sequence:
+            session.status = "completed"
+            db.commit()
+            return {"total": 0, "wrong_count": 0}
+
+        # 2. 一次性查出这份卷子所有的题目详情（为了获取正确答案）
+        stmt = select(BankQuestion).where(BankQuestion.id.in_(sequence))
+        result = db.execute(stmt)
+        questions = {q.id: q for q in result.scalars().all()}
+
+        wrong_questions_to_add = []
+
+        # 3. 逐题对比
+        for q_id in sequence:
+            q = questions.get(q_id)
+            if not q: 
+                continue
+
+            # 兼容按字符串字典键或数字键传来的参数
+            u_ans = user_answers_map.get(str(q_id)) or user_answers_map.get(q_id) or []
+            c_ans = q.correct_answer
+
+            # 判题逻辑（兼容多选集的无序比对与单选文本去除首尾空格比对）
+            is_correct = False
+            if isinstance(c_ans, list) and isinstance(u_ans, list):
+                is_correct = set(c_ans) == set(u_ans)
+            elif str(c_ans).strip() == str(u_ans).strip():
+                is_correct = True
+
+            if not is_correct:
+                wrong_questions_to_add.append(q_id)
+
+        # 4. 错题去重并写入数据库
+        if wrong_questions_to_add:
+            # 先查一下这些题是不是已经在错题本里了，避免重复添加
+            exist_stmt = select(WrongQuestion.question_id).where(
+                WrongQuestion.user_id == user_id,
+                WrongQuestion.question_id.in_(wrong_questions_to_add)
+            )
+            exist_res = db.execute(exist_stmt)
+            exist_ids = set(exist_res.scalars().all())
+
+            # 只把全新的错题塞进去
+            new_wrong_objs = [
+                WrongQuestion(user_id=user_id, question_id=qid)
+                for qid in wrong_questions_to_add if qid not in exist_ids
+            ]
+            if new_wrong_objs:
+                db.add_all(new_wrong_objs)
+
+        # 5. 更新会话状态为已完成
+        session.status = "completed"
+        session.last_viewed_index = 0
+        db.commit()
+        
+        return {"total": len(sequence), "wrong_count": len(wrong_questions_to_add)}
 
 ps_service = PracticeSessionService()

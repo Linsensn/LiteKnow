@@ -2,8 +2,9 @@ import logging
 from fastapi import APIRouter, Depends, Query, Path, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from itertools import groupby
+from pydantic import BaseModel
 
 from config.database import get_db
 from utils.deps import get_current_user
@@ -20,6 +21,10 @@ from schemas.practice_session_schemas import (
 
 audit_logger = logging.getLogger("liteknow.audit")
 router = APIRouter(prefix="/practice-sessions", tags=["Student/Practice Sessions"])
+
+# 🌟 声明前端传过来的交卷数据结构
+class SubmitPaperReq(BaseModel):
+    answers: Dict[str, Any]  # Key是题目ID，Value是用户填写的答案
 
 @router.post("", response_model=ResponseModel[PracticeSessionOut], summary="发起新的练习会话")
 async def start_practice_session(
@@ -162,3 +167,19 @@ async def import_sessions(
     await ps_service.import_sessions_from_csv(db=db, user_id=current_student.id, file=file)
     audit_logger.info(f"User {current_student.id} imported sessions from {file.filename}")
     return success(message="数据导入完成")
+
+# 🌟 新增路由：交卷并判题收录错题
+@router.post("/{session_id}/submit-paper", response_model=ResponseModel[dict], summary="交卷并判题收录错题")
+async def submit_paper_and_grade(
+    payload: SubmitPaperReq,
+    session_id: int = Path(..., description="会话ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    result = await ps_service.grade_and_submit_session(
+        db=db, 
+        session_id=session_id, 
+        user_id=current_student.id, 
+        user_answers_map=payload.answers
+    )
+    return success(data=result, message="交卷成功，错题已收录")
