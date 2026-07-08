@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # 依赖注入组件对齐组长的导入
 from config.database import get_db
 from utils.deps import get_current_user
-
+from utils.response import success  
 from schemas.ai_bank_schema import BankParseRequest, BankParseResponse
 from services.ai_bank_service import ai_bank_service
 
@@ -25,8 +25,7 @@ async def parse_text_to_bank(
     user_id = current_student.get("id")
     
     # 获取 Service 返回的 JSON 结构并直接响应
-    return await ai_bank_service.parse_and_save_bank(
-        db=db, 
-        user_id=user_id, 
-        req=req
+    data = await ai_bank_service.parse_and_save_bank(
+        db=db, user_id=user_id, req=req
     )
+    return success(data=data)  
