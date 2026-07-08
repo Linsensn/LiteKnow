@@ -1,4 +1,5 @@
 import csv
+import json
 from io import StringIO
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,6 @@ class WrongQuestionService:
 
     async def update_my_analysis(self, db: AsyncSession, wq_id: int, user_id: int, my_analysis: str):
         try:
-            # 捕获并返回 rowcount
             rowcount = await wrong_questions_crud.update_wrong_question(db=db, id=wq_id, user_id=user_id, update_data={"my_analysis": my_analysis})
             db.commit()
             return rowcount
@@ -31,7 +31,6 @@ class WrongQuestionService:
 
     async def remove_wrong_question(self, db: AsyncSession, wq_id: int, user_id: int):
         try:
-            # 捕获并返回 rowcount
             rowcount = await wrong_questions_crud.delete_wrong_question(db=db, id=wq_id, user_id=user_id)
             db.commit()
             return rowcount
@@ -41,7 +40,6 @@ class WrongQuestionService:
 
     async def bulk_remove_wrong_questions(self, db: AsyncSession, wq_ids: list[int], user_id: int):
         try:
-            # 捕获并返回 rowcount
             rowcount = await wrong_questions_crud.delete_multi_wrong_questions(db=db, ids=wq_ids, user_id=user_id)
             db.commit()
             return rowcount
@@ -64,10 +62,19 @@ class WrongQuestionService:
         output = StringIO()
         writer = csv.writer(output)
         writer.writerow(["错题ID", "题目内容", "你的答案", "正确答案", "个人解析", "收录时间"])
+        
         for w in items:
+            # 将 JSON 转换为字符串存储进 CSV
+            user_ans_str = json.dumps(w.user_answer, ensure_ascii=False) if w.user_answer else ""
+            correct_ans_str = json.dumps(w.correct_answer, ensure_ascii=False) if w.correct_answer else ""
+            
             writer.writerow([
-                w.id, w.question_content, w.user_answer or "", w.correct_answer or "", 
-                w.my_analysis or "", w.created_at.strftime("%Y-%m-%d %H:%M:%S") if w.created_at else ""
+                w.id, 
+                w.question_content, 
+                user_ans_str, 
+                correct_ans_str, 
+                w.my_analysis or "", 
+                w.created_at.strftime("%Y-%m-%d %H:%M:%S") if w.created_at else ""
             ])
         return output.getvalue()
         
@@ -77,13 +84,33 @@ class WrongQuestionService:
         decoded = content.decode('utf-8')
         reader = csv.DictReader(StringIO(decoded))
         objs_in = []
+        
         for row in reader:
+            raw_user_ans = row.get("你的答案", "")
+            raw_correct_ans = row.get("正确答案", "")
+            
+            # 尝试将 CSV 中的字符串解析回 JSON，如果是纯文本且非合法JSON，直接存原字符串也可（取决于你的兼容性要求）
+            parsed_user_ans = None
+            if raw_user_ans:
+                try:
+                    parsed_user_ans = json.loads(raw_user_ans)
+                except json.JSONDecodeError:
+                    parsed_user_ans = raw_user_ans  # 如果解析失败，保留纯文本作为兜底
+            
+            parsed_correct_ans = None
+            if raw_correct_ans:
+                try:
+                    parsed_correct_ans = json.loads(raw_correct_ans)
+                except json.JSONDecodeError:
+                    parsed_correct_ans = raw_correct_ans
+
             objs_in.append({
                 "question_content": row.get("题目内容", ""),
-                "user_answer": row.get("你的答案", ""),
-                "correct_answer": row.get("正确答案", ""),
+                "user_answer": parsed_user_ans,
+                "correct_answer": parsed_correct_ans,
                 "my_analysis": row.get("个人解析", "")
             })
+            
         if objs_in:
             await self.bulk_import_wrong_questions(db=db, user_id=user_id, questions_data=objs_in)
 
