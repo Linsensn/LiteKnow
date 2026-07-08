@@ -1,25 +1,57 @@
 # backend/routers/student/ai_bank_router.py
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session # 🌟 修改：从 asyncio 换成了 orm 同步引入
+from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 
 from config.database import get_db
 from utils.deps import get_current_user
-from utils.response import success  
+from utils.exceptions import CustomAPIException, ErrorCode
+from utils.response import success
+
 from schemas.ai_bank_schema import BankParseRequest, BankParseResponse
 from services.ai_bank_service import ai_bank_service
+# 🌟 新增：引入附件服务
+from services.attachment_service import att_service
 
+logger = logging.getLogger("liteknow.ai_bank")
 router = APIRouter(prefix="/ai/bank", tags=["Student/AI/智能题库"])
 
-@router.post("/parse", response_model=BankParseResponse, summary="提取文本生成结构化题库")
+@router.post("/parse", response_model=BankParseResponse, summary="提取文本/图片生成结构化题库")
 async def parse_text_to_bank(
     req: BankParseRequest,
-    db: Session = Depends(get_db), # 🌟 修改：类型提示改为 Session
+    db: AsyncSession = Depends(get_db), # 恢复为 AsyncSession 以对齐组长
     current_student = Depends(get_current_user)
 ):
     user_id = current_student.id
+    content_parts = []
     
-    # 获取 Service 返回的 JSON 结构并直接响应
-    data = await ai_bank_service.parse_and_save_bank(
-        db=db, user_id=user_id, req=req
+    # 1. 拼接用户手打的文本
+    if req.content and req.content.strip():
+        content_parts.append(f"【用户文本说明】:\n{req.content.strip()}")
+
+    # 2. 🌟 对齐组长：读取附件 OCR 识别好的文本 
+    if req.attachment_ids:
+        for att_id in req.attachment_ids:
+            att = await att_service.get_attachment_by_id(db, att_id=att_id, user_id=user_id)
+            if att and att.extracted_text and att.extracted_text.strip():
+                content_parts.append(f"【附件提取内容】:\n{att.extracted_text}")
+            else:
+                logger.warning(f"附件 {att_id} 不存在或未提取到有效文本")
+
+    if not content_parts:
+        raise CustomAPIException(
+            code=ErrorCode.FILE_OR_IMAGE_VALIDATION_ERROR, 
+            message="请提供有效的文本内容或上传能识别出文字的图片/文件"
+        )
+        
+    final_user_content = "\n\n".join(content_parts)
+    
+    # 3. 调用业务逻辑
+    result = await ai_bank_service.parse_and_save_bank(
+        db=db, 
+        user_id=user_id, 
+        bank_name=req.bank_name,
+        final_content=final_user_content
     )
-    return success(data=data)  
+    
+    return result
