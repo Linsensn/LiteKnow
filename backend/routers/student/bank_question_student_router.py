@@ -1,9 +1,10 @@
-# backend/routers/student/bank_questions_student_route.py
+# backend/routers/student/bank_question_student_router.py
 from fastapi import APIRouter, Depends, Query, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db
 from utils.deps import get_current_user
 from services.bank_question_service import bq_service
+from utils.response import success  
 
 router = APIRouter(prefix="/questions", tags=["Student - 题库浏览"])
 
@@ -18,10 +19,11 @@ async def student_list_questions(
     db: AsyncSession = Depends(get_db),
     current_student: dict = Depends(get_current_user)
 ):
-    return await bq_service.get_question_page(
+    data = await bq_service.get_question_page(
         db=db, bank_id=bank_id, difficulty=difficulty, keyword=keyword,
         page=page, page_size=page_size
     )
+    return success(data=data)  
 
 
 @router.get("/{question_id}", summary="查看单道题目详情")
@@ -30,4 +32,5 @@ async def student_get_question(
     db: AsyncSession = Depends(get_db),
     current_student: dict = Depends(get_current_user)
 ):
-    return await bq_service.get_question(db, question_id=question_id)
+    data = await bq_service.get_question(db, question_id=question_id)
+    return success(data=data) 

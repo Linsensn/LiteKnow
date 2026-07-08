@@ -4,6 +4,9 @@ from utils.exceptions import CustomAPIException, ErrorCode
 from crud.attachments_crud import attachment_crud
 from schemas.attachment_schema import AttachmentResponse
 from schemas.common import PageResult
+from utils.ocr_client import ocr_client
+import logging    
+logger = logging.getLogger("liteknow.attachment")
 
 class AttachmentService:
 
@@ -45,19 +48,27 @@ class AttachmentService:
             page_size=page_size
         )
 
-    # 3. 创建附件记录
     async def create_attachment(
         self, db: AsyncSession, *, user_id: int, file_type: str,
         file_url: str, extracted_text: str = None, message_id: int = None
     ):
+        # ★ 新增：如果是图片且未传入 extracted_text，自动运行 OCR
+        if not extracted_text and file_type and file_type.startswith("image/"):
+            ocr_text = ocr_client.ocr_image(file_url)
+            if ocr_text:
+                extracted_text = ocr_text
+                logger.info(
+                    f"OCR 自动识别完成，attachment 路径: {file_url}"
+                )
+
         try:
             new_attachment = await attachment_crud.create_with_owner(
                 db, user_id=user_id, file_type=file_type,
                 file_url=file_url, extracted_text=extracted_text,
                 message_id=message_id
             )
-            db.commit()
-            db.refresh(new_attachment)
+            await db.commit()
+            await db.refresh(new_attachment)
             return new_attachment
         except Exception as e:
             db.rollback()
