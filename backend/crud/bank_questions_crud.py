@@ -17,8 +17,8 @@ class CRUDBankQuestion:
         return result.scalar_one_or_none()
 
     # 2. 分页多条件查询（含总数）
-    async def get_multi_bank_questions(
-        db: AsyncSession, *, skip: int = 0, limit: int = 20,
+    async def get_multi(
+        self,db: AsyncSession, *, skip: int = 0, limit: int = 20,
         bank_id: Optional[int] = None, keyword: Optional[str] = None,
         difficulty: Optional[str] = None
     ) -> Tuple[List[BankQuestion], int]:
@@ -61,7 +61,7 @@ class CRUDBankQuestion:
             stmt = stmt.where(BankQuestion.content.ilike(f"%{keyword}%"))
 
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar() or 0
 
     # 4. 单条新增
     async def create(self, db: AsyncSession, *, obj_in: dict) -> BankQuestion:
@@ -106,7 +106,7 @@ class CRUDBankQuestion:
         """统计某个题库的题目数量"""
         stmt = select(func.count(BankQuestion.id)).where(BankQuestion.bank_id == bank_id)
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar() or 0
     
     # 随机获取 N 道题 — 用于乱序练习模式
     async def get_random(self, db: AsyncSession, *, bank_id: int, limit: int = 10) -> List[BankQuestion]:
