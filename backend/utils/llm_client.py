@@ -139,7 +139,7 @@ class LLMClient:
             logger.error(f"LLM 对话流式调用异常: {str(e)}")
             yield f"\n[服务异常: {str(e)}]"
 
-    def get_langchain_chat_model(model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
+    def get_langchain_chat_model(self, model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
         """
         获取配置好的 LangChain ChatOpenAI 实例
         """

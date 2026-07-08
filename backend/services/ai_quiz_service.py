@@ -10,7 +10,6 @@ from models.bank_questions import BankQuestion
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 
-# ======= 引入 LangChain 相关库 =======
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
@@ -84,7 +83,7 @@ class AIQuizService:
         try:
             # 2. 追加或新建题库逻辑
             if target_bank_id:
-                result = await db.execute(
+                result = db.execute(
                     select(QuestionBank).where(QuestionBank.id == target_bank_id, QuestionBank.user_id == user_id)
                 )
                 existing_bank = result.scalars().first()
@@ -101,7 +100,7 @@ class AIQuizService:
                     total_questions=len(questions)
                 )
                 db.add(new_bank)
-                await db.flush() 
+                db.flush() 
                 bank_id = new_bank.id
 
             # 3. 批量存入题目 (因为 questions 是 Pydantic 对象，用 . 读取属性)
@@ -114,7 +113,7 @@ class AIQuizService:
                     content=q.content,
                     # 将 Pydantic 的 options 列表转成前端需要的 JSON 数组结构
                     options_json=[opt.model_dump() for opt in q.options_json],
-                    correct_answer=json.dumps(q.correct_answer, ensure_ascii=False),
+                    correct_answer=q.correct_answer,
                     ai_analysis=q.ai_analysis
                 ) for q in questions
             ]
@@ -127,7 +126,7 @@ class AIQuizService:
             )
             await msg_service.create_message(db, obj_in=ai_msg_in)
             
-            await db.commit()
+            db.commit()
 
             return {
                 "bank_id": bank_id,
@@ -136,10 +135,10 @@ class AIQuizService:
             }
 
         except CustomAPIException as ce:
-            await db.rollback()
+            db.rollback()
             raise ce
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             logger.error(f"测验生成与落库失败: {str(e)}")
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED, message="智能测验处理入库失败")
 
