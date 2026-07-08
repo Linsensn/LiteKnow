@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends
 from utils.deps import get_current_user, get_admin_user
 student_router = APIRouter()
 
-# 1. 在这里导入 ai_bank_router
 from . import (
     ai_summary_router,
+    ai_quiz_router, 
     ai_explain_router, 
     ai_bank_router,           
     practice_records_student_router,
@@ -36,4 +36,5 @@ student_router.include_router(practice_sessions_student_router.router, dependenc
 student_router.include_router(practice_records_student_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(ai_summary_router.router, dependencies=[Depends(get_current_user)])
 student_router.include_router(ai_bank_router.router, dependencies=[Depends(get_current_user)]) 
+student_router.include_router(ai_quiz_router.router, dependencies=[Depends(get_current_user)]) 
 student_router.include_router(ai_explain_router.router, dependencies=[Depends(get_current_user)])

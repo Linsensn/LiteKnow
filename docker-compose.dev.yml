@@ -29,12 +29,15 @@ services:
   backend:
     image: linssen85012/liteknow-backend:latest
     build:
-      context: ./backend # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
+      context: ./backend # 指定 Dockerfile 所在的目录
       dockerfile: Dockerfile
     container_name: liteknow-backend-dev
     restart: always
     env_file:
       - .env
+    environment: 
+      - PADDLE_CPU_ONLY=1
+      - FLAGS_enable_pir=0 
     ports:
       - "8000:8000" # 对外暴露 API 端口
     volumes:
@@ -44,7 +47,7 @@ services:
         condition: service_healthy # 等待 MySQL 健康检查通过后再启动后端
       redis:
         condition: service_started
-    # 修改为 app.main:app，指向 app 目录下的 main.py
+    # 启动命令，指向 app 目录下的 main.py
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # 定义持久化数据卷
