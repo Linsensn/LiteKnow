@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from crud import practice_sessions_crud
 from models.bank_questions import BankQuestion
-from models.wrong_questions import WrongQuestion  # 🌟 新增导入错题模型
+from models.wrong_questions import WrongQuestion
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class PracticeSessionService:
@@ -15,10 +15,8 @@ class PracticeSessionService:
         """核心业务：创建会话（根据模式混淆题目顺序）"""
         sequence = question_sequence.copy() if question_sequence else []
         
-        # 🌟 核心升级：根据不同的练习模式，采取不同的查题策略
         if not sequence:
             if mode == "mistake":
-                # 【错题模式】联表查询：找出当前用户、当前题库下的所有错题ID
                 stmt = select(WrongQuestion.question_id).join(
                     BankQuestion, WrongQuestion.question_id == BankQuestion.id
                 ).where(
@@ -26,20 +24,17 @@ class PracticeSessionService:
                     BankQuestion.bank_id == bank_id
                 )
             else:
-                # 【默认模式】顺序/随机，查出当前题库下的所有题目ID
                 stmt = select(BankQuestion.id).where(BankQuestion.bank_id == bank_id)
 
             result = db.execute(stmt)
             sequence = list(result.scalars().all())
             
-        # 🌟 针对错题模式的专属空数据提示
         if not sequence:
             if mode == "mistake":
                 raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "太棒了，你在这个题库里还没有错题！"})
             else:
                 raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "该题库下暂时没有题目哦"})
 
-        # 处理随机模式 (错题练习也可以叠加随机)
         if mode == "random" or mode == "mistake":
             random.shuffle(sequence)
             
@@ -108,7 +103,6 @@ class PracticeSessionService:
             await practice_sessions_crud.create_multi_sessions(db=db, objs_in=objs_in)
             db.commit()
 
-    # 🌟 新增：交卷判题，并自动收录错题 (严格遵守无 await db 操作规范)
     async def grade_and_submit_session(self, db: AsyncSession, session_id: int, user_id: int, user_answers_map: dict):
         """核心业务：交卷判题，并自动收录错题"""
         # 1. 查出会话信息
@@ -125,7 +119,8 @@ class PracticeSessionService:
         result = db.execute(stmt)
         questions = {q.id: q for q in result.scalars().all()}
 
-        wrong_questions_to_add = []
+        # 🌟 修复点 1：不再只存 ID，而是把整道题的对象和用户的答案都暂存下来
+        wrong_questions_data = []
 
         # 3. 逐题对比
         for q_id in sequence:
@@ -145,23 +140,40 @@ class PracticeSessionService:
                 is_correct = True
 
             if not is_correct:
-                wrong_questions_to_add.append(q_id)
+                wrong_questions_data.append({
+                    "q_id": q_id,
+                    "u_ans": u_ans,
+                    "q_obj": q
+                })
 
         # 4. 错题去重并写入数据库
-        if wrong_questions_to_add:
-            # 先查一下这些题是不是已经在错题本里了，避免重复添加
+        if wrong_questions_data:
+            # 提取出所有的题号用于查重
+            q_ids_to_check = [item["q_id"] for item in wrong_questions_data]
+            
             exist_stmt = select(WrongQuestion.question_id).where(
                 WrongQuestion.user_id == user_id,
-                WrongQuestion.question_id.in_(wrong_questions_to_add)
+                WrongQuestion.question_id.in_(q_ids_to_check)
             )
             exist_res = db.execute(exist_stmt)
             exist_ids = set(exist_res.scalars().all())
 
-            # 只把全新的错题塞进去
-            new_wrong_objs = [
-                WrongQuestion(user_id=user_id, question_id=qid)
-                for qid in wrong_questions_to_add if qid not in exist_ids
-            ]
+            # 🌟 修复点 2：在实例化 WrongQuestion 时，把题目快照内容塞进去
+            new_wrong_objs = []
+            for item in wrong_questions_data:
+                if item["q_id"] not in exist_ids:
+                    q_obj = item["q_obj"]
+                    new_wrong_objs.append(
+                        WrongQuestion(
+                            user_id=user_id, 
+                            question_id=item["q_id"],
+                            question_content=q_obj.content,          # 补上题目内容快照
+                            user_answer=item["u_ans"],               # 补上用户的错误答案
+                            correct_answer=q_obj.correct_answer,     # 补上正确答案
+                            ai_analysis=q_obj.ai_analysis            # 补上AI解析
+                        )
+                    )
+            
             if new_wrong_objs:
                 db.add_all(new_wrong_objs)
 
@@ -170,6 +182,6 @@ class PracticeSessionService:
         session.last_viewed_index = 0
         db.commit()
         
-        return {"total": len(sequence), "wrong_count": len(wrong_questions_to_add)}
+        return {"total": len(sequence), "wrong_count": len(wrong_questions_data)}
 
 ps_service = PracticeSessionService()
