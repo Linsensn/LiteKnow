@@ -21,14 +21,16 @@ async def create_text_summary_stream(
     处理纯文本格式的课文摘要请求。
     采用 Server-Sent Events (SSE) 协议返回打字机流式响应。
     """
-    # 获取 service 返回的异步代理生成器[cite: 20]
+    # 获取 service 返回的异步代理生成器，传入附件ID列表和用户ID
     generator = await ai_summary_service.generate_text_summary_stream(
         db=db, 
-        session_id=req.session_id, 
-        user_content=req.content
+        session_id=req.session_id,
+        user_id=current_student.id,  # 传递用户ID
+        user_content=req.content,
+        attachment_ids=req.parsed_attachment_ids # 传递解析好的附件ID列表
     )
     
-    # 必须使用 StreamingResponse，并将 media_type 设为 text/event-stream[cite: 20]
+    # 必须使用 StreamingResponse，并将 media_type 设为 text/event-stream
     return StreamingResponse(
         generator, 
         media_type="text/event-stream"
