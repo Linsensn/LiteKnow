@@ -40,12 +40,10 @@ async def upload_attachment(
     if file.content_type not in ALLOWED_TYPES:
         raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="不支持的文件类型")
     
-    
     # 2. 读取并校验文件大小
     file_bytes = await file.read()
     if len(file_bytes) > MAX_FILE_SIZE:
         raise CustomAPIException(code=ErrorCode.BUSINESS_PARAM_ERROR, message="文件大小不能超过10MB")
-    
     
     # 3. 本地存储
     file_path = save_file_local(

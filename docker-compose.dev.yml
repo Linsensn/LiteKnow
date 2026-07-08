@@ -25,14 +25,6 @@ services:
     ports:
       - "6379:6379"
 
-  # OCR 文字识别服务
-  ocr:
-    build: ./ocr
-    container_name: liteknow-ocr-dev
-    restart: always
-    ports:
-      - "9003:9003"
-
   # FastAPI 后端服务
   backend:
     image: linssen85012/liteknow-backend:latest
