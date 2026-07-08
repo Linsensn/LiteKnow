@@ -1,3 +1,6 @@
 {
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "识别题库",
+  "backgroundColor": "#f5f7fa",
+  "navigationBarBackgroundColor": "#ffffff"
 }

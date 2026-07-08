@@ -15,7 +15,9 @@
     "pages/adminUsers/adminUsers",
     "pages/adminBanks/adminBanks",
     "pages/adminSessions/adminSessions",
-    "pages/profileEdit/profileEdit"
+    "pages/profileEdit/profileEdit",
+    "pages/doPractice/doPractice",
+    "pages/questionManage/questionManage"
   ],
   "window": {
     "navigationBarTextStyle": "black",

@@ -1,33 +1,48 @@
 <view class="container">
-  <view class="content-card">
-    <view class="card-title">指定知识点或提出疑问</view>
-    <textarea 
-      class="text-input" 
-      placeholder="例如：请帮我详细讲解一下光合作用的过程，或者解释一下什么是牛顿第一定律..." 
-      maxlength="500" 
-      bindinput="onInput" 
-      value="{{questionText}}">
-    </textarea>
+  
+  <scroll-view class="chat-scroll-area" scroll-y="true" scroll-into-view="{{scrollToId}}" scroll-with-animation="true">
+    <view class="chat-list" wx:if="{{messageList.length > 0}}">
+      
+      <view class="chat-item {{item.role === 'user' ? 'user-msg' : 'ai-msg'}}" wx:for="{{messageList}}" wx:key="id" id="msg-{{item.id}}">
+        <image class="avatar" src="{{item.role === 'user' ? userInfo.avatar_url : '/assets/ai-avatar.png'}}"></image>
+        
+        <view class="bubble-wrapper">
+          <view class="bubble">
+            <rich-text wx:if="{{item.role === 'ai' && item.htmlNodes}}" nodes="{{item.htmlNodes}}"></rich-text>
+            <text class="content" wx:else>{{item.content}}</text>
+          </view>
+          
+          <view class="copy-btn" wx:if="{{item.role === 'ai' && !isLoading}}" catchtap="copyText" data-text="{{item.content}}">
+            <text>📋 复制内容</text>
+          </view>
+        </view>
+      </view>
+
+    </view>
+  </scroll-view>
+
+  <view class="bottom-input-area">
+    <view class="form-title" wx:if="{{messageList.length === 0}}">指定知识点或提出疑问</view>
     
-    <view class="action-group">
-      <button 
-        class="generate-btn" 
-        bindtap="generateExplanation" 
-        disabled="{{!questionText || isTyping}}">
-        {{isTyping ? '正在生成讲解...' : '开始精讲'}}
+    <view class="input-area">
+      <textarea 
+        class="question-input {{messageList.length > 0 ? 'compact' : ''}}" 
+        placeholder="例如：解释一下什么是牛顿第一定律..." 
+        placeholder-class="placeholder-style"
+        value="{{questionText}}" 
+        bindinput="onInput"
+        maxlength="500"
+        disable-default-padding="true"
+        cursor-spacing="20"
+      ></textarea>
+      <view class="word-count">{{questionText.length}}/500</view>
+    </view>
+
+    <view class="btn-wrapper">
+      <button class="submit-btn {{questionText.length > 0 ? 'active' : ''}}" bindtap="submitQuestion" disabled="{{isLoading}}">
+        {{isLoading ? 'AI 思考中...' : '开始精讲'}}
       </button>
     </view>
   </view>
 
-  <view class="content-card result-card" wx:if="{{explainResult || isTyping}}">
-    <view class="card-title">💡 AI 深度剖析</view>
-    <view class="result-text">
-      <text user-select="true">{{explainResult}}</text>
-    </view>
-    
-    <view class="action-footer">
-      <view class="feedback-btn" bindtap="askMore">没太懂，继续追问</view>
-      <view class="copy-btn" bindtap="copyResult">复制</view>
-    </view>
-  </view>
 </view>

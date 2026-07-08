@@ -1,0 +1,29 @@
+<view class="container">
+  <view class="header">
+    <text class="title">共 {{totalQuestions}} 道题目</text>
+    <view class="filter-btn">筛选 ▾</view>
+  </view>
+
+  <scroll-view scroll-y="true" class="list-area" bindscrolltolower="loadMore">
+    <view class="q-card" wx:for="{{questionList}}" wx:key="id">
+      <view class="q-card-header">
+        <view class="tags">
+          <text class="tag-type">{{item.question_type === 'single_choice' ? '单选' : (item.question_type === 'multi_choice' ? '多选' : '简答')}}</text>
+          <text class="tag-diff {{item.difficulty_level}}">{{item.difficulty_level === 'easy' ? '简单' : (item.difficulty_level === 'hard' ? '困难' : '中等')}}</text>
+        </view>
+        <text class="delete-btn" catchtap="deleteQuestion" data-id="{{item.id}}">删除</text>
+      </view>
+      
+      <view class="q-content">{{item.content}}</view>
+      
+      <view class="q-options" wx:if="{{item.question_type !== 'essay'}}">
+        <text wx:for="{{item.displayOptions}}" wx:for-item="opt" wx:key="*this">{{opt}}</text>
+      </view>
+      
+      <view class="q-answer">正确答案：{{item.displayAnswer}}</view>
+    </view>
+    
+    <view class="loading-status" wx:if="{{isLoading}}">加载中...</view>
+    <view class="loading-status" wx:if="{{!hasMore && questionList.length > 0}}">到底啦~</view>
+  </scroll-view>
+</view>

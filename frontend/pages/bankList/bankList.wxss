@@ -1,89 +1,57 @@
+/* 容器背景设为淡淡的灰色，让白色卡片更凸显 */
 .container {
   min-height: 100vh;
-  background-color: #f7f8fa;
+  background-color: #f5f7fa;
   padding: 30rpx;
-  box-sizing: border-box;
 }
 
-.list-wrapper {
-  width: 100%;
+.bank-list {
+  display: flex;
+  flex-direction: column;
 }
 
-/* 列表卡片 */
-.bank-item {
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 36rpx 30rpx;
-  margin-bottom: 20rpx;
+/* 核心卡片样式：圆角+阴影 */
+.bank-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.02);
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03); /* 极淡的阴影，高级感来源 */
+  transition: all 0.2s;
 }
 
-.bank-item:active {
-  background-color: #fcfcfc;
+/* 点击反馈效果 */
+.bank-card:active {
+  transform: scale(0.98);
+  background-color: #f9f9f9;
 }
 
-.item-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding-right: 20rpx;
-}
-
-.bank-title {
+/* 字体层级：主标题加粗，副标题灰色 */
+.bank-name {
   font-size: 32rpx;
-  color: #333333;
-  font-weight: 500;
-  margin-bottom: 8rpx;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
-.bank-subtitle {
-  font-size: 24rpx;
-  color: #b2b2b2;
-  margin-top: 4rpx;
-}
-
-.item-right {
+.bank-right {
   display: flex;
   align-items: center;
 }
 
-.bank-count {
-  font-size: 30rpx;
-  color: #888888;
-  margin-right: 16rpx;
+.q-count {
+  font-size: 26rpx;
+  color: #999;
+  margin-right: 20rpx;
+  background: #f0f2f5;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
 }
 
 .arrow {
-  font-size: 30rpx;
-  color: #cccccc;
-  font-family: "Courier New", Courier, monospace; 
-}
-
-/* --- 新增：空状态样式 --- */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 200rpx; /* 让提示内容居中偏下 */
-}
-
-.empty-icon {
-  font-size: 100rpx;
-  margin-bottom: 30rpx;
-}
-
-.empty-text {
-  font-size: 32rpx;
-  color: #333333;
+  color: #c8c8c8;
+  font-size: 28rpx;
   font-weight: bold;
-  margin-bottom: 16rpx;
-}
-
-.empty-subtext {
-  font-size: 26rpx;
-  color: #999999;
 }

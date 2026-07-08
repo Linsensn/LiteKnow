@@ -1,0 +1,21 @@
+.container { min-height: 100vh; background-color: #f5f7fa; display: flex; flex-direction: column; }
+.header { padding: 30rpx; display: flex; justify-content: space-between; align-items: center; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02); z-index: 10;}
+.title { font-size: 28rpx; color: #666; }
+.filter-btn { font-size: 28rpx; color: #2b85e4; font-weight: bold;}
+
+.list-area { flex: 1; padding: 20rpx 30rpx; box-sizing: border-box; height: 0; }
+.q-card { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 24rpx; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.03); }
+
+.q-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; }
+.tags { display: flex; gap: 16rpx; }
+.tag-type { background: #e6f1fc; color: #2b85e4; font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 8rpx; font-weight: bold; }
+.tag-diff { font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 8rpx; }
+.tag-diff.easy { background: #f6ffed; color: #52c41a; }
+.tag-diff.medium { background: #fff7e6; color: #fa8c16; }
+.tag-diff.hard { background: #fff1f0; color: #ff4d4f; }
+.delete-btn { font-size: 24rpx; color: #999; }
+
+.q-content { font-size: 30rpx; color: #333; font-weight: 500; margin-bottom: 20rpx; line-height: 1.5; }
+.q-options { display: flex; flex-direction: column; gap: 10rpx; margin-bottom: 20rpx; font-size: 26rpx; color: #666; background: #f9f9f9; padding: 16rpx; border-radius: 8rpx;}
+.q-answer { font-size: 26rpx; color: #07c160; font-weight: bold; border-top: 2rpx dashed #eee; padding-top: 20rpx;}
+.loading-status { text-align: center; font-size: 24rpx; color: #999; padding: 20rpx 0; }

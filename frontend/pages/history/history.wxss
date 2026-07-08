@@ -1,4 +1,8 @@
+/* ✨ 修复 1：解除全局居中，强制撑满 100% 宽度 */
 .container {
+  display: block; 
+  width: 100%;
+  box-sizing: border-box;
   min-height: 100vh;
   background-color: #f5f7fa;
   padding: 30rpx;
@@ -10,11 +14,21 @@
   gap: 24rpx;
 }
 
+/* ✨ 修复 2：卡片宽度设为 100%，并增加点击时的原生交互反馈 */
 .history-card {
+  width: 100%;
+  box-sizing: border-box;
   background: #ffffff;
   border-radius: 20rpx;
   padding: 30rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
+  transition: all 0.2s; /* 点击动画过渡 */
+}
+
+/* 增加类似 iOS 的点击按压效果 */
+.history-card:active {
+  transform: scale(0.98);
+  background-color: #fafafa;
 }
 
 .card-header {

@@ -1,158 +1,29 @@
-page {
-  background-color: #F5F7FA;
-}
+/* summary.wxss & quiz.wxss 共用基础设计 */
+.container { padding: 30rpx; background-color: #f5f7fa; min-height: 100vh; box-sizing: border-box; }
+.form-card, .section-card, .result-card { background: #fff; border-radius: 24rpx; padding: 40rpx 30rpx; margin-bottom: 30rpx; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.02); width: 100%; box-sizing: border-box; }
+.form-title, .section-title { font-size: 34rpx; font-weight: bold; color: #333; margin-bottom: 24rpx; }
 
-.container {
-  padding: 30rpx 24rpx;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  padding-bottom: 60rpx; /* 给底部留点呼吸空间 */
-}
+/* 文本域 */
+.content-input, .source-input { width: 100%; height: 240rpx; background: #f8f9fa; border-radius: 16rpx; padding: 20rpx; font-size: 28rpx; box-sizing: border-box; margin-bottom: 20rpx;}
 
-/* 基础卡片样式复用 */
-.content-card {
-  width: 100%;
-  box-sizing: border-box;
-  background: #FFF;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
-}
+/* 按钮通用 */
+.submit-btn, .generate-btn { background: #a3e4b7; color: #fff; border-radius: 50rpx; font-weight: bold; padding: 16rpx 0; width: 100% !important; margin-top: 20rpx;}
+.submit-btn.active, .generate-btn.active { background: #07c160; box-shadow: 0 8rpx 20rpx rgba(7,193,96,0.3); }
 
-.card-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 24rpx;
-}
+/* 摘要页独有 */
+.attachment-bar { display: flex; align-items: center; justify-content: flex-end; }
+.upload-btn, .file-tag { font-size: 24rpx; color: #666; background: #f0f2f5; padding: 10rpx 24rpx; border-radius: 30rpx; }
+.delete-icon { color: #ff4d4f; margin-left: 10rpx; font-weight: bold; }
+.result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; border-bottom: 2rpx dashed #eee; padding-bottom: 20rpx;}
+.copy-btn { font-size: 24rpx; color: #2b85e4; background: #e6f1fc; padding: 6rpx 20rpx; border-radius: 10rpx;}
+.result-content { font-size: 30rpx; color: #333; line-height: 1.8; max-height: 600rpx;}
 
-.text-input {
-  width: 100%;
-  height: 180rpx;
-  background-color: #F9F9F9;
-  border-radius: 12rpx;
-  padding: 20rpx;
-  font-size: 28rpx;
-  color: #333;
-  box-sizing: border-box;
-}
-
-.action-group {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 30rpx;
-}
-
-.generate-btn {
-  margin: 0;
-  background: #07c160;
-  color: #FFF;
-  font-size: 28rpx;
-  border-radius: 40rpx;
-  padding: 0 60rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-}
-
-.generate-btn[disabled] {
-  background: #A5E4C0 !important;
-  color: #FFF !important;
-}
-
-/* 题目卡片专属样式 */
-.quiz-title {
-  font-size: 32rpx;
-  color: #333;
-  font-weight: 500;
-  margin-bottom: 30rpx;
-  line-height: 1.5;
-}
-
-.quiz-num {
-  font-weight: bold;
-  color: #07c160;
-  margin-right: 10rpx;
-}
-
-.option-item {
-  display: flex;
-  align-items: center;
-  background-color: #F8F9FA;
-  border: 2rpx solid transparent;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  transition: all 0.2s;
-}
-
-.option-label {
-  font-weight: bold;
-  margin-right: 16rpx;
-  color: #666;
-}
-
-.option-text {
-  font-size: 30rpx;
-  color: #444;
-}
-
-/* 选项状态样式 */
-.option-item.selected {
-  background-color: #E8F5E9;
-  border-color: #07c160;
-}
-.option-item.selected .option-label {
-  color: #07c160;
-}
-
-/* 提交后的正确/错误反馈 */
-.option-item.correct {
-  background-color: #E8F5E9;
-  border-color: #07c160;
-}
-.option-item.wrong {
-  background-color: #FFEBEE;
-  border-color: #F44336;
-}
-
-/* 解析区域 */
-.explanation-box {
-  margin-top: 30rpx;
-  padding: 24rpx;
-  background-color: #FFF9E6;
-  border-radius: 12rpx;
-  display: flex;
-  flex-direction: column;
-}
-
-.exp-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #F57C00;
-  margin-bottom: 12rpx;
-}
-
-.exp-content {
-  font-size: 28rpx;
-  color: #555;
-  line-height: 1.6;
-}
-
-/* 底部大按钮 */
-.submit-quiz-btn {
-  width: 90% !important;
-  background: #07c160;
-  color: #FFF;
-  border-radius: 50rpx;
-  font-size: 34rpx;
-  font-weight: normal;
-  margin-top: 20rpx;
-}
-
-.restart-btn {
-  background: #FFF;
-  color: #07c160;
-  border: 2rpx solid #07c160;
-}
+/* 测验页独有 */
+.upload-btn-light { text-align: center; font-size: 26rpx; color: #07c160; padding: 16rpx; border: 2rpx dashed #07c160; border-radius: 12rpx; }
+.config-row { display: flex; align-items: center; justify-content: space-between; padding: 20rpx 0; border-bottom: 2rpx solid #f5f5f5;}
+.label { font-size: 30rpx; color: #333; font-weight: 500;}
+.slider { flex: 1; margin-left: 40rpx;}
+.radio-group { display: flex; gap: 20rpx;}
+.radio-item { padding: 8rpx 30rpx; background: #f5f5f5; border-radius: 30rpx; font-size: 26rpx; color: #666; border: 2rpx solid transparent;}
+.radio-item.selected { background: #e8f8f0; color: #07c160; border-color: #07c160;}
+.picker-value { font-size: 28rpx; color: #666;}

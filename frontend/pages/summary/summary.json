@@ -1,3 +1,6 @@
 {
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "课文摘要",
+  "backgroundColor": "#f5f7fa",
+  "navigationBarBackgroundColor": "#ffffff"
 }

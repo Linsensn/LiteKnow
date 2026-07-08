@@ -15,34 +15,27 @@ Page({
   },
 
   // ✨ 核心方法：拉取真实历史数据
-  // 参数 isRefresh: 是否是下拉刷新/首次加载（true表示清空重置，false表示触底追加）
   async fetchSessions(isRefresh = false) {
-    if (this.data.isLoading) return; // 防抖，避免重复请求
-    if (!isRefresh && !this.data.hasMore) return; // 如果不是刷新，且没有更多数据了，直接退出
+    if (this.data.isLoading) return; 
+    if (!isRefresh && !this.data.hasMore) return; 
 
     this.setData({ isLoading: true });
 
-    // 如果是刷新，重置页码和状态
+    // ✨ 修复 1：直接使用页码，不再计算 skip
     let currentPage = isRefresh ? 1 : this.data.page;
-    let currentSkip = (currentPage - 1) * this.data.pageSize;
 
     try {
-      // ⚠️ 注意：这里的路径请确保与您主程序挂载的真实前缀一致（假设包含 /api/v1/student）
       const res = await util.request('/api/v1/student/sessions/', 'GET', {
-        skip: currentSkip,
-        limit: this.data.pageSize
-        // keyword: '', // 以后加搜索框可以传这个
-        // task_type: '' // 以后加分类 Tab 可以传这个
+        page: currentPage,            // 对齐后端的 page
+        page_size: this.data.pageSize // 对齐后端的 page_size
       });
 
-      // 获取到的新数据数组
-      const newData = res || []; 
+      // ✨ 修复 2：从后端的 PageResult 结构中提取真正的数组 list
+      const newData = (res && res.list) ? res.list : []; 
       
       this.setData({
-        // 如果是刷新，直接覆盖；如果是触底，则将新数据拼接到老数据后面
         sessionList: isRefresh ? newData : [...this.data.sessionList, ...newData],
         page: currentPage + 1,
-        // 如果后端返回的数据条数小于我们请求的每页条数，说明到底了
         hasMore: newData.length === this.data.pageSize
       });
 
@@ -51,7 +44,20 @@ Page({
       wx.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       this.setData({ isLoading: false });
-      wx.stopPullDownRefresh(); // 停止顶部转圈动画
+      wx.stopPullDownRefresh(); 
+    }
+  },
+
+  // ✨ 新增：点击历史卡片，根据任务类型跳转到对应的 AI 页面恢复上下文
+  goToDetail(e) {
+    const { id, type } = e.currentTarget.dataset;
+    
+    if (type === 'summary') {
+      wx.navigateTo({ url: `/pages/summary/summary?sessionId=${id}` });
+    } else if (type === 'explain') {
+      wx.navigateTo({ url: `/pages/explain/explain?sessionId=${id}` });
+    } else {
+      wx.showToast({ title: '该任务类型暂未开放历史查看', icon: 'none' });
     }
   },
 

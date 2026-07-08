@@ -1,138 +1,217 @@
-/* 页面整体底色 */
 .container {
   min-height: 100vh;
-  background-color: #f7f8fa;
+  background-color: #f5f7fa; 
   padding: 30rpx;
   box-sizing: border-box;
 }
 
-/* 核心包裹卡片 */
-.content-card {
-  background: #ffffff;
+/* 核心白色卡片 */
+.form-card {
+  background-color: #ffffff;
+  border-radius: 24rpx;
   padding: 40rpx 30rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.02);
 }
 
-.card-title {
-  font-size: 32rpx;
+/* Tabs 样式 */
+.tabs {
+  display: flex;
+  background-color: #f0f2f5;
+  border-radius: 16rpx;
+  padding: 8rpx;
+  margin-bottom: 40rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  padding: 16rpx 0;
+  border-radius: 12rpx;
+  transition: all 0.3s;
+}
+
+.tab-item.active {
+  background-color: #ffffff;
+  color: #333333;
+  font-weight: bold;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.form-title {
+  font-size: 34rpx;
   font-weight: bold;
   color: #333333;
   margin-bottom: 12rpx;
 }
 
-.sub-text {
+.form-subtitle {
   font-size: 26rpx;
   color: #888888;
-  margin-bottom: 30rpx;
   line-height: 1.5;
+  margin-bottom: 30rpx;
 }
 
-/* 内部虚线上传框 */
+/* 上传/预览区域 */
 .upload-area {
-  background: #f8f9fb;
-  border: 2rpx dashed #d1d5db;
+  background-color: #f8f9fa;
   border-radius: 16rpx;
+  height: 360rpx;
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 50rpx;
+}
+
+.empty-state {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 60rpx 0;
-  margin-bottom: 40rpx;
-  transition: all 0.2s;
+  align-items: center;
+}
+.empty-state:active {
+  background-color: #f0f2f5; 
 }
 
-.upload-area:active {
-  background: #f0fdf4;
-  border-color: #07c160;
-}
-
-.upload-icon {
-  font-size: 50rpx;
+.plus-icon {
+  font-size: 60rpx;
   color: #999999;
+  font-weight: 300;
   margin-bottom: 10rpx;
-  line-height: 1;
 }
 
 .upload-text {
   font-size: 28rpx;
-  color: #999999;
+  color: #666666;
 }
 
-/* 文件列表 */
-.file-list {
+.preview-state {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+}
+
+.doc-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.doc-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+.doc-name {
+  font-size: 28rpx;
+  color: #333;
+  word-break: break-all;
+  padding: 0 40rpx;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  width: 50rpx;
+  height: 50rpx;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 36rpx;
+  z-index: 10;
+}
+.remove-btn:active {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* 文本输入区样式 */
+.text-area-wrapper {
+  margin-bottom: 50rpx;
+}
+
+.input-group {
   margin-bottom: 30rpx;
 }
 
-.file-item {
-  display: flex;
-  align-items: center;
-  background: #f8f9fb;
-  padding: 20rpx;
-  border-radius: 12rpx;
+.label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
   margin-bottom: 16rpx;
 }
 
-.file-thumb {
-  width: 70rpx;
-  height: 70rpx;
-  border-radius: 8rpx;
-  margin-right: 20rpx;
-  background: #e0e0e0;
+.required {
+  color: #ff4d4f;
 }
 
-.file-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.file-name {
-  font-size: 26rpx;
-  color: #333333;
-  margin-bottom: 6rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.file-size {
-  font-size: 22rpx;
-  color: #999999;
-}
-
-.delete-btn {
-  font-size: 32rpx;
-  color: #cccccc;
-  padding: 10rpx 20rpx;
-}
-
-/* 操作按钮组（右对齐，和摘要页一模一样） */
-.action-group {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 10rpx;
-}
-
-.generate-btn {
-  background-color: #a8e3c3; /* 不可点击时的浅绿色 */
-  color: #ffffff;
+.input-box {
+  width: 100%;
+  height: 88rpx;
+  background-color: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
   font-size: 28rpx;
-  font-weight: 500;
-  border-radius: 40rpx; /* 药丸形圆角 */
-  margin: 0;
-  padding: 0 50rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-  min-width: 200rpx;
+  box-sizing: border-box;
 }
 
-.generate-btn:not([disabled]) {
-  background-color: #07c160; /* 可点击时的微信绿 */
+.textarea-box {
+  width: 100%;
+  height: 400rpx;
+  background-color: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  line-height: 1.5;
 }
 
-.generate-btn::after {
+/* 底部按钮包裹区 */
+.btn-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.submit-btn {
+  width: 80% !important;
+  background-color: #a3e4b7; 
+  color: #ffffff;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  padding: 16rpx 0;
+  transition: all 0.3s;
+}
+
+.submit-btn::after {
   border: none;
+}
+
+.submit-btn.active {
+  background-color: #63d58b;
+  box-shadow: 0 8rpx 20rpx rgba(99, 213, 139, 0.3);
+}
+
+.submit-btn.active:active {
+  transform: scale(0.98);
+  opacity: 0.9;
 }

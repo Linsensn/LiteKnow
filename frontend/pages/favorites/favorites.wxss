@@ -1,8 +1,70 @@
-.container { padding: 30rpx; background: #f7f8fa; min-height: 100vh; }
-.item-card { 
-  background: #fff; padding: 30rpx; border-radius: 16rpx; 
-  margin-bottom: 20rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+.container { 
+  padding: 0 30rpx 30rpx 30rpx; 
+  background: #f7f8fa; 
+  min-height: 100vh; 
+  display: flex;
+  flex-direction: column;
 }
-.item-title { font-size: 30rpx; font-weight: bold; margin-bottom: 10rpx; }
-.item-meta { font-size: 24rpx; color: #999; }
-.empty-state { text-align: center; color: #999; margin-top: 200rpx; }
+
+/* Tab 切换样式 */
+.tabs-wrapper {
+  display: flex;
+  justify-content: space-around;
+  background: #fff;
+  border-radius: 16rpx;
+  margin: 20rpx 0;
+  padding: 10rpx 0;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+}
+
+.tab {
+  padding: 16rpx 40rpx;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab.active {
+  color: #2b85e4;
+  font-weight: bold;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 6rpx;
+  background: #2b85e4;
+  border-radius: 4rpx;
+}
+
+/* 卡片样式 [cite: 3, 4] */
+.list-wrapper { flex: 1; }
+.item-card { 
+  background: #fff; 
+  padding: 30rpx; 
+  border-radius: 16rpx; 
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+}
+.item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16rpx; }
+.type-tag { font-size: 22rpx; color: #2b85e4; background: #e6f1fc; padding: 4rpx 12rpx; border-radius: 6rpx; }
+.time { font-size: 24rpx; color: #999; }
+.item-title { font-size: 30rpx; font-weight: bold; color: #333; margin-bottom: 24rpx; line-height: 1.5; }
+.item-footer { display: flex; justify-content: flex-end; }
+.delete-btn { font-size: 24rpx; color: #ff4d4f; border: 1rpx solid #ff4d4f; padding: 6rpx 20rpx; border-radius: 30rpx; background: transparent; line-height: 1.5; margin: 0;}
+.delete-btn::after { border: none; }
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+  color: #999;
+  font-size: 28rpx;
+}

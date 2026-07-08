@@ -1,45 +1,40 @@
 <view class="container">
-  <view class="content-card" wx:if="{{!isBankMode}}">
-    <view class="card-title">生成专属测验</view>
-    <textarea 
-      class="text-input" 
-      placeholder="请输入需要生成测验的知识点或课文段落（例如：唐朝历史、牛顿三大定律）..." 
-      maxlength="500" 
-      bindinput="onInput" 
-      value="{{topicText}}">
-    </textarea>
-    
-    <view class="action-group">
-      <button class="generate-btn" bindtap="generateQuiz" disabled="{{!topicText}}">一键出题</button>
+  <view class="section-card">
+    <view class="section-title">提供出题素材</view>
+    <textarea class="source-input" placeholder="输入知识点（如：唐朝历史）或粘贴长篇课文..." value="{{sourceText}}" bindinput="onInput"></textarea>
+    <view class="upload-btn-light" bindtap="uploadMaterial">
+      {{fileName ? '已选择: ' + fileName : '+ 上传素材(图片/文档)'}}
     </view>
   </view>
 
-  <block wx:if="{{quizList.length > 0}}">
-    <view class="content-card quiz-card" wx:for="{{quizList}}" wx:key="id" wx:for-index="qIndex" wx:for-item="question">
-      <view class="quiz-title"><text class="quiz-num">{{qIndex + 1}}.</text> {{question.title}}</view>
-      
-      <view class="options-list">
-        <view 
-          class="option-item {{question.selected === oIndex ? 'selected' : ''}} {{hasSubmitted && question.correct === oIndex ? 'correct' : ''}} {{hasSubmitted && question.selected === oIndex && question.correct !== oIndex ? 'wrong' : ''}}" 
-          wx:for="{{question.options}}" 
-          wx:key="*this" 
-          wx:for-index="oIndex" 
-          wx:for-item="option"
-          bindtap="selectOption" 
-          data-qindex="{{qIndex}}" 
-          data-oindex="{{oIndex}}">
-          <text class="option-label">{{['A', 'B', 'C', 'D'][oIndex]}}.</text>
-          <text class="option-text">{{option}}</text>
-        </view>
-      </view>
-
-      <view class="explanation-box" wx:if="{{hasSubmitted}}">
-        <text class="exp-title">📝 AI 解析：</text>
-        <text class="exp-content">{{question.explanation}}</text>
-      </view>
+  <view class="section-card">
+    <view class="section-title">测验配置</view>
+    
+    <view class="config-row">
+      <text class="label">生成题数</text>
+      <slider class="slider" min="5" max="20" step="5" value="{{questionCount}}" show-value bindchange="onCountChange" activeColor="#07c160"/>
     </view>
 
-    <button class="submit-quiz-btn" bindtap="submitQuiz" wx:if="{{!hasSubmitted}}">提交答卷</button>
-    <button class="submit-quiz-btn restart-btn" bindtap="restartQuiz" wx:if="{{hasSubmitted}}">重新生成</button>
-  </block>
+    <view class="config-row">
+      <text class="label">题目难度</text>
+      <view class="radio-group">
+        <view class="radio-item {{difficulty === 'easy' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="easy">基础</view>
+        <view class="radio-item {{difficulty === 'medium' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="medium">进阶</view>
+        <view class="radio-item {{difficulty === 'hard' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="hard">困难</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="config-row" style="border:none;">
+      <text class="label">保存至题库</text>
+      <picker bindchange="onBankChange" range="{{bankList}}" range-key="name">
+        <view class="picker-value">{{selectedBankName || '点击选择题库 >'}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <button class="generate-btn {{(sourceText || fileName) && selectedBankId ? 'active' : ''}}" bindtap="generateQuiz" disabled="{{isGenerating}}">
+    {{isGenerating ? 'AI 正在出题...' : '一键生成练习'}}
+  </button>
 </view>

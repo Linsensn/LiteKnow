@@ -1,0 +1,62 @@
+<view class="container" wx:if="{{currentQuestion}}">
+  <view class="progress-bar">
+    <view class="progress-text">进度：{{currentIndex + 1}} / {{questionSequence.length}}</view>
+    <progress percent="{{((currentIndex + 1) / questionSequence.length) * 100}}" active activeColor="#07c160" stroke-width="4" border-radius="2" />
+  </view>
+
+  <view class="question-card">
+    <view class="q-header">
+      <view class="q-type">{{currentQuestion.question_type === 'single_choice' ? '单选题' : (currentQuestion.question_type === 'multi_choice' ? '多选题' : '简答题')}}</view>
+    </view>
+    
+    <view class="q-content">{{currentQuestion.content}}</view>
+
+    <view class="options-list" wx:if="{{currentQuestion.question_type !== 'essay'}}">
+      <view 
+        class="option-item {{isSubmitted ? (item.isCorrect ? 'correct' : (item.isSelected ? 'wrong' : '')) : (item.isSelected ? 'selected' : '')}}" 
+        wx:for="{{optionsList}}" 
+        wx:key="index"
+        bindtap="toggleOption" 
+        data-index="{{index}}"
+      >
+        <text class="opt-prefix">{{item.prefix}}.</text>
+        <text class="opt-text">{{item.text}}</text>
+        <text class="result-icon" wx:if="{{isSubmitted && item.isCorrect}}">✅</text>
+        <text class="result-icon" wx:if="{{isSubmitted && item.isSelected && !item.isCorrect}}">❌</text>
+      </view>
+    </view>
+
+    <textarea wx:else class="essay-input" placeholder="请输入你的解答..." bindinput="onEssayInput" value="{{userAnswer}}" disabled="{{isSubmitted}}"></textarea>
+  </view>
+
+  <view class="analysis-card" wx:if="{{isSessionSubmitted}}">
+    <view class="analysis-header">
+      <text class="status-tag {{isAnswerCorrect ? 'tag-green' : 'tag-red'}}">{{isAnswerCorrect ? '回答正确' : '回答错误'}}</text>
+    </view>
+    <view class="answer-row">
+      <text>正确答案：<text class="text-green">{{currentQuestion.correctAnswerDisplay}}</text></text>
+      <text class="ml-20">你的答案：<text class="{{isAnswerCorrect ? 'text-green' : 'text-red'}}">{{userAnswerDisplay || '未作答'}}</text></text>
+    </view>
+    
+    <view class="analysis-content" wx:if="{{currentQuestion.ai_analysis}}">
+      <view class="a-title">✨ AI 智能解析</view>
+      <view class="a-text">{{currentQuestion.ai_analysis}}</view>
+    </view>
+  </view>
+
+  <view class="footer-btn-area">
+    <block wx:if="{{!isSessionSubmitted}}">
+      <button class="action-btn outline-btn" bindtap="goPrev" disabled="{{currentIndex === 0}}">上一题</button>
+      
+      <button class="action-btn submit-btn" bindtap="goNext" wx:if="{{currentIndex < questionSequence.length - 1}}">下一题</button>
+      <button class="action-btn finish-btn" bindtap="submitPaper" wx:else>交卷</button>
+    </block>
+    
+    <block wx:else>
+      <button class="action-btn outline-btn" bindtap="goPrev" disabled="{{currentIndex === 0}}">上一题</button>
+      
+      <button class="action-btn next-btn" bindtap="goNext" wx:if="{{currentIndex < questionSequence.length - 1}}">下一题</button>
+      <button class="action-btn finish-btn" bindtap="exitReview" wx:else>结束回顾</button>
+    </block>
+  </view>
+</view>
