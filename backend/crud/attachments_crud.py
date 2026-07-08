@@ -68,7 +68,7 @@ class CRUDAttachment:
             stmt = stmt.where(Attachment.file_type.ilike(f"%{file_type}%"))
 
         result = db.execute(stmt)
-        return result.scalar_one() or 0
+        return result.scalar() or 0
 
     # 4. 带用户归属创建
     async def create_with_owner(
@@ -96,7 +96,7 @@ class CRUDAttachment:
         result = db.execute(stmt)
         return result.rowcount
     
-    async def delete_attachment(db: AsyncSession, *, db_obj: Attachment):
+    async def delete_attachment(self, db: AsyncSession, *, db_obj: Attachment):
         """物理删除单条附件"""
         db.delete(db_obj)
         db.flush()
