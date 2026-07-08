@@ -1,7 +1,7 @@
 import os
 import uuid
 
-BASE_DIR = "backend/uploads/attachments"
+BASE_DIR = "uploads/attachments"
 
 def save_file_local(file_bytes: bytes, filename: str, user_id: int) -> str:
     user_dir = os.path.join(BASE_DIR, str(user_id))
