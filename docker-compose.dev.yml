@@ -35,6 +35,9 @@ services:
     restart: always
     env_file:
       - .env
+    environment: 
+      - PADDLE_CPU_ONLY=1
+      - FLAGS_enable_pir=0 
     ports:
       - "8000:8000" # 对外暴露 API 端口
     volumes:
