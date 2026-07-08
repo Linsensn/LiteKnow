@@ -17,7 +17,8 @@
     "pages/adminSessions/adminSessions",
     "pages/profileEdit/profileEdit",
     "pages/doPractice/doPractice",
-    "pages/questionManage/questionManage"
+    "pages/questionManage/questionManage",
+    "pages/mistakeDetail/mistakeDetail"
   ],
   "window": {
     "navigationBarTextStyle": "black",

@@ -1,6 +1,4 @@
 {
-  "usingComponents": {},
   "navigationBarTitleText": "题库管理",
-  "backgroundColor": "#f5f7fa",
-  "navigationBarBackgroundColor": "#ffffff"
+  "usingComponents": {}
 }

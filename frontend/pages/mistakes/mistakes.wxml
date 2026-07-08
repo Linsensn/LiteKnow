@@ -2,7 +2,17 @@
   <view class="header-bar">
     <view class="search-box">
       <text class="search-icon">🔍</text>
-      <input class="search-input" placeholder="搜索错题内容..." value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search"/>
+      <input 
+        class="search-input" 
+        placeholder="搜索错题内容..." 
+        value="{{keyword}}" 
+        bindinput="onSearchInput" 
+        bindconfirm="onSearch" 
+        confirm-type="search"
+      />
+      <view class="clear-btn-area" wx:if="{{keyword}}" catchtap="clearSearch">
+        <text class="clear-icon">×</text>
+      </view>
     </view>
   </view>
 

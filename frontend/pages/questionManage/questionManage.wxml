@@ -1,29 +1,70 @@
 <view class="container">
-  <view class="header">
-    <text class="title">共 {{totalQuestions}} 道题目</text>
-    <view class="filter-btn">筛选 ▾</view>
+  <scroll-view scroll-y class="list-container" bindscrolltolower="onReachBottom">
+    <checkbox-group bindchange="onCheckboxChange">
+      <view class="q-card" wx:for="{{questionList}}" wx:key="id">
+        
+        <view class="q-header">
+          <checkbox value="{{item.id}}" checked="{{item.checked}}" color="#07c160"/>
+          <text class="q-type">{{item.question_type === 'single_choice' ? '单选题' : (item.question_type === 'multi_choice' ? '多选题' : '简答题')}}</text>
+        </view>
+        
+        <view class="q-content">{{item.content}}</view>
+
+        <view class="q-options" wx:if="{{item.parsedOptions.length > 0}}">
+          <view class="opt-text" wx:for="{{item.parsedOptions}}" wx:key="id" wx:for-item="opt">
+            {{opt.id}}. {{opt.content}}
+          </view>
+        </view>
+        <view class="q-answer">正确答案：<text class="text-green">{{item.correctAnswerDisplay}}</text></view>
+
+        <view class="q-actions">
+          <button class="btn edit-btn" catchtap="openEditModal" data-index="{{index}}">编辑</button>
+          <button class="btn del-btn" catchtap="deleteSingle" data-id="{{item.id}}" data-index="{{index}}">删除</button>
+        </view>
+
+      </view>
+    </checkbox-group>
+
+    <view class="loading-status" wx:if="{{isLoading}}">加载中...</view>
+    <view class="no-more" wx:if="{{!hasMore && questionList.length > 0}}">没有更多题目了</view>
+    <view class="empty-state" wx:if="{{questionList.length === 0 && !isLoading}}">该题库暂无题目</view>
+  </scroll-view>
+
+  <view class="bottom-bar">
+    <text class="selected-count">已选 {{selectedIds.length}} 项</text>
+    <button class="batch-del-btn {{selectedIds.length > 0 ? 'active' : ''}}" bindtap="deleteBatch" disabled="{{selectedIds.length === 0}}">
+      批量删除
+    </button>
   </view>
 
-  <scroll-view scroll-y="true" class="list-area" bindscrolltolower="loadMore">
-    <view class="q-card" wx:for="{{questionList}}" wx:key="id">
-      <view class="q-card-header">
-        <view class="tags">
-          <text class="tag-type">{{item.question_type === 'single_choice' ? '单选' : (item.question_type === 'multi_choice' ? '多选' : '简答')}}</text>
-          <text class="tag-diff {{item.difficulty_level}}">{{item.difficulty_level === 'easy' ? '简单' : (item.difficulty_level === 'hard' ? '困难' : '中等')}}</text>
+  <view class="modal-mask" wx:if="{{showEditModal}}">
+    <view class="modal-content">
+      <view class="modal-header">编辑题目</view>
+      
+      <scroll-view scroll-y class="modal-scroll">
+        <view class="form-group">
+          <view class="label">题干内容</view>
+          <textarea class="textarea-box" model:value="{{editForm.content}}" auto-height maxlength="-1"></textarea>
         </view>
-        <text class="delete-btn" catchtap="deleteQuestion" data-id="{{item.id}}">删除</text>
+
+        <block wx:if="{{editForm.parsedOptions.length > 0}}">
+          <view class="label">编辑选项</view>
+          <view class="form-group option-group" wx:for="{{editForm.parsedOptions}}" wx:key="id">
+            <text class="opt-label">{{item.id}}</text>
+            <input class="input-box" value="{{item.content}}" data-index="{{index}}" bindinput="onOptionInput" />
+          </view>
+        </block>
+
+        <view class="form-group">
+          <view class="label">正确答案 <text class="tip">(多选题用逗号隔开，如 A,C)</text></view>
+          <input class="input-box answer-box" model:value="{{editForm.correct_answer}}" />
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <button class="m-btn cancel-btn" bindtap="closeEditModal">取消</button>
+        <button class="m-btn save-btn" bindtap="saveEdit">保存</button>
       </view>
-      
-      <view class="q-content">{{item.content}}</view>
-      
-      <view class="q-options" wx:if="{{item.question_type !== 'essay'}}">
-        <text wx:for="{{item.displayOptions}}" wx:for-item="opt" wx:key="*this">{{opt}}</text>
-      </view>
-      
-      <view class="q-answer">正确答案：{{item.displayAnswer}}</view>
     </view>
-    
-    <view class="loading-status" wx:if="{{isLoading}}">加载中...</view>
-    <view class="loading-status" wx:if="{{!hasMore && questionList.length > 0}}">到底啦~</view>
-  </scroll-view>
+  </view>
 </view>

@@ -1,0 +1,30 @@
+<view class="container" wx:if="{{detail && question}}">
+  <view class="q-card">
+    <view class="q-header">
+      <text class="q-type">{{question.question_type === 'single_choice' ? '单选题' : (question.question_type === 'multi_choice' ? '多选题' : '简答题')}}</text>
+    </view>
+    
+    <view class="q-content">{{question.content || detail.question_content}}</view>
+
+    <view class="options-list" wx:if="{{optionsList.length > 0}}">
+      <view class="option-item {{item.isCorrect ? 'correct' : (item.isUserChoice ? 'wrong' : '')}}" wx:for="{{optionsList}}" wx:key="id">
+        <text class="opt-prefix">{{item.id}}.</text>
+        <text class="opt-text">{{item.content}}</text>
+        <text class="result-icon" wx:if="{{item.isCorrect}}">✅</text>
+        <text class="result-icon" wx:if="{{item.isUserChoice}}">❌</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="a-card">
+    <view class="answer-row">
+      <text>我的答案：<text class="text-red">{{detail.user_answer || '未作答'}}</text></text>
+      <text class="ml-40">正确答案：<text class="text-green">{{question.correct_answer || detail.correct_answer}}</text></text>
+    </view>
+
+    <view class="analysis-box" wx:if="{{question.ai_analysis || question.my_analysis || detail.ai_analysis}}">
+      <view class="a-title">✨ 详细解析</view>
+      <view class="a-text">{{question.ai_analysis || question.my_analysis || detail.ai_analysis}}</view>
+    </view>
+  </view>
+</view>

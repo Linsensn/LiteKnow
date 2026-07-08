@@ -1,4 +1,6 @@
 .container {
+  display: block; /* 🌟 核心1：覆盖 app.wxss 全局的 flex 布局 */
+  padding: 0;     /* 🌟 核心2：清空全局自带的 padding，让头部完全贴边 */
   min-height: 100vh;
   background-color: #f5f7fa;
   padding-bottom: 40rpx;
@@ -6,21 +8,62 @@
 
 /* 顶部搜索 */
 .header-bar {
+  width: 100%; /* 🌟 强制宽度 100% 撑满屏幕 */
+  box-sizing: border-box;
   background-color: #ffffff;
   padding: 20rpx 30rpx;
   position: sticky;
   top: 0;
   z-index: 99;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.03); /* 🌟 加一点淡淡的阴影，让它和下面的灰色背景有层次感 */
 }
+
 .search-box {
   background-color: #f0f2f5;
   border-radius: 40rpx;
   display: flex;
   align-items: center;
-  padding: 14rpx 24rpx;
+  padding: 0 24rpx;
+  height: 72rpx; /* 🌟 固定高度，防止输入框跳动 */
+  box-sizing: border-box;
 }
-.search-icon { font-size: 28rpx; margin-right: 16rpx; }
-.search-input { flex: 1; font-size: 28rpx; color: #333; }
+
+.search-icon { 
+  font-size: 28rpx; 
+  margin-right: 16rpx; 
+  color: #999;
+}
+
+.search-input { 
+  flex: 1; 
+  font-size: 28rpx; 
+  color: #333; 
+  height: 100%;
+}
+
+/* 🌟 叉号专门的点击区域，向左和上下延伸，非常好点 */
+.clear-btn-area {
+  padding: 10rpx 0 10rpx 20rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* 🌟 画一个精致的实心灰色小圆圈叉号 */
+.clear-icon {
+  background-color: #cccccc;
+  color: #ffffff;
+  font-size: 26rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 
 /* 列表容器 */
 .list-container {

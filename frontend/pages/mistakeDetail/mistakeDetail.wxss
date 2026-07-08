@@ -1,0 +1,80 @@
+.container {
+  display: block; /* 🌟 核心修复：强制覆盖 app.wxss，解决排版中间出现大白边的问题 */
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+/* 题目卡片 */
+.q-card, .a-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
+}
+
+.q-header { margin-bottom: 20rpx; }
+.q-type {
+  background: #e6f1fc;
+  color: #2b85e4;
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-weight: bold;
+}
+
+.q-content {
+  font-size: 32rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+  font-weight: 500;
+}
+
+/* 选项样式 */
+.option-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 30rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid transparent;
+  position: relative;
+}
+
+.opt-prefix { font-weight: bold; margin-right: 20rpx; color: #666; }
+.opt-text { flex: 1; font-size: 30rpx; color: #333; }
+.result-icon { position: absolute; right: 30rpx; font-size: 32rpx; }
+
+/* 正确/错误状态高亮 */
+.option-item.correct { background: #f6ffed; border-color: #52c41a; }
+.option-item.correct .opt-prefix, .option-item.correct .opt-text { color: #52c41a; }
+
+.option-item.wrong { background: #fff1f0; border-color: #ff4d4f; }
+.option-item.wrong .opt-prefix, .option-item.wrong .opt-text { color: #ff4d4f; }
+
+/* 答案解析卡片 */
+.answer-row {
+  display: flex;
+  font-size: 30rpx;
+  color: #666;
+  margin-bottom: 30rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 2rpx dashed #eee;
+}
+
+.text-red { color: #ff4d4f; font-weight: bold; }
+.text-green { color: #52c41a; font-weight: bold; }
+.ml-40 { margin-left: 60rpx; }
+
+.analysis-box {
+  background: #f8f9fa;
+  padding: 24rpx;
+  border-radius: 16rpx;
+}
+
+.a-title { font-size: 30rpx; font-weight: bold; color: #333; margin-bottom: 16rpx; }
+.a-text { font-size: 28rpx; color: #666; line-height: 1.6; }
