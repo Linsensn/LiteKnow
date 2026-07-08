@@ -26,6 +26,7 @@ async def admin_list_questions(
         db=db, bank_id=bank_id, difficulty=difficulty, keyword=keyword,
         page=page, page_size=page_size
     )
+    data.list = [QuestionResponse.model_validate(item) for item in data.list]
     return success(data=data)
 
 
@@ -36,7 +37,7 @@ async def admin_get_question(
     current_admin: dict = Depends(get_admin_user)
 ):
     data = await bq_service.get_question(db, question_id=question_id)
-    return success(data=data)
+    return success(data=QuestionResponse.model_validate(data))
 
 
 @router.post("", summary="单条录入题目", response_model=ResponseModel[QuestionResponse])
@@ -46,7 +47,7 @@ async def admin_create_question(
     current_admin: dict = Depends(get_admin_user)
 ):
     data = await bq_service.create_question(db, obj_in=question_in)
-    return success(data=data, message="题目创建成功")
+    return success(data=QuestionResponse.model_validate(data), message="题目创建成功")
 
 
 @router.post("/batch", summary="批量导入题目")
@@ -67,7 +68,7 @@ async def admin_update_question(
     current_admin: dict = Depends(get_admin_user)
 ):
     data = await bq_service.update_question(db, question_id=question_id, obj_in=question_in)
-    return success(data=data, message="题目信息已更新")
+    return success(data=QuestionResponse.model_validate(data), message="题目信息已更新")
 
 @router.delete("/{question_id}", summary="逻辑删除题目")
 async def admin_delete_question(

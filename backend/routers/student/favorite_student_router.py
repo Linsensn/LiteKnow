@@ -47,6 +47,7 @@ async def get_my_folders(
         db, user_id=current_student.id, content_type=content_type,
         page=page, page_size=page_size
     )
+    data.list = [FavoriteResponse.model_validate(item) for item in data.list]  # ← 加这一行
     return success(data=data)
 
 @router.get(
@@ -62,7 +63,7 @@ async def get_folder_detail(
     folder = await fav_service.get_folder_detail(
         db, user_id=current_student.id, folder_id=folder_id
     )
-    return success(data=folder)
+    return success(data=FavoriteResponse.model_validate(folder))  # ← 改这一行
 
 @router.put(
     "/{folder_id}",
@@ -79,7 +80,7 @@ async def update_folder(
         db, user_id=current_student.id, folder_id=folder_id,
         update_data=update_in.model_dump(exclude_unset=True)
     )
-    return success(data=folder)
+    return success(data=FavoriteResponse.model_validate(folder))  # ← 改这一行
 
 
 @router.delete(
