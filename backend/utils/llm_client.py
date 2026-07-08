@@ -5,6 +5,7 @@ from config.settings import settings
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from typing import AsyncGenerator
+from langchain_openai import ChatOpenAI
 
 # 配置简单的日志记录
 logger = logging.getLogger("liteknow.llm")
@@ -137,5 +138,23 @@ class LLMClient:
         except Exception as e:
             logger.error(f"LLM 对话流式调用异常: {str(e)}")
             yield f"\n[服务异常: {str(e)}]"
+
+    def get_langchain_chat_model(model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
+        """
+        获取配置好的 LangChain ChatOpenAI 实例
+        """
+        # 优先读取传入的模型，其次读取默认模型
+        actual_model = model_name or getattr(
+            settings, "LLM_DEFAULT_MODEL", 
+            getattr(settings, "LLM_MODEL_ZHIPU", "THUDM/GLM-Z1-9B-0414")
+        )
+        
+        return ChatOpenAI(
+            api_key=settings.LLM_API_KEY,
+            base_url=settings.LLM_BASE_URL,
+            model=actual_model,
+            temperature=temperature,
+            max_retries=2  # 如果网络抖动，允许 LangChain 自动重试 2 次
+        )
 # 实例化单例，整个项目只需 from utils.llm_client import llm_client 即可调用
 llm_client = LLMClient()

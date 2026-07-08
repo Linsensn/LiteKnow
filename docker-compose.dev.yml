@@ -25,20 +25,19 @@ services:
     ports:
       - "6379:6379"
 
+  # OCR 文字识别服务
   ocr:
-    image: linssen85012/liteknow-ocr:latest
+    build: ./ocr
     container_name: liteknow-ocr-dev
     restart: always
     ports:
       - "9003:9003"
 
-
-
   # FastAPI 后端服务
   backend:
     image: linssen85012/liteknow-backend:latest
     build:
-      context: ./backend # 指定 Dockerfile 所在的目录 (假设后端代码在 backend 目录下)
+      context: ./backend # 指定 Dockerfile 所在的目录
       dockerfile: Dockerfile
     container_name: liteknow-backend-dev
     restart: always
@@ -53,7 +52,7 @@ services:
         condition: service_healthy # 等待 MySQL 健康检查通过后再启动后端
       redis:
         condition: service_started
-    # 修改为 app.main:app，指向 app 目录下的 main.py
+    # 启动命令，指向 app 目录下的 main.py
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # 定义持久化数据卷

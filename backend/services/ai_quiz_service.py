@@ -1,46 +1,25 @@
+# backend/services/ai_quiz_service.py
 import json
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-# 移除原先的 from fastapi import HTTPException
-# 引入项目自定义的异常类和错误码枚举
 from utils.exceptions import CustomAPIException, ErrorCode 
-
 from models.question_banks import QuestionBank
 from models.bank_questions import BankQuestion
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
+
+# ======= 引入 LangChain 相关库 =======
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.exceptions import OutputParserException
+from schemas.ai_quiz_schema import QuizOutputData
 from utils.llm_client import llm_client
 
 logger = logging.getLogger("liteknow.ai_quiz")
 
 class AIQuizService:
-    def _build_dynamic_prompt(self, count: int, difficulty: str, types_str: str) -> str:
-        """根据用户需求动态生成 Prompt"""
-        return (
-            f"你是一个严谨且专业的出题专家。请仔细阅读用户提供的课文要点，自主生成 {count} 道题目。\n"
-            f"题目整体难度应控制在：{difficulty}（easy=简单, medium=中等, hard=困难）。\n"
-            f"允许生成的题型包括：{types_str}（single_choice=单选, multi_choice=多选, true_false=判断, essay=简答/应用题）。请根据知识点合理分配题型。\n"
-            "要求：\n"
-            "1. 必须以严格的 JSON 对象格式输出，不要包含任何 Markdown 标记。\n"
-            "2. 你的输出必须完全符合以下 JSON 结构：\n"
-            "{\n"
-            '  "questions": [\n'
-            "    {\n"
-            '      "chapter_name": "简短章节名称",\n'
-            '      "question_type": "这里填具体的题型（如 essay）",\n'
-            '      "difficulty_level": "当前题目的难度",\n'
-            '      "content": "题干内容",\n'
-            '      "options_json": [ '
-            '         {"id": "A", "content": "选项内容"} '
-            '      ], // 如果是简答题或判断题，此数组必须为空 []\n'
-            '      "correct_answer": ["A", "B"], // 简答题填关键得分点，判断题填 ["正确"] 或 ["错误"]\n'
-            '      "ai_analysis": "详细解析"\n'
-            "    }\n"
-            "  ]\n"
-            "}"
-        )
-    
     async def generate_and_save_quiz(
         self, 
         db: AsyncSession, 
@@ -54,93 +33,102 @@ class AIQuizService:
         question_types: str = "single_choice",
         target_bank_id: int = None
     ) -> dict:
+        
+        # 1. 记录用户的输入
+        user_msg_in = MessageCreate(
+            session_id=session_id, role="user", content_type="text", content=user_content
+        )
+        await msg_service.create_message(db, obj_in=user_msg_in)
+
+        # ================= 核心改造：LangChain 处理链路 =================
+        
+        # A. 初始化解析器（绑定我们写好的 Pydantic Schema）
+        parser = PydanticOutputParser(pydantic_object=QuizOutputData)
+        
+        # B. 构建 Prompt 模板（自动注入解析规则）
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "你是一个严谨且专业的出题专家。请仔细阅读用户提供的课文要点，自主生成 {count} 道题目。\n"
+                       "题目整体难度应控制在：{difficulty}（easy=简单, medium=中等, hard=困难）。\n"
+                       "允许生成的题型包括：{types_str}。请根据知识点合理分配题型。\n\n"
+                       "【重要格式要求】:\n{format_instructions}"),
+            ("user", "课文素材：\n{user_content}")
+        ]).partial(format_instructions=parser.get_format_instructions())
+        
+        # C. 初始化大模型工具
+        llm = llm_client.get_langchain_chat_model(model_name=model_name, temperature=0.3)
+        
+        # D. 组装 LCEL 链：Prompt -> LLM -> Parser
+        chain = prompt | llm | parser
+
+        # E. 执行异步调用（如果输出格式不对，LangChain会自动报错，不用你再写 try json.loads 了）
         try:
-            # 1. 记录用户的输入
-            user_msg_in = MessageCreate(
-                session_id=session_id,
-                role="user",
-                content_type="text",
-                content=user_content
-            )
-            await msg_service.create_message(db, obj_in=user_msg_in)
+            # result 直接就是一个 QuizOutputData 类型的 Python 对象！
+            quiz_result: QuizOutputData = await chain.ainvoke({
+                "count": question_count,
+                "difficulty": difficulty,
+                "types_str": question_types,
+                "user_content": user_content
+            })
+            questions = quiz_result.questions
+        except OutputParserException as e:
+            logger.error(f"LangChain 解析异常: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI 生成的数据格式不符，请重试。")
+        except Exception as e:
+            logger.error(f"LangChain 调用异常: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message=f"大模型响应超时或失败: {str(e)}")
 
-            # 2. 动态构建系统提示词并调用大模型
-            dynamic_prompt = self._build_dynamic_prompt(question_count, difficulty, question_types)
-            ai_response_text = await llm_client.async_call_llm(
-                system_prompt=dynamic_prompt,
-                user_prompt=user_content,
-                response_format="json_object",
-                target_model=model_name
-            )
+        if not questions:
+            raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI 未能生成有效的题目。")
 
-            # 3. 解析JSON数据
-            try:
-                quiz_data = json.loads(ai_response_text)
-                questions = quiz_data.get("questions", [])
-            except json.JSONDecodeError:
-                logger.error(f"AI返回了非法的JSON结构: {ai_response_text}")
-                # 使用全局业务异常抛出解析错误
-                raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI生成的测验数据格式异常，请重试。")
-
-            if not questions:
-                raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI未能生成有效的题目。")
-
-            # ================= 4. 追加模式的核心实现 =================
+        # ================= 数据库落库逻辑 (几乎保持原样) =================
+        try:
+            # 2. 追加或新建题库逻辑
             if target_bank_id:
-                # 追加模式：验证目标题库是否存在，且是否属于当前用户
-                # 这里需要你确保 models 里有 QuestionBank 并在上方 import
-                from sqlalchemy import select
-                result = db.execute(
+                result = await db.execute(
                     select(QuestionBank).where(QuestionBank.id == target_bank_id, QuestionBank.user_id == user_id)
                 )
                 existing_bank = result.scalars().first()
                 if not existing_bank:
                     raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="指定的题库不存在或无权限追加")
                 
-                # 更新老题库的总题数
                 existing_bank.total_questions += len(questions)
                 bank_id = existing_bank.id
                 db.add(existing_bank)
             else:
-                # 新建模式
                 new_bank = QuestionBank(
-                    user_id=user_id,
-                    bank_name=bank_name,
+                    user_id=user_id, bank_name=bank_name,
                     description=f"AI生成的测试题（难度:{difficulty}）",
                     total_questions=len(questions)
                 )
                 db.add(new_bank)
-                db.flush() # 这里确保你传进来的 db 是 AsyncSession
+                await db.flush() 
                 bank_id = new_bank.id
 
-            # 5. 批量存入题目 (将原本的 new_bank.id 替换为最终决定的 bank_id)
+            # 3. 批量存入题目 (因为 questions 是 Pydantic 对象，用 . 读取属性)
             bank_questions_to_insert = [
                 BankQuestion(
                     bank_id=bank_id, 
-                    chapter_name="AI智能提取",
-                    question_type=q.get("question_type", "single_choice"),
-                    difficulty_level=q.get("difficulty_level", difficulty),
-                    content=q.get("content", ""),
-                    options_json=q.get("options_json", []),
-                    # 注意：如果大模型把答案弄成了字符串，这里统一转成JSON字符串存入
-                    correct_answer=json.dumps(q.get("correct_answer", []), ensure_ascii=False) if isinstance(q.get("correct_answer"), list) else q.get("correct_answer", ""),
-                    ai_analysis=q.get("ai_analysis", "")
+                    chapter_name=q.chapter_name,
+                    question_type=q.question_type,
+                    difficulty_level=q.difficulty_level,
+                    content=q.content,
+                    # 将 Pydantic 的 options 列表转成前端需要的 JSON 数组结构
+                    options_json=[opt.model_dump() for opt in q.options_json],
+                    correct_answer=json.dumps(q.correct_answer, ensure_ascii=False),
+                    ai_analysis=q.ai_analysis
                 ) for q in questions
             ]
             db.add_all(bank_questions_to_insert)
             
-            # 6. 保存AI回复
+            # 4. 保存 AI 回复消息
             ai_msg_in = MessageCreate(
-                session_id=session_id,
-                role="assistant",
-                content_type="text",
-                content=f"为您生成了 {len(questions)} 道选择题，我已仔细校验了全部答案的合理性并生成了题库。"
+                session_id=session_id, role="assistant", content_type="text",
+                content=f"为您生成了 {len(questions)} 道题目，我已仔细校验了全部答案的合理性并生成了题库。"
             )
             await msg_service.create_message(db, obj_in=ai_msg_in)
             
-            db.commit()
+            await db.commit()
 
-            # 返回纯净的业务数据字典，交由 Router 去包装
             return {
                 "bank_id": bank_id,
                 "added_questions": len(questions),
@@ -148,13 +136,11 @@ class AIQuizService:
             }
 
         except CustomAPIException as ce:
-            # 捕获已知业务异常直接向上抛出
-            db.rollback()
+            await db.rollback()
             raise ce
         except Exception as e:
-            db.rollback()
+            await db.rollback()
             logger.error(f"测验生成与落库失败: {str(e)}")
-            # 拦截未知异常，统一转为业务异常
-            raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED, message=f"智能测验处理失败: {str(e)}")
+            raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED, message="智能测验处理入库失败")
 
 ai_quiz_service = AIQuizService()
