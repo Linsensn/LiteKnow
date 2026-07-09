@@ -7,7 +7,6 @@ from sqlalchemy import text
 from utils.exceptions import CustomAPIException, ErrorCode
 from utils.llm_client import llm_client 
 
-# 🌟 新增：引入 LangChain 核心库
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
@@ -18,16 +17,13 @@ logger = logging.getLogger("liteknow.ai_bank")
 
 class AIBankService:
     async def parse_and_save_bank(
-        self, db: AsyncSession, user_id: int, bank_name: str, final_content: str
+        self, db: AsyncSession, user_id: int, bank_name: str, final_content: str, model_name: str = None
     ) -> BankParseResponse:
         
         logger.info(f"==> 开始处理题库解析任务，用户ID: {user_id}")
-        logger.info("==> 正在使用 LangChain 请求大模型...")
-
-        # 1. 初始化解析器（绑定我们的 BankParseOutputData）
+        
         parser = PydanticOutputParser(pydantic_object=BankParseOutputData)
         
-        # 2. 构建 Prompt 模板（注入格式要求）
         prompt = ChatPromptTemplate.from_messages([
             ("system", "你是一个专业的教育内容处理助手。\n"
                        "请仔细分析用户提供的资料（包含杂乱的文字或OCR识别的题目记录），\n"
@@ -37,15 +33,11 @@ class AIBankService:
             ("user", "资料素材：\n{final_content}")
         ]).partial(format_instructions=parser.get_format_instructions())
 
-        # 3. 初始化大模型工具
-        llm = llm_client.get_langchain_chat_model(temperature=0.2)
-        
-        # 4. 组装 LCEL 链
+        # 🌟 对齐组长：将传入的 model_name 给到 LangChain
+        llm = llm_client.get_langchain_chat_model(model_name=model_name, temperature=0.2)
         chain = prompt | llm | parser
 
-        # 5. 执行异步调用并自动解析为 Pydantic 对象
         try:
-            # 这里的 bank_result 直接就是 BankParseOutputData 对象！
             bank_result: BankParseOutputData = await chain.ainvoke({
                 "final_content": final_content
             })
@@ -63,7 +55,7 @@ class AIBankService:
         logger.info(f"==> 成功解析出 {len(questions)} 道题目，准备落库...")
 
         try:
-            # 6. 落库逻辑 (恢复 AsyncSession 操作)
+            # 🌟 对齐组长：恢复 AsyncSession 的原生 await 操作
             bank_insert_sql = text('''
                 INSERT INTO question_banks (user_id, bank_name, description, total_questions, created_at, updated_at) 
                 VALUES (:user_id, :bank_name, :description, :total_questions, NOW(), NOW())
@@ -83,7 +75,6 @@ class AIBankService:
             ''')
 
             for q in questions:
-                # 转为字典列表用于 JSON 序列化
                 options_to_save = [opt.model_dump() for opt in q.options] if q.options else []
 
                 db.execute(question_insert_sql, {
