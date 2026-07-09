@@ -1,11 +1,12 @@
 # backend/routers/student/messages_student_route.py
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
 from config.database import get_db
 from utils.deps import get_current_user
 from utils.response import success
 from services.message_service import msg_service
-from schemas.message_schema import MessageCreate, MessageResponse
+from schemas.message_schema import MessageCreate, MessageUpdate, MessageResponse
 
 router = APIRouter(prefix="/messages", tags=["Student/messages"])
 
@@ -55,3 +56,14 @@ async def delete_my_message(
 ):
     await msg_service.delete_message(db, message_id=message_id)
     return success(message="消息删除成功")
+
+
+@router.put("/{message_id}", summary="编辑单条消息")
+async def update_my_message(
+    message_id: int = Path(..., description="消息ID"),
+    update_data: MessageUpdate = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    updated = await msg_service.update_message(db, message_id=message_id, update_data=update_data)
+    return success(data=MessageResponse.model_validate(updated).model_dump(), message="消息更新成功")
