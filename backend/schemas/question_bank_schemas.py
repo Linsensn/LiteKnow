@@ -58,7 +58,7 @@ class BulkDeleteIn(BaseModel):
         }
     )
 
-# 响应：单条题库信息输出
+# 响应：单条题库信息输出 (已新增统计字段)
 class QuestionBankOut(BaseModel):
     id: int
     user_id: int
@@ -67,6 +67,10 @@ class QuestionBankOut(BaseModel):
     total_questions: Optional[int]
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    
+    # 动态统计字段
+    completion_rate: Optional[float] = Field(0.0, description="完成率 (0-100的百分比数值)")
+    accuracy_rate: Optional[float] = Field(0.0, description="正确率 (0-100的百分比数值)")
     
     model_config = ConfigDict(
         from_attributes=True,
@@ -77,6 +81,8 @@ class QuestionBankOut(BaseModel):
                 "bank_name": "操作系统原理期末复习题库",
                 "description": "包含进程管理、内存分配、文件系统等核心考点",
                 "total_questions": 150,
+                "completion_rate": 0.0,
+                "accuracy_rate": 0.0,
                 "created_at": "2026-07-01T10:00:00",
                 "updated_at": "2026-07-05T20:00:00"
             }
