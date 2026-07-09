@@ -10,12 +10,13 @@ from models.bank_questions import BankQuestion
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 
-# ======= 引入 LangChain 相关库 =======
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
 from schemas.ai_quiz_schema import QuizOutputData
 from utils.llm_client import llm_client
+from crud.messages_crud import msg_crud 
 
 logger = logging.getLogger("liteknow.ai_quiz")
 
@@ -34,35 +35,38 @@ class AIQuizService:
         target_bank_id: int = None
     ) -> dict:
         
-        # 1. 记录用户的输入
         user_msg_in = MessageCreate(
             session_id=session_id, role="user", content_type="text", content=user_content
         )
         await msg_service.create_message(db, obj_in=user_msg_in)
 
-        # ================= 核心改造：LangChain 处理链路 =================
-        
-        # A. 初始化解析器（绑定我们写好的 Pydantic Schema）
+        history_messages = await msg_crud.get_by_session(db, session_id)
+
+        # 将 SQLAlchemy 对象转化为 LangChain 原生消息对象
+        history_langchain_messages = []
+        for msg in history_messages:
+            if msg.role == "user":
+                history_langchain_messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                history_langchain_messages.append(AIMessage(content=msg.content))
+
         parser = PydanticOutputParser(pydantic_object=QuizOutputData)
         
-        # B. 构建 Prompt 模板（自动注入解析规则）
         prompt = ChatPromptTemplate.from_messages([
             ("system", "你是一个严谨且专业的出题专家。请仔细阅读用户提供的课文要点，自主生成 {count} 道题目。\n"
                        "题目整体难度应控制在：{difficulty}（easy=简单, medium=中等, hard=困难）。\n"
                        "允许生成的题型包括：{types_str}。请根据知识点合理分配题型。\n\n"
                        "【重要格式要求】:\n{format_instructions}"),
+            *history_langchain_messages, # 将历史消息透传进去，让 AI 记住上下文
             ("user", "课文素材：\n{user_content}")
         ]).partial(format_instructions=parser.get_format_instructions())
         
-        # C. 初始化大模型工具
         llm = llm_client.get_langchain_chat_model(model_name=model_name, temperature=0.3)
         
-        # D. 组装 LCEL 链：Prompt -> LLM -> Parser
+        # 组装 LCEL 链：Prompt -> LLM -> Parser
         chain = prompt | llm | parser
 
-        # E. 执行异步调用（如果输出格式不对，LangChain会自动报错，不用你再写 try json.loads 了）
         try:
-            # result 直接就是一个 QuizOutputData 类型的 Python 对象！
             quiz_result: QuizOutputData = await chain.ainvoke({
                 "count": question_count,
                 "difficulty": difficulty,
@@ -80,11 +84,9 @@ class AIQuizService:
         if not questions:
             raise CustomAPIException(code=ErrorCode.AI_VALIDATION_FAILED, message="AI 未能生成有效的题目。")
 
-        # ================= 数据库落库逻辑 (几乎保持原样) =================
         try:
-            # 2. 追加或新建题库逻辑
             if target_bank_id:
-                result = await db.execute(
+                result = db.execute(
                     select(QuestionBank).where(QuestionBank.id == target_bank_id, QuestionBank.user_id == user_id)
                 )
                 existing_bank = result.scalars().first()
@@ -101,10 +103,9 @@ class AIQuizService:
                     total_questions=len(questions)
                 )
                 db.add(new_bank)
-                await db.flush() 
+                db.flush() 
                 bank_id = new_bank.id
 
-            # 3. 批量存入题目 (因为 questions 是 Pydantic 对象，用 . 读取属性)
             bank_questions_to_insert = [
                 BankQuestion(
                     bank_id=bank_id, 
@@ -112,22 +113,20 @@ class AIQuizService:
                     question_type=q.question_type,
                     difficulty_level=q.difficulty_level,
                     content=q.content,
-                    # 将 Pydantic 的 options 列表转成前端需要的 JSON 数组结构
                     options_json=[opt.model_dump() for opt in q.options_json],
-                    correct_answer=json.dumps(q.correct_answer, ensure_ascii=False),
+                    correct_answer=q.correct_answer,
                     ai_analysis=q.ai_analysis
                 ) for q in questions
             ]
             db.add_all(bank_questions_to_insert)
             
-            # 4. 保存 AI 回复消息
             ai_msg_in = MessageCreate(
                 session_id=session_id, role="assistant", content_type="text",
                 content=f"为您生成了 {len(questions)} 道题目，我已仔细校验了全部答案的合理性并生成了题库。"
             )
             await msg_service.create_message(db, obj_in=ai_msg_in)
             
-            await db.commit()
+            db.commit()
 
             return {
                 "bank_id": bank_id,
@@ -136,10 +135,10 @@ class AIQuizService:
             }
 
         except CustomAPIException as ce:
-            await db.rollback()
+            db.rollback()
             raise ce
         except Exception as e:
-            await db.rollback()
+            db.rollback()
             logger.error(f"测验生成与落库失败: {str(e)}")
             raise CustomAPIException(code=ErrorCode.DB_OPERATION_FAILED, message="智能测验处理入库失败")
 

@@ -1,9 +1,13 @@
 # backend/utils/ocr_client.py
 import logging
+import subprocess
+import tempfile
+import os
 import io
 import pandas as pd
 import docx
 import fitz
+from bs4 import BeautifulSoup
 from fastapi import UploadFile
 from paddleocr import PaddleOCR
 
@@ -23,7 +27,7 @@ async def parse_file_content(file: UploadFile) -> str:
         if file_ext in ['jpg', 'jpeg', 'png', 'bmp', 'webp']:
             return _extract_text_from_image(file_bytes)
         elif file_ext in ['doc', 'docx']:
-            return _extract_text_from_word(file_bytes)
+            return _extract_text_from_word(file_bytes, file_ext)
         elif file_ext == 'pdf':
             return await _extract_text_from_pdf(file_bytes)
         else:
@@ -83,9 +87,65 @@ def _extract_text_from_image(image_bytes: bytes) -> str:
         logger.error(f"本地 OCR 识别失败: {str(e)}")
         return ""
 
-def _extract_text_from_word(file_bytes: bytes) -> str:
-    doc = docx.Document(io.BytesIO(file_bytes))
-    return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+def _extract_text_from_word(file_bytes: bytes, file_ext: str) -> str:
+    """
+    区分 .doc 和 .docx 两种格式进行解析
+    """
+    # 1. 如果是新版 .docx
+    if file_ext == 'docx':
+        try:
+            doc = docx.Document(io.BytesIO(file_bytes))
+            return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+        except Exception as e:
+            logger.error(f"docx解析失败: {str(e)}")
+            return ""
+
+    # 2. 如果是旧版 .doc
+    elif file_ext == 'doc':
+        try:
+            # 写入临时文件
+            with tempfile.NamedTemporaryFile(suffix='.doc', delete=False) as tmp_file:
+                tmp_file.write(file_bytes)
+                tmp_path = tmp_file.name
+            
+            # 调用 antiword 提取
+            result = subprocess.run(
+                ['antiword', tmp_path], 
+                capture_output=True, 
+                text=True, 
+                check=False
+            )
+
+            if "HTML" in result.stderr or "HTML" in result.stdout:
+                try:
+                    logger.info("检测到 HTML 格式伪装，正在启动 BeautifulSoup 兜底解析...")
+                    soup = BeautifulSoup(file_bytes, 'html.parser')
+                    text = soup.get_text(separator='\n')
+                    return text
+                except Exception as html_e:
+                    logger.error(f"HTML 兜底解析也失败了: {str(html_e)}")
+                    # 这里不要 return，继续往下走，看看是不是其他错误
+            
+            # 如果 antiword 确实解析失败但又不是 HTML
+            if result.returncode != 0:
+                logger.error(f"antiword 解析 .doc 失败！退出码: {result.returncode}, 错误信息: {result.stderr}")
+                return ""
+            
+            # 如果 stdout 提取出来是空的
+            if not result.stdout.strip():
+                logger.warning("antiword 解析成功，但提取出的文本为空")
+                return ""
+
+            return result.stdout
+            
+        except Exception as e:
+            logger.error(f".doc 解析失败: {str(e)}")
+            return ""
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            
+    return ""
 
 async def _extract_text_from_pdf(file_bytes: bytes) -> str:
     doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -122,7 +182,7 @@ async def parse_local_file(file_path: str, original_filename: str) -> str:
         elif file_ext in ['doc', 'docx']:
             with open(file_path, "rb") as f:
                 file_bytes = f.read()
-            return _extract_text_from_word(file_bytes)
+            return _extract_text_from_word(file_bytes, file_ext)
             
         elif file_ext in ['xls', 'xlsx']:
             df = pd.read_excel(file_path)

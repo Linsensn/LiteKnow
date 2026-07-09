@@ -23,6 +23,7 @@ async def admin_list_messages(
     data = await msg_service.get_message_page(
         db, session_id=session_id, page=page, page_size=page_size
     )
+    data.list = [MessageResponse.model_validate(item) for item in data.list]
     return success(data=data)
 
 
@@ -33,7 +34,7 @@ async def admin_get_message(
     current_admin: dict = Depends(get_admin_user)
 ):
     message = await msg_service.get_message(db, message_id=message_id)
-    return success(data=message)
+    return success(data=MessageResponse.model_validate(message))
 
 @router.delete("/{message_id}", summary="管理员强制删除消息")
 async def admin_delete_message(

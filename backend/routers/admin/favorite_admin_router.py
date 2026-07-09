@@ -8,7 +8,7 @@ from utils.response import success
 from schemas.common import ResponseModel, PageResult
 from schemas.favorite_schema import FavoriteResponse, FavoriteAdminBatchDeleteReq
 from services.favorite_service import fav_service
-
+from schemas.favorite_schema import FavoriteResponse
 router = APIRouter(prefix="/favorites", tags=["Admin - 收藏管理"])
 
 
@@ -29,6 +29,7 @@ async def get_folders_admin(
         db, page=page, page_size=page_size,
         content_type=content_type, user_id=user_id
     )
+    data.list = [FavoriteResponse.model_validate(item) for item in data.list]
     return success(data=data)
 
 
@@ -43,7 +44,7 @@ async def get_folder_admin(
     current_admin = Depends(get_admin_user)
 ):
     folder = await fav_service.get_folder_admin(db, folder_id=folder_id)
-    return success(data=folder)
+    return success(data=FavoriteResponse.model_validate(folder))
 
 
 @router.get(
