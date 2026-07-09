@@ -6,14 +6,14 @@ from fastapi.responses import StreamingResponse
 import logging
 
 from crud import session_crud
-from utils.exceptions import CustomAPIException, ErrorCode #[cite: 29]
+from utils.exceptions import CustomAPIException, ErrorCode 
 
 logger = logging.getLogger(__name__)
 
-def audit_log(user_id: int, action: str, target_id: int = None, details: str = ""):
+def audit_log(user_id: int, action: str, details: str = ""):
     """【操作日志审计】记录关键操作"""
     # 实际项目中应写入专门的 audit_logs 数据表
-    logger.info(f"[Audit] User:{user_id} | Action:{action} | Target:{target_id} | Detail:{details}")
+    logger.info(f"[Audit] User:{user_id} | Action:{action} | Detail:{details}")
 
 async def export_sessions_csv(db: DBSession):
     """【数据导出】导出全量会话为 CSV 格式流"""
