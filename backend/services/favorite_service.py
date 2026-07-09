@@ -262,7 +262,58 @@ class FavoriteService:
             )
         return folder
 
-        # 8. 管理端：批量删除收藏夹
+    # 7b. 管理端：获取收藏夹内容详情（无 user_id 归属校验）
+    async def get_folder_contents_admin(
+        self, db: AsyncSession, folder_id: int,
+        page: int = 1, page_size: int = 20
+    ) -> dict:
+        folder = await favorite_crud.get(db, folder_id=folder_id)
+        if not folder:
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, message="收藏夹不存在")
+
+        content_ids = folder.content_ids or []
+        total = len(content_ids)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_ids = content_ids[start:end]
+
+        # 按 content_type 分发到不同业务表
+        if not page_ids:
+            items = []
+        elif folder.content_type == "question":
+            from crud.bank_questions_crud import bank_question
+            db_items = await bank_question.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
+        elif folder.content_type == "summary":
+            from crud.messages_crud import msg_crud
+            db_items = await msg_crud.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
+        elif folder.content_type == "session":
+            from models.sessions import Session as SessionModel
+            from sqlalchemy import select
+            stmt = select(SessionModel).where(SessionModel.id.in_(page_ids))
+            result = db.execute(stmt)
+            db_items = result.scalars().all()
+            items = [_sa_to_dict(o) for o in db_items]
+        elif folder.content_type == "bank":
+            from models.question_banks import QuestionBank as QuestionBankModel
+            from sqlalchemy import select
+            stmt = select(QuestionBankModel).where(QuestionBankModel.id.in_(page_ids))
+            result = db.execute(stmt)
+            db_items = result.scalars().all()
+            items = [_sa_to_dict(o) for o in db_items]
+        else:
+            items = []
+
+        return {
+            "folder": _sa_to_dict(folder),
+            "contents": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size
+        }
+
+    # 8. 管理端：批量删除收藏夹
     async def batch_delete_admin(self, db: AsyncSession, ids: List[int]) -> int:
         try:
             if not ids:
