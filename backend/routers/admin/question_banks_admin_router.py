@@ -13,7 +13,9 @@ from schemas.common import ResponseModel, PageResult
 from schemas.question_bank_schemas import QuestionBankOut, QuestionBankUpdate, BulkDeleteIn
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/admin/question-banks", tags=["Admin/Question Banks"])
+
+# 👇 修复 2：去掉多余的 /admin 前缀，解决 404 路由嵌套双重 /admin 问题
+router = APIRouter(prefix="/question-banks", tags=["Admin/Question Banks"])
 
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]], summary="管理员分页搜索全局题库")
 async def admin_list_question_banks(
@@ -24,7 +26,7 @@ async def admin_list_question_banks(
     db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """管理员分页查看全局题库列表，支持关键字搜索和排序"""
-    # 👇 修复：显式声明这是管理员视角，跳过用户ID过滤
+    # 👇 修复 1：显式声明这是管理员视角，跳过用户ID过滤 (解决越权Bug)
     result = await qb_service.get_banks(db=db, current_user=current_admin, keyword=keyword, page=page, page_size=page_size, sort_by=sort_by, is_admin_mode=True)
     items_data = [QuestionBankOut.model_validate(item) for item in result["items"]]
     
@@ -58,7 +60,7 @@ async def admin_bulk_delete_question_banks(
     data: BulkDeleteIn, db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """批量删除指定的题库，用于管理员强制清理"""
-    # 👇 修复：显式声明这是管理员视角，允许越权删除
+    # 👇 修复 1：显式声明这是管理员视角，允许越权删除 (解决越权Bug)
     deleted_count = await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=data.bank_ids, is_admin_mode=True)
     audit_logger.warning(f"Admin {current_admin.id} force batch deleted banks {data.bank_ids}")
     return success(message=f"全局批量删除成功，共删除 {deleted_count or 0} 个题库")
@@ -68,7 +70,7 @@ async def admin_delete_single_bank(
     bank_id: int = Path(..., description="题库ID", examples=[5012]), db: AsyncSession = Depends(get_db), current_admin: User = Depends(get_admin_user)
 ):
     """删除指定ID的题库，内部复用批量删除逻辑"""
-    # 👇 修复：显式声明这是管理员视角，允许越权删除
+    # 👇 修复 1：显式声明这是管理员视角，允许越权删除 (解决越权Bug)
     deleted_count = await qb_service.bulk_delete(db=db, current_user=current_admin, bank_ids=[bank_id], is_admin_mode=True)
     audit_logger.warning(f"Admin {current_admin.id} force deleted bank {bank_id}")
     return success(message=f"全局题库删除成功，共删除 {deleted_count or 0} 个题库")
