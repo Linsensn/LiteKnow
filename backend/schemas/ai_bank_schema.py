@@ -1,21 +1,34 @@
 # backend/schemas/ai_bank_schema.py
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Any
+from typing import List, Optional
+import json
 
-# 新增：定义严格的选项结构
 class OptionItem(BaseModel):
     id: str = Field(..., description="选项标识，如 'A', 'B', 'C', 'D'")
     content: str = Field(..., description="选项的具体内容")
 
 class BankParseRequest(BaseModel):
     bank_name: str = Field(..., description="要生成的题库名称")
-    content: str = Field(..., description="用户上传的包含杂乱题目的纯文本内容")
+    model_name: Optional[str] = Field(None, description="指定调用的大模型（不传则用系统默认）")
+    content: Optional[str] = Field("", description="用户填写的纯文本内容或补充说明")
+    # 🌟 对齐组长写法：前端可能以字符串形式传数组
+    attachment_ids: str = Field("[]", description="已上传附件的ID列表(JSON数组字符串)，例如: [1, 2, 3]")
+
+    # 🌟 对齐组长写法：提供一个属性直接获取解析好的列表
+    @property
+    def parsed_attachment_ids(self) -> List[int]:
+        try:
+            return json.loads(self.attachment_ids)
+        except Exception:
+            return []
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "bank_name": "高等数学期中复习题",
-                "content": "1. 1+1等于几？ A. 1 B. 2 C. 3 D. 4 答案是B。解析：这是基础算术。"
+                "model_name": "deepseek-ai/DeepSeek-V3",
+                "content": "请把这些照片里的题目提取出来",
+                "attachment_ids": "[101, 102]"
             }
         }
     )
@@ -24,10 +37,12 @@ class ParsedQuestion(BaseModel):
     question_type: str = Field(..., description="题型: single_choice/multi_choice/essay/application 等")
     difficulty_level: str = Field(default="medium", description="难度: easy/medium/hard")
     content: str = Field(..., description="题干内容")
-    options: List[OptionItem] = Field(default=[], description="选项列表对象数组")
-    # 修改：适配数据库的 JSON 类型
-    correct_answer: Any = Field(..., description="正确答案(JSON格式，选择题推荐使用数组如 ['B'] 或 ['A','C'])")
+    options: List[OptionItem] = Field(default=[], description="选项列表对象数组，简答题等无选项请留空数组 []")
+    correct_answer: List[str] = Field(..., description="正确答案(格式必须为数组，如 ['B'] 或 ['A','C']，简答题填关键得分点列表)")
     ai_analysis: str = Field(default="", description="AI生成的解析或原文自带的解析")
+
+class BankParseOutputData(BaseModel):
+    questions: List[ParsedQuestion] = Field(description="解析出的题目列表")
 
 class BankParseResponse(BaseModel):
     bank_id: int = Field(..., description="生成的题库主键ID")
