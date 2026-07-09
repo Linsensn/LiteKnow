@@ -3,7 +3,6 @@ from io import StringIO
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from crud import question_banks_crud
-from crud.favorites_crud import favorite_crud
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class QuestionBankService:
@@ -40,9 +39,10 @@ class QuestionBankService:
             
         return bank
 
-    # 👇 修复重点：引入 is_admin_mode，默认开启数据隔离保护
-    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc", is_admin_mode: bool = False):
-        query_user_id = None if is_admin_mode else current_user.id
+    # 👇 修复：新增 target_user_id 参数，允许管理员按特定用户筛选
+    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc", is_admin_mode: bool = False, target_user_id: int = None):
+        # 如果是管理员，查指定的 target_user_id (不传就是查所有)；如果是学生，死死锁住只能查自己 (current_user.id)
+        query_user_id = target_user_id if is_admin_mode else current_user.id
         skip = (page - 1) * page_size
         
         items, total = await question_banks_crud.get_multi_question_banks(
@@ -75,15 +75,9 @@ class QuestionBankService:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
-    # 👇 同理修复：彻底阻断潜在的越权删除风险
     async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int], is_admin_mode: bool = False) -> int:
         query_user_id = None if is_admin_mode else current_user.id
         try:
-            # 先级联清理收藏夹中对应的题库ID
-            await favorite_crud.remove_content_ids_by_type(
-                db, content_type="bank", content_ids=bank_ids
-            )
-            # 再删除题库
             rowcount = await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
             db.commit()
             return rowcount
