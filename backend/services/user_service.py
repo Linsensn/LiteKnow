@@ -29,6 +29,14 @@ async def wechat_login_service(db: Session, code: str):
         access_token = create_access_token(subject=user.id) 
         return access_token
 
+    if code == "wx_o002":  # 测试管理员登录
+        # 直接查库里写死的一个测试用户，或者动态创建一个
+        user = user_crud.get_user_by_openid(db, code)
+        if not user:
+            user = user_crud.create_user(db, code, role='admin')
+        access_token = create_access_token(subject=user.id) 
+        return access_token
+
     # 调用微信服务端换取 OpenID
     wx_url = f"https://api.weixin.qq.com/sns/jscode2session?appid={WX_APPID}&secret={WX_SECRET}&js_code={code}&grant_type=authorization_code"
     
