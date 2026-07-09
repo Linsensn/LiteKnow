@@ -1,7 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, or_, desc, asc
+from sqlalchemy import select, update, delete, func, or_, desc, asc, distinct
 from sqlalchemy.dialects.mysql import insert
 from models.question_banks import QuestionBank
+from models.practice_records import PracticeRecord
+from models.practice_sessions import PracticeSession
 from typing import List, Optional, Dict, Any, Tuple
 
 async def create_question_bank(db: AsyncSession, *, obj_in: dict, user_id: int) -> QuestionBank:
@@ -81,3 +83,41 @@ async def delete_banks_by_ids(db: AsyncSession, *, ids: List[int], user_id: Opti
         stmt = stmt.where(QuestionBank.user_id == user_id)
     result = db.execute(stmt)
     return result.rowcount
+
+async def get_user_bank_stats(db: AsyncSession, user_id: int, bank_id: int) -> Tuple[int, int, int]:
+    """统计某个用户在指定题库下的做题数据：(已做去重题目数, 总做题次数, 正确次数)"""
+    
+    # 1. 查询已做过的去重题目数 (计算完成率)
+    stmt_completed = select(func.count(distinct(PracticeRecord.question_id))).join(
+        PracticeSession, PracticeRecord.session_id == PracticeSession.id
+    ).where(
+        PracticeSession.bank_id == bank_id,
+        PracticeRecord.user_id == user_id,
+        PracticeRecord.is_completed == True
+    )
+    completed_res = db.execute(stmt_completed)
+    completed_count = completed_res.scalar() or 0
+
+    # 2. 查询总做题次数 (计算正确率的分母)
+    stmt_attempts = select(func.count(PracticeRecord.id)).join(
+        PracticeSession, PracticeRecord.session_id == PracticeSession.id
+    ).where(
+        PracticeSession.bank_id == bank_id,
+        PracticeRecord.user_id == user_id,
+        PracticeRecord.is_completed == True
+    )
+    attempts_res = db.execute(stmt_attempts)
+    total_attempts = attempts_res.scalar() or 0
+
+    # 3. 查询做正确的次数 (计算正确率的分子)
+    stmt_correct = select(func.count(PracticeRecord.id)).join(
+        PracticeSession, PracticeRecord.session_id == PracticeSession.id
+    ).where(
+        PracticeSession.bank_id == bank_id,
+        PracticeRecord.user_id == user_id,
+        PracticeRecord.is_correct == True
+    )
+    correct_res = db.execute(stmt_correct)
+    correct_attempts = correct_res.scalar() or 0
+
+    return completed_count, total_attempts, correct_attempts
