@@ -1,17 +1,29 @@
 # backend/services/favorite_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
+
 from crud.favorites_crud import favorite_crud
+from crud.bank_questions_crud import bank_question
+from crud.messages_crud import msg_crud
 from schemas.favorite_schema import FavoriteCreate
 from schemas.common import PageResult
+from models.sessions import Session as SessionModel
+from models.question_banks import QuestionBank as QuestionBankModel
 from utils.exceptions import CustomAPIException, ErrorCode
+from loguru import logger
+
+
+def _sa_to_dict(obj):
+    """SQLAlchemy 模型 → dict（替代 model_dump，SA 模型没有该方法）"""
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
 
 
 class FavoriteService:
 
     # ==================== 学生端方法 ====================
 
-        # 1. 添加收藏
+    # 1. 添加收藏
     # 自动定位对应类型的收藏夹，不存在则自动创建；幂等：已存在时不做变更
     async def add_favorite(
         self, db: AsyncSession, user_id: int, obj_in: FavoriteCreate, content_id: int
@@ -23,6 +35,8 @@ class FavoriteService:
             if not folder:
                 folder = await favorite_crud.create(db, user_id=user_id, obj_in=obj_in.model_dump())
 
+            logger.debug("add_favorite | folder_id={} content_ids={} type={} content_id={}",
+                         folder.id, folder.content_ids, type(folder.content_ids), content_id)
             if content_id in (folder.content_ids or []):
                 db.commit()
                 return {"action": "exists", "message": "已收藏，无需重复添加"}
@@ -50,6 +64,8 @@ class FavoriteService:
                 db.commit()
                 return {"action": "removed", "message": "已取消收藏"}
 
+            logger.debug("remove_favorite | folder_id={} content_ids={} type={} content_id={}",
+                         folder.id, folder.content_ids, type(folder.content_ids), content_id)
             await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
             db.commit()
             return {"action": "removed", "message": "已取消收藏"}
@@ -84,7 +100,7 @@ class FavoriteService:
         folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
         if not folder:
             raise CustomAPIException(
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.DATA_NOT_FOUND,
                 message="收藏夹不存在"
             )
         return folder
@@ -97,7 +113,7 @@ class FavoriteService:
             folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
             if not folder:
                 raise CustomAPIException(
-                    code=ErrorCode.NOT_FOUND,
+                    code=ErrorCode.DATA_NOT_FOUND,
                     message="收藏夹不存在"
                 )
             updated = await favorite_crud.update(db, db_obj=folder, update_data=update_data)
@@ -140,6 +156,8 @@ class FavoriteService:
         folder = await favorite_crud.get_by_type(db, user_id=user_id, content_type=content_type)
         if not folder:
             return {"is_favorited": False, "folder_id": None}
+        logger.debug("check_favorite_status | folder_id={} content_ids={} type={}",
+                     folder.id, folder.content_ids, type(folder.content_ids))
         return {
             "is_favorited": content_id in (folder.content_ids or []),
             "folder_id": folder.id
@@ -153,6 +171,8 @@ class FavoriteService:
         folder = await favorite_crud.get_by_type(db, user_id=user_id, content_type=content_type)
         if not folder:
             return {str(cid): False for cid in content_ids}
+        logger.debug("batch_check_status | folder_id={} content_ids={} type={}",
+                     folder.id, folder.content_ids, type(folder.content_ids))
         fav_set = set(folder.content_ids or [])
         return {str(cid): cid in fav_set for cid in content_ids}
 
@@ -164,7 +184,7 @@ class FavoriteService:
         """把 content_ids 解析成具体内容返回"""
         folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
         if not folder:
-            raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="收藏夹不存在")
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, message="收藏夹不存在")
 
         content_ids = folder.content_ids or []
         total = len(content_ids)
@@ -172,23 +192,37 @@ class FavoriteService:
         end = start + page_size
         page_ids = content_ids[start:end]
 
+        logger.debug("get_folder_contents | folder_id={} content_ids={} type={} page_ids={}",
+                     folder.id, content_ids, type(content_ids), page_ids)
+
         # 按 content_type 分发到不同业务表
         if not page_ids:
             items = []
         elif folder.content_type == "question":
-            from crud.bank_questions_crud import get_bank_questions_by_ids
-            items = await get_bank_questions_by_ids(db, ids=page_ids)
-            items = [q.model_dump() for q in items]
+            db_items = await bank_question.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
         elif folder.content_type == "summary":
-            from crud.messages_crud import msg_crud
-            items = await msg_crud.get_by_ids(db, ids=page_ids)
-            items = [m.model_dump() for m in items]
+            db_items = await msg_crud.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
+        elif folder.content_type == "session":
+            stmt = select(SessionModel).where(SessionModel.id.in_(page_ids))
+            result = db.execute(stmt)
+            db_items = result.scalars().all()
+            items = [_sa_to_dict(o) for o in db_items]
+
+        # ✨ 新增 bank (题库) 的查询分支
+        elif folder.content_type == "bank":
+            stmt = select(QuestionBankModel).where(QuestionBankModel.id.in_(page_ids))
+            result = db.execute(stmt)
+            db_items = result.scalars().all()
+            items = [_sa_to_dict(o) for o in db_items]
+
         else:
             # knowledge 或其他类型暂不支持
             items = []
 
         return {
-            "folder": folder,
+            "folder": _sa_to_dict(folder),
             "contents": items,
             "total": total,
             "page": page,
@@ -223,7 +257,7 @@ class FavoriteService:
         folder = await favorite_crud.get(db, folder_id=folder_id)
         if not folder:
             raise CustomAPIException(
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.DATA_NOT_FOUND,
                 message="收藏夹不存在"
             )
         return folder

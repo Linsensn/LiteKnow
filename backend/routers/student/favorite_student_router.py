@@ -65,58 +65,11 @@ async def get_my_folders(
         db, user_id=current_student.id, content_type=content_type,
         page=page, page_size=page_size
     )
-    data.list = [FavoriteResponse.model_validate(item) for item in data.list]  # ← 加这一行
+    data.list = [FavoriteResponse.model_validate(item) for item in data.list]
     return success(data=data)
 
-@router.get(
-    "/{folder_id}",
-    summary="获取单个收藏夹详情",
-    response_model=ResponseModel[FavoriteResponse]
-)
-async def get_folder_detail(
-    folder_id: int = Path(..., description="收藏夹ID"),
-    db: AsyncSession = Depends(get_db),
-    current_student = Depends(get_current_user)
-):
-    folder = await fav_service.get_folder_detail(
-        db, user_id=current_student.id, folder_id=folder_id
-    )
-    return success(data=FavoriteResponse.model_validate(folder))  # ← 改这一行
 
-@router.put(
-    "/{folder_id}",
-    summary="更新收藏夹基础信息",
-    response_model=ResponseModel[FavoriteResponse]
-)
-async def update_folder(
-    folder_id: int = Path(..., description="收藏夹ID"),
-    update_in: FavoriteUpdate = ...,
-    db: AsyncSession = Depends(get_db),
-    current_student = Depends(get_current_user)
-):
-    folder = await fav_service.update_folder_info(
-        db, user_id=current_student.id, folder_id=folder_id,
-        update_data=update_in.model_dump(exclude_unset=True)
-    )
-    return success(data=FavoriteResponse.model_validate(folder))  # ← 改这一行
-
-
-@router.delete(
-    "/contents/batch",
-    summary="批量移除收藏夹内的内容",
-    response_model=ResponseModel[dict]
-)
-async def batch_remove_contents(
-    content_type: str = Query(..., description="收藏夹类型: question/summary/knowledge"),
-    req: FavoriteBatchRemoveReq = ...,
-    db: AsyncSession = Depends(get_db),
-    current_student = Depends(get_current_user)
-):
-    count = await fav_service.batch_remove_contents(
-        db, user_id=current_student.id, content_type=content_type, content_ids=req.content_ids
-    )
-    return success(data={"removed_count": count}, message=f"成功移除{count}条收藏内容")
-
+# ⚠️ 固定路径必须放在动态路径 /{folder_id} 之前，避免 FastAPI 路由贪婪匹配
 @router.get("/status", summary="检查单个内容收藏状态")
 async def check_fav_status(
     content_type: str = Query(..., description="收藏类型: question/summary/knowledge"),
@@ -142,6 +95,57 @@ async def batch_check_fav_status(
         content_type=req.content_type, content_ids=req.content_ids
     )
     return success(data={"status_map": data})
+
+
+@router.delete(
+    "/contents/batch",
+    summary="批量移除收藏夹内的内容",
+    response_model=ResponseModel[dict]
+)
+async def batch_remove_contents(
+    content_type: str = Query(..., description="收藏夹类型: question/summary/knowledge"),
+    req: FavoriteBatchRemoveReq = ...,
+    db: AsyncSession = Depends(get_db),
+    current_student = Depends(get_current_user)
+):
+    count = await fav_service.batch_remove_contents(
+        db, user_id=current_student.id, content_type=content_type, content_ids=req.content_ids
+    )
+    return success(data={"removed_count": count}, message=f"成功移除{count}条收藏内容")
+
+
+# 动态路径参数统一放在末尾
+@router.get(
+    "/{folder_id}",
+    summary="获取单个收藏夹详情",
+    response_model=ResponseModel[FavoriteResponse]
+)
+async def get_folder_detail(
+    folder_id: int = Path(..., description="收藏夹ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student = Depends(get_current_user)
+):
+    folder = await fav_service.get_folder_detail(
+        db, user_id=current_student.id, folder_id=folder_id
+    )
+    return success(data=FavoriteResponse.model_validate(folder))
+
+@router.put(
+    "/{folder_id}",
+    summary="更新收藏夹基础信息",
+    response_model=ResponseModel[FavoriteResponse]
+)
+async def update_folder(
+    folder_id: int = Path(..., description="收藏夹ID"),
+    update_in: FavoriteUpdate = ...,
+    db: AsyncSession = Depends(get_db),
+    current_student = Depends(get_current_user)
+):
+    folder = await fav_service.update_folder_info(
+        db, user_id=current_student.id, folder_id=folder_id,
+        update_data=update_in.model_dump(exclude_unset=True)
+    )
+    return success(data=FavoriteResponse.model_validate(folder))
 
 
 @router.get("/{folder_id}/contents", summary="获取收藏夹内容详情")

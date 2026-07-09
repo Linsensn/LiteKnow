@@ -29,6 +29,14 @@ async def wechat_login_service(db: Session, code: str):
         access_token = create_access_token(subject=user.id) 
         return access_token
 
+    if code == "wx_o002":  # 测试管理员登录
+        # 直接查库里写死的一个测试用户，或者动态创建一个
+        user = user_crud.get_user_by_openid(db, code)
+        if not user:
+            user = user_crud.create_user(db, code, role='admin')
+        access_token = create_access_token(subject=user.id) 
+        return access_token
+
     # 调用微信服务端换取 OpenID
     wx_url = f"https://api.weixin.qq.com/sns/jscode2session?appid={WX_APPID}&secret={WX_SECRET}&js_code={code}&grant_type=authorization_code"
     
@@ -62,6 +70,30 @@ async def wechat_login_service(db: Session, code: str):
         "token_type": "bearer",
         "role": user.role
     }
+
+# backend/services/user_svc.py （追加）
+
+def get_users_paginated_service(
+    db: Session, 
+    page: int, 
+    page_size: int, 
+    admin_id: int,
+    role: str = None, 
+    keyword: str = None, 
+    is_active: bool = None
+):
+    """【业务层】分页查询用户，并记录审计日志"""
+    skip = (page - 1) * page_size
+    total, users = user_crud.get_users_paginated(
+        db, skip=skip, limit=page_size, 
+        role=role, keyword=keyword, is_active=is_active
+    )
+    
+    # 记录审计日志（这里你可以决定是否每次翻页都记录，或只记录带筛选条件的情况）
+    filter_desc = f"role={role}, keyword={keyword}, is_active={is_active}" if any([role, keyword, is_active is not None]) else "无筛选"
+    audit_log(admin_id, "VIEW_USERS_PAGINATED", details=f"Page {page}, Size {page_size}, Filters: {filter_desc}")
+    
+    return total, users
 
 def audit_log(admin_id: int, action: str, details: str = ""):
     """【操作日志审计】记录管理员关键操作轨迹"""

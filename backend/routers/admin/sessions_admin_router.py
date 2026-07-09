@@ -8,6 +8,7 @@ from utils.response import success
 from schemas.session_schemas import SessionCreate, SessionStatusToggle, SessionOut
 from schemas.common import ResponseModel, PageResult
 from crud import session_crud
+from crud.favorites_crud import favorite_crud
 from services import session_service
 from models.users import User
 
@@ -24,7 +25,7 @@ def read_all_sessions(
     )
     
     data_list = [SessionOut.model_validate(s).model_dump() for s in sessions]
-    page_data = PageResult(list=data_list, total=total, page=page, page_size=page_size)[cite: 45]
+    page_data = PageResult(list=data_list, total=total, page=page, page_size=page_size)
     
     return success(data=page_data.model_dump())
 
@@ -51,6 +52,11 @@ def batch_delete_sessions(
     session_ids: list[int], physical: bool = False, 
     db: DBSession = Depends(get_db), admin: User = Depends(get_admin_user)  
 ):
+    # 物理删除时级联清理收藏夹中对应的会话ID
+    if physical:
+        favorite_crud.remove_content_ids_by_type_sync(
+            db, content_type="session", content_ids=session_ids
+        )
     session_crud.batch_delete_sessions(db, session_ids, physical=physical)
     session_service.audit_log(admin.id, "BATCH_DELETE", details=f"Deleted {len(session_ids)} sessions. Physical: {physical}")
     return success(message=f"成功删除 {len(session_ids)} 条会话")  
