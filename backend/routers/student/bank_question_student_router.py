@@ -6,7 +6,7 @@ from utils.deps import get_current_user
 from services.bank_question_service import bq_service
 from utils.response import success  
 from schemas.bank_question_schema import QuestionResponse
-router = APIRouter(prefix="/questions", tags=["Student - 题库浏览"])
+router = APIRouter(prefix="/questions", tags=["Student/bank_question"])
 
 
 @router.get("", summary="学生端分页浏览题库题目")

@@ -9,8 +9,7 @@ from services.message_service import msg_service
 from schemas.common import ResponseModel, PageResult
 from schemas.message_schema import MessageResponse
 
-router = APIRouter(prefix="/messages", tags=["Admin - 消息审计"])
- 
+router = APIRouter(prefix="/messages", tags=["Admin/messages"])
 
 @router.get("", summary="管理员分页查询全站消息", response_model=ResponseModel[PageResult[MessageResponse]])
 async def admin_list_messages(

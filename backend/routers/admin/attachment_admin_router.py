@@ -9,7 +9,7 @@ from schemas.common import ResponseModel, PageResult
 from schemas.attachment_schema import AttachmentResponse
 from services.attachment_service import att_service
 
-router = APIRouter(prefix="/attachments", tags=["Admin - 资源审计"])
+router = APIRouter(prefix="/attachments", tags=["Admin/attachments"])
 
 
 @router.get("", summary="管理员分页查询全站附件", response_model=ResponseModel[PageResult[AttachmentResponse]])

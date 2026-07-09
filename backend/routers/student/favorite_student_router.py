@@ -16,7 +16,7 @@ from schemas.favorite_schema import (
 )
 from services.favorite_service import fav_service
 
-router = APIRouter(prefix="/favorites", tags=["Student - favorites"])
+router = APIRouter(prefix="/favorites", tags=["Student/favorites"])
 
 
 @router.post(

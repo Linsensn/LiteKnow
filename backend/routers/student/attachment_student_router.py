@@ -12,7 +12,7 @@ from services.attachment_service import att_service
 from schemas.common import ResponseModel, PageResult
 from schemas.attachment_schema import AttachmentResponse
 
-router = APIRouter(prefix="/attachments", tags=["Student - 资源管理"])
+router = APIRouter(prefix="/attachments", tags=["Student/attachments"])
 
 ALLOWED_TYPES = [
     "image/jpeg", 

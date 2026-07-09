@@ -7,7 +7,7 @@ from utils.response import success
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate, MessageResponse
 
-router = APIRouter(prefix="/messages", tags=["Student - 对话消息"])
+router = APIRouter(prefix="/messages", tags=["Student/messages"])
 
 
 @router.get("/session/{session_id}", summary="获取指定会话的消息列表")
