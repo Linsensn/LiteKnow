@@ -27,7 +27,6 @@ async def create_smart_quiz(
     # 直接通过 ID 去数据库读识别好的文本 
     if req.attachment_ids:
         for att_id in req.attachment_ids:
-            # 假设你已经在 att_service 中实现了 get_attachment_by_id
             att = await att_service.get_attachment_by_id(db, att_id=att_id, user_id=current_student.id)
             
             if att and att.extracted_text and att.extracted_text.strip():
