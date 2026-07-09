@@ -84,7 +84,7 @@ class FavoriteService:
         folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
         if not folder:
             raise CustomAPIException(
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.DATA_NOT_FOUND,
                 message="收藏夹不存在"
             )
         return folder
@@ -97,7 +97,7 @@ class FavoriteService:
             folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
             if not folder:
                 raise CustomAPIException(
-                    code=ErrorCode.NOT_FOUND,
+                    code=ErrorCode.DATA_NOT_FOUND,
                     message="收藏夹不存在"
                 )
             updated = await favorite_crud.update(db, db_obj=folder, update_data=update_data)
@@ -164,7 +164,7 @@ class FavoriteService:
         """把 content_ids 解析成具体内容返回"""
         folder = await favorite_crud.get(db, folder_id=folder_id, user_id=user_id)
         if not folder:
-            raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="收藏夹不存在")
+            raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, message="收藏夹不存在")
 
         content_ids = folder.content_ids or []
         total = len(content_ids)
@@ -223,7 +223,7 @@ class FavoriteService:
         folder = await favorite_crud.get(db, folder_id=folder_id)
         if not folder:
             raise CustomAPIException(
-                code=ErrorCode.NOT_FOUND,
+                code=ErrorCode.DATA_NOT_FOUND,
                 message="收藏夹不存在"
             )
         return folder

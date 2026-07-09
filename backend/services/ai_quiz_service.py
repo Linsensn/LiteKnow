@@ -91,7 +91,7 @@ class AIQuizService:
                 )
                 existing_bank = result.scalars().first()
                 if not existing_bank:
-                    raise CustomAPIException(code=ErrorCode.NOT_FOUND, message="指定的题库不存在或无权限追加")
+                    raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, message="指定的题库不存在或无权限追加")
                 
                 existing_bank.total_questions += len(questions)
                 bank_id = existing_bank.id
