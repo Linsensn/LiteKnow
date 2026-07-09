@@ -20,20 +20,38 @@ router = APIRouter(prefix="/favorites", tags=["Student - favorites"])
 
 
 @router.post(
-    "/toggle",
-    summary="切换收藏状态",
+    "/add",
+    summary="添加收藏",
     response_model=ResponseModel[dict]
 )
-async def toggle_favorite(
+async def add_favorite(
     req: FavoriteContentOperateReq,
     db: AsyncSession = Depends(get_db),
     current_student = Depends(get_current_user)
 ):
     obj_in = FavoriteCreate(content_type=req.content_type)
-    result = await fav_service.toggle_favorite(
+    result = await fav_service.add_favorite(
         db, user_id=current_student.id, obj_in=obj_in, content_id=req.content_id
     )
     return success(data={"action": result["action"]}, message=result["message"])
+
+
+@router.post(
+    "/remove",
+    summary="取消收藏",
+    response_model=ResponseModel[dict]
+)
+async def remove_favorite(
+    req: FavoriteContentOperateReq,
+    db: AsyncSession = Depends(get_db),
+    current_student = Depends(get_current_user)
+):
+    obj_in = FavoriteCreate(content_type=req.content_type)
+    result = await fav_service.remove_favorite(
+        db, user_id=current_student.id, obj_in=obj_in, content_id=req.content_id
+    )
+    return success(data={"action": result["action"]}, message=result["message"])
+
 
 @router.get("", summary="分页获取我的收藏列表")
 async def get_my_folders(
