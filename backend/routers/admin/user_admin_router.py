@@ -28,9 +28,24 @@ def batch_create_users(data_list: list[UserCreate], db: Session = Depends(get_db
     return success(message=f"成功批量导入 {count} 名用户")
 
 @router.get("/", summary="分页获取所有用户列表", response_model=ResponseModel[PageResult[UserOut]])
-def read_users(page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
-    skip = (page - 1) * page_size 
-    total, users = user_crud.get_users_paginated(db, skip=skip, limit=page_size)
+def read_users(
+    page: int = 1, 
+    page_size: int = 20, 
+    role: str = None, 
+    keyword: str = None, 
+    is_active: bool = None,  
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user) 
+):
+    total, users = user_service.get_users_paginated_service(
+        db, 
+        page=page, 
+        page_size=page_size, 
+        admin_id=admin.id,
+        role=role, 
+        keyword=keyword, 
+        is_active=is_active
+    )
     
     page_data = PageResult[UserOut](
         list=[UserOut.model_validate(u) for u in users],

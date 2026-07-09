@@ -51,7 +51,7 @@ def get_users_paginated(
             or_(User.nickname.like(f"%{keyword}%"), User.signature.like(f"%{keyword}%"))
         )
     
-    total = query.count()                     # 统计总条数
+    total = query.count() 
     users = query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
     return total, users
 
