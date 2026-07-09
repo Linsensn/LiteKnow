@@ -1,5 +1,5 @@
 # backend/routers/student/attachments_student_route.py
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Path
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Path, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from config.database import get_db
@@ -10,7 +10,7 @@ from utils.local_storage import save_file_local
 from utils.ocr_client import parse_local_file
 from services.attachment_service import att_service
 from schemas.common import ResponseModel, PageResult
-from schemas.attachment_schema import AttachmentResponse
+from schemas.attachment_schema import AttachmentResponse, AttachmentUpdate
 
 router = APIRouter(prefix="/attachments", tags=["Student/attachments"])
 
@@ -53,10 +53,9 @@ async def upload_attachment(
     )
 
     # 自动进行 OCR / 文本提取
-    # 这一步就算解析失败（返回空字符串），也不阻断上传成功
     extracted_text = await parse_local_file(file_path, file.filename)
     
-    # 4. 写入数据库，连同提取的文本一起保存
+    # 4. 写入数据库
     new_attachment = await att_service.create_attachment(
         db=db,
         user_id=current_student.id,
@@ -68,7 +67,7 @@ async def upload_attachment(
     
     # 5. 根据解析结果返回不同的提示语
     msg = "上传并解析成功" if extracted_text else "上传成功，但未识别到有效文字（可能是图片不清晰或为空白）"
-    return success(data=AttachmentResponse.model_validate(new_attachment), message=msg)  # ← 改这行
+    return success(data=AttachmentResponse.model_validate(new_attachment), message=msg)
 
 
 @router.get("", summary="分页获取我的附件列表", response_model=ResponseModel[PageResult[AttachmentResponse]])
@@ -83,8 +82,36 @@ async def get_my_attachments(
         db, user_id=current_student.id,
         file_type=file_type, page=page, page_size=page_size
     )
-    data.list = [AttachmentResponse.model_validate(item) for item in data.list]  # ← 加这行
+    data.list = [AttachmentResponse.model_validate(item) for item in data.list]
     return success(data=data)
+
+
+@router.get("/{attachment_id}", summary="获取附件详情", response_model=ResponseModel[AttachmentResponse])
+async def get_my_attachment(
+    attachment_id: int = Path(..., description="附件ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    attachment = await att_service.get_attachment_by_id(db, att_id=attachment_id, user_id=current_student.id)
+    if not attachment:
+        raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND)
+    return success(data=AttachmentResponse.model_validate(attachment))
+
+
+@router.put("/{attachment_id}", summary="编辑我的附件信息")
+async def update_my_attachment(
+    attachment_id: int = Path(..., description="附件ID"),
+    update_data: AttachmentUpdate = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    # 先校验归属
+    attachment = await att_service.get_attachment_by_id(db, att_id=attachment_id, user_id=current_student.id)
+    if not attachment:
+        raise CustomAPIException(code=ErrorCode.RESOURCE_ACCESS_DENIED)
+    await att_service.update_attachment(db, attachment_id=attachment_id, update_data=update_data)
+    return success(message="附件更新成功")
+
 
 @router.delete("/{attachment_id}", summary="删除我的附件")
 async def delete_my_attachment(
