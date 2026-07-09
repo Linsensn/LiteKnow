@@ -24,7 +24,7 @@ def read_all_sessions(
     )
     
     data_list = [SessionOut.model_validate(s).model_dump() for s in sessions]
-    page_data = PageResult(list=data_list, total=total, page=page, page_size=page_size)[cite: 45]
+    page_data = PageResult(list=data_list, total=total, page=page, page_size=page_size)
     
     return success(data=page_data.model_dump())
 

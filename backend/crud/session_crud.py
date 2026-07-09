@@ -61,6 +61,10 @@ def update_session(db: DBSession, db_obj: Session, update_data: dict) -> Session
     db.refresh(db_obj)
     return db_obj
 
+def get_sessions(db: DBSession, limit: int = 10000):
+    """【全量查询】用于导出等场景（返回未删除的会话列表）"""
+    return db.query(Session).filter(Session.is_deleted == False).limit(limit).all()
+
 def batch_update_status(db: DBSession, session_ids: list[int], new_status: str) -> int:
     """【批量更改】与【状态切换】"""
     stmt = update(Session).where(Session.id.in_(session_ids)).values(status=new_status)

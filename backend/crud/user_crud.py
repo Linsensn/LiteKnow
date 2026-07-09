@@ -29,6 +29,32 @@ def get_users_advanced(
         
     return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
 
+def get_users_paginated(
+    db: Session, 
+    skip: int = 0, 
+    limit: int = 20, 
+    role: str = None, 
+    keyword: str = None, 
+    is_active: bool = None
+):
+    """
+    【分页 + 多条件组合查询】返回 (总条数, 当前页列表)
+    """
+    query = db.query(User).filter(User.is_deleted == False)
+    
+    if role:
+        query = query.filter(User.role == role)
+    if is_active is not None:
+        query = query.filter(User.is_active == is_active)
+    if keyword:
+        query = query.filter(
+            or_(User.nickname.like(f"%{keyword}%"), User.signature.like(f"%{keyword}%"))
+        )
+    
+    total = query.count() 
+    users = query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
+    return total, users
+
 def batch_create_users(db: Session, objs_in: list[dict]) -> int:
     """【批量新增】"""
     db_objs = [User(**obj) for obj in objs_in]
