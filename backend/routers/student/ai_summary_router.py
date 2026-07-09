@@ -1,4 +1,4 @@
-# backend/routers/student/ai_summary_route.py
+# backend/routers/student/ai_summary_router.py
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
