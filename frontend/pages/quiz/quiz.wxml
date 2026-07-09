@@ -1,9 +1,19 @@
 <view class="container">
   <view class="section-card">
     <view class="section-title">提供出题素材</view>
-    <textarea class="source-input" placeholder="输入知识点（如：唐朝历史）或粘贴长篇课文..." value="{{sourceText}}" bindinput="onInput"></textarea>
-    <view class="upload-btn-light" bindtap="uploadMaterial">
-      {{fileName ? '已选择: ' + fileName : '+ 上传素材(图片/文档)'}}
+    <textarea class="source-input" placeholder="输入知识点（如：唐朝历史）或粘贴长篇课文..." model:value="{{materialText}}" maxlength="-1" disable-default-padding="{{true}}" show-confirm-bar="{{false}}"></textarea>
+    
+    <view class="upload-btn-light" bindtap="handleUpload">
+      + 上传素材(图片/文档)
+    </view>
+    
+    <view wx:if="{{attachments.length > 0}}" style="margin-top: 20rpx;">
+      <block wx:for="{{attachments}}" wx:key="index">
+        <view class="file-tag" style="display: inline-block; margin: 10rpx 10rpx 0 0;">
+          <text>{{item.name}}</text>
+          <text class="delete-icon" data-index="{{index}}" bindtap="removeAttachment">×</text>
+        </view>
+      </block>
     </view>
   </view>
 
@@ -12,29 +22,35 @@
     
     <view class="config-row">
       <text class="label">生成题数</text>
-      <slider class="slider" min="5" max="20" step="5" value="{{questionCount}}" show-value bindchange="onCountChange" activeColor="#07c160"/>
+      <slider class="slider" min="1" max="20" step="1" value="{{questionCount}}" show-value bindchange="onCountChange" activeColor="#07c160"/>
     </view>
 
     <view class="config-row">
       <text class="label">题目难度</text>
       <view class="radio-group">
-        <view class="radio-item {{difficulty === 'easy' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="easy">基础</view>
-        <view class="radio-item {{difficulty === 'medium' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="medium">进阶</view>
-        <view class="radio-item {{difficulty === 'hard' ? 'selected' : ''}}" bindtap="setDifficulty" data-level="hard">困难</view>
+        <view class="radio-item {{difficulty === 'basic' ? 'selected' : ''}}" bindtap="onDifficultyChange" data-level="basic">基础</view>
+        <view class="radio-item {{difficulty === 'advanced' ? 'selected' : ''}}" bindtap="onDifficultyChange" data-level="advanced">进阶</view>
+        <view class="radio-item {{difficulty === 'hard' ? 'selected' : ''}}" bindtap="onDifficultyChange" data-level="hard">困难</view>
       </view>
     </view>
   </view>
 
   <view class="section-card">
-    <view class="config-row" style="border:none;">
+    <view class="config-row" style="{{(!selectedBank || selectedBank.id === null) ? 'border-bottom: 2rpx solid #f5f5f5;' : 'border:none;'}}">
       <text class="label">保存至题库</text>
-      <picker bindchange="onBankChange" range="{{bankList}}" range-key="name">
-        <view class="picker-value">{{selectedBankName || '点击选择题库 >'}}</view>
+      <picker bindchange="onBankChange" range="{{bankList}}" range-key="bank_name">
+        <view class="picker-value">
+          {{selectedBank ? selectedBank.bank_name : '+ 自动新建题库'}}
+        </view>
       </picker>
+    </view>
+
+    <view class="config-row" style="border:none; padding-top: 30rpx;" wx:if="{{!selectedBank || selectedBank.id === null}}">
+      <input class="custom-bank-input" placeholder="请输入新题库名称 (可选)" model:value="{{customBankName}}" />
     </view>
   </view>
 
-  <button class="generate-btn {{(sourceText || fileName) && selectedBankId ? 'active' : ''}}" bindtap="generateQuiz" disabled="{{isGenerating}}">
-    {{isGenerating ? 'AI 正在出题...' : '一键生成练习'}}
+  <button class="generate-btn {{(materialText || attachments.length > 0) ? 'active' : ''}}" bindtap="generateQuiz">
+    一键生成练习
   </button>
 </view>

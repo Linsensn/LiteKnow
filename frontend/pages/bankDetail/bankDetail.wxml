@@ -1,20 +1,21 @@
-<view class="container">
+<view class="detail-page">
   <view class="header-card">
     <view class="title-row">
       <view class="title">{{bankInfo.name || '加载中...'}}</view>
-      <view class="more-btn">•••</view>
+      <view class="more-btn" bindtap="goToManage">•••</view>
     </view>
+    
     <view class="subtitle">
       {{bankInfo.question_count || 0}}题  {{bankInfo.created_at || '刚刚'}}创建
     </view>
     
     <view class="stats-row">
       <view class="stat-item">
-        <view class="stat-num text-purple">100<text class="percent">%</text></view>
+        <view class="stat-num text-purple">{{bankInfo.completion_rate || 0}}<text class="percent">%</text></view>
         <view class="stat-label">完成率</view>
       </view>
       <view class="stat-item">
-        <view class="stat-num text-green">74.86<text class="percent">%</text></view>
+        <view class="stat-num text-green">{{bankInfo.accuracy_rate || 0}}<text class="percent">%</text></view>
         <view class="stat-label">正确率</view>
       </view>
     </view>
@@ -25,12 +26,14 @@
       <view class="action-title text-blue">题库管理</view>
       <view class="action-desc text-blue-light">更多题库功能看这里</view>
     </view>
-    <view class="action-card bg-orange">
+    
+    <view class="action-card bg-orange" bindtap="goToHistory">
       <view class="badge hot">HOT</view>
       <view class="action-title text-orange">练习统计</view>
       <view class="action-desc text-orange-light">多维度追踪学习进度</view>
     </view>
-    <view class="action-card bg-green">
+    
+    <view class="action-card bg-green" bindtap="goToNotes">
       <view class="badge new">练匀心得</view>
       <view class="action-title text-green-dark">我的笔记</view>
       <view class="action-desc text-green-light">记录刷题心得和技巧</view>
@@ -47,7 +50,7 @@
       <view class="mode-item" bindtap="startPractice" data-mode="sequential">
         <view class="mode-info">
           <view class="mode-name">顺序练习</view>
-          <view class="mode-progress">1/{{bankInfo.question_count || 76}}</view>
+          <view class="mode-progress">1/{{bankInfo.question_count || 0}}</view>
         </view>
         <view class="mode-icon text-blue">📝</view>
       </view>

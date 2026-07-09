@@ -33,7 +33,7 @@
     <view class="input-area">
       <textarea 
         class="content-input" 
-        placeholder="粘贴长文本，或点击下方按钮上传需要摘要的文档..." 
+        placeholder="输入知识点 (如：唐朝历史) 或粘贴长篇课文..." 
         value="{{inputText}}" 
         bindinput="onInput"
         maxlength="-1"
@@ -41,19 +41,20 @@
         cursor-spacing="20"
       ></textarea>
       
-      <view class="attachment-bar">
-        <view class="file-tag" wx:if="{{fileName}}">
-          <text>📄 {{fileName}}</text>
-          <text class="delete-icon" catchtap="removeFile">×</text>
-        </view>
-        <view class="upload-btn" bindtap="uploadDoc" wx:else>
-          <text class="icon">📎</text> 上传文档/图片
+      <view class="file-list" wx:if="{{uploadedFiles.length > 0}}">
+        <view class="file-tag" wx:for="{{uploadedFiles}}" wx:key="id">
+          <text class="file-name">📄 {{item.name}}</text>
+          <text class="delete-icon" catchtap="removeFile" data-index="{{index}}">×</text>
         </view>
       </view>
     </view>
 
+    <view class="upload-btn-full" bindtap="uploadDoc">
+      <text class="icon">+</text> 上传素材(图片/文档)
+    </view>
+
     <view class="btn-wrapper">
-      <button class="submit-btn {{(inputText.length > 0 || fileName) ? 'active' : ''}}" bindtap="generateSummary" disabled="{{isLoading}}">
+      <button class="submit-btn {{(inputText.length > 0 || uploadedFiles.length > 0) ? 'active' : ''}}" bindtap="generateSummary" disabled="{{isLoading}}">
         {{isLoading ? 'AI 提炼中...' : '生成智能摘要'}}
       </button>
     </view>

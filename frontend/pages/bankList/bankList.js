@@ -1,6 +1,9 @@
 const util = require('../../utils/util.js');
 const app = getApp();
 
+// 在 Page 外部声明防抖定时器变量
+let searchTimeout = null; 
+
 Page({
   data: {
     bankList: [],
@@ -17,12 +20,23 @@ Page({
     this.fetchBanks(true);
   },
 
-  // 监听搜索框输入
+  // 监听搜索框输入并使用防抖
   onSearchInput(e) {
-    this.setData({ keyword: e.detail.value });
+    const keyword = e.detail.value;
+    this.setData({ keyword });
+    
+    // 防抖逻辑：如果之前有等待执行的搜索，先取消掉
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // 设置新的定时器：用户停止打字 500 毫秒后，自动触发接口刷新列表
+    searchTimeout = setTimeout(() => {
+      this.fetchBanks(true);
+    }, 500);
   },
 
-  // 触发搜索
+  // 触发搜索 (如点击键盘搜索按钮)
   onSearch() {
     this.fetchBanks(true);
   },
@@ -36,7 +50,6 @@ Page({
     let currentPage = isRefresh ? 1 : this.data.page;
 
     try {
-      // ⚠️ 路径前缀请确保和您的 main.py 挂载一致，比如 '/api/v1/student/question-banks'
       const res = await util.request('/api/v1/student/question-banks', 'GET', {
         page: currentPage,
         page_size: this.data.pageSize,
@@ -76,7 +89,7 @@ Page({
             // 对接 POST 接口创建题库
             await util.request('/api/v1/student/question-banks', 'POST', {
               name: res.content.trim(),
-              description: 'AI 生成的专属题库' // 默认给个描述，您也可以让后端设为可选
+              description: 'AI 生成的专属题库' // 默认给个描述
             });
             wx.hideLoading();
             wx.showToast({ title: '创建成功', icon: 'success' });

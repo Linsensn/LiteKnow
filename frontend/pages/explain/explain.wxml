@@ -27,7 +27,7 @@
     <view class="input-area">
       <textarea 
         class="question-input {{messageList.length > 0 ? 'compact' : ''}}" 
-        placeholder="例如：解释一下什么是牛顿第一定律..." 
+        placeholder="例如：请解释一下图片中的这道题..." 
         placeholder-class="placeholder-style"
         value="{{questionText}}" 
         bindinput="onInput"
@@ -35,11 +35,23 @@
         disable-default-padding="true"
         cursor-spacing="20"
       ></textarea>
+      
+      <view class="file-list" wx:if="{{uploadedFiles.length > 0}}">
+        <view class="file-tag" wx:for="{{uploadedFiles}}" wx:key="id">
+          <text class="file-name">📄 {{item.name}}</text>
+          <text class="delete-icon" catchtap="removeFile" data-index="{{index}}">×</text>
+        </view>
+      </view>
+
       <view class="word-count">{{questionText.length}}/500</view>
     </view>
 
+    <view class="upload-btn-full" bindtap="uploadDoc">
+      <text class="icon">+</text> 上传素材(图片/文档)
+    </view>
+
     <view class="btn-wrapper">
-      <button class="submit-btn {{questionText.length > 0 ? 'active' : ''}}" bindtap="submitQuestion" disabled="{{isLoading}}">
+      <button class="submit-btn {{(questionText.length > 0 || uploadedFiles.length > 0) ? 'active' : ''}}" bindtap="submitQuestion" disabled="{{isLoading}}">
         {{isLoading ? 'AI 思考中...' : '开始精讲'}}
       </button>
     </view>

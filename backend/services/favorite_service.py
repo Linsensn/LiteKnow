@@ -193,7 +193,7 @@ class FavoriteService:
             items = [_sa_to_dict(o) for o in db_items]
         elif folder.content_type == "session":
             stmt = select(SessionModel).where(SessionModel.id.in_(page_ids))
-            result = await db.execute(stmt)
+            result = db.execute(stmt)
             db_items = result.scalars().all()
             items = [_sa_to_dict(o) for o in db_items]
         else:

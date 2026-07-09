@@ -1,10 +1,17 @@
-<view class="bank-list">
-  <view class="bank-card" wx:for="{{bankList}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
-    <view class="bank-name">{{item.bank_name}}</view>
-    
-    <view class="bank-right">
-      <text class="q-count">{{item.total_questions || 0}}题</text>
-      <text class="arrow">></text>
+<view class="bank-page">
+  <view class="search-box">
+    <icon type="search" size="18" color="#999" />
+    <input class="search-input" placeholder="搜索题库内容..." value="{{keyword}}" bindinput="onSearchInput" />
+  </view>
+
+  <view class="bank-list">
+    <view class="bank-card" wx:for="{{bankList}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="bank-name">{{item.bank_name}}</view>
+      
+      <view class="bank-right">
+        <text class="q-count">{{item.total_questions || 0}}题</text>
+        <text class="arrow">></text>
+      </view>
     </view>
   </view>
 </view>

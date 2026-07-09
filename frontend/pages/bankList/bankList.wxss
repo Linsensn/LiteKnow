@@ -1,8 +1,28 @@
 /* 容器背景设为淡淡的灰色，让白色卡片更凸显 */
-.container {
+.bank-page {
   min-height: 100vh;
   background-color: #f5f7fa;
   padding: 30rpx;
+  display: block; /* 核心修复：摆脱 app.wxss 全局 flex 居中的影响 */
+  box-sizing: border-box;
+}
+
+/* 搜索框样式 */
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 40rpx;
+  padding: 16rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
+}
+
+.search-input {
+  flex: 1;
+  margin-left: 16rpx;
+  font-size: 28rpx;
+  color: #333;
 }
 
 .bank-list {

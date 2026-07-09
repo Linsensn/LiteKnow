@@ -1,20 +1,20 @@
 const util = require('../../utils/util.js');
 const app = getApp();
 // ⚠️ 确保替换为真实后端地址
-const BASE_URL = 'http://127.0.0.1:8000'; 
+const BASE_URL = app.globalData.baseUrl || 'http://127.0.0.1:8000'; 
 
 Page({
   data: {
     inputText: '',
-    fileName: '',
-    fileId: null,
+    uploadedFiles: [],      // 存放文件显示信息 [{ id: 1, name: 'abc.pdf' }]
+    parsedAttachmentIds: [], // 存放传给后端的附件 ID 数组
     isLoading: false,
     messageList: [],
     userInfo: {},
     currentSessionId: null,
     scrollToId: '',
-    isFavorited: false,  // 记录当前会话是否被收藏
-    isLoadingFav: false  // 防止用户连续点击收藏按钮
+    isFavorited: false,     // 收藏状态
+    isLoadingFav: false     // 防止重复点击收藏
   },
 
   onLoad(options) {
@@ -24,7 +24,13 @@ Page({
     if (options.sessionId) {
       this.setData({ currentSessionId: options.sessionId });
       this.fetchSessionHistory(options.sessionId);
-      this.checkFavoriteStatus(options.sessionId); // 检查收藏状态
+    }
+  },
+
+  onShow() {
+    // 每次进入页面时，实时同步收藏状态，确保星星准确
+    if (this.data.currentSessionId) {
+      this.checkFavoriteStatus(this.data.currentSessionId);
     }
   },
 
@@ -32,19 +38,64 @@ Page({
     this.setData({ inputText: e.detail.value });
   },
 
+  // 选择并上传文档
   uploadDoc() {
     wx.chooseMessageFile({
       count: 1,
       type: 'all',
       success: (res) => {
         const file = res.tempFiles[0];
-        this.setData({ fileName: file.name });
+        if (file.size > 10 * 1024 * 1024) {
+          return wx.showToast({ title: '文件不能超过10MB', icon: 'none' });
+        }
+        this.uploadToServer(file);
       }
     });
   },
 
-  removeFile() {
-    this.setData({ fileName: '', fileId: null });
+  // 核心：上传至服务器并获取解析 ID
+  uploadToServer(file) {
+    const that = this;
+    wx.showLoading({ title: '上传并解析中...', mask: true });
+    const token = wx.getStorageSync('token');
+
+    wx.uploadFile({
+      url: `${BASE_URL}/api/v1/student/attachments/upload`,
+      filePath: file.path,
+      name: 'file', 
+      header: { 'Authorization': `Bearer ${token}` },
+      success(res) {
+        wx.hideLoading();
+        try {
+          const data = JSON.parse(res.data);
+          if (data.code === 0 || data.code === 200) {
+            const attachment = data.data;
+            that.setData({
+              uploadedFiles: [...that.data.uploadedFiles, { id: attachment.id, name: file.name }],
+              parsedAttachmentIds: [...that.data.parsedAttachmentIds, attachment.id]
+            });
+            wx.showToast({ title: '上传成功', icon: 'success' });
+          } else {
+            wx.showToast({ title: data.message || '上传失败', icon: 'none' });
+          }
+        } catch (e) {
+          wx.showToast({ title: '服务器响应异常', icon: 'none' });
+        }
+      },
+      fail() {
+        wx.hideLoading();
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      }
+    });
+  },
+
+  removeFile(e) {
+    const index = e.currentTarget.dataset.index;
+    const files = [...this.data.uploadedFiles];
+    const ids = [...this.data.parsedAttachmentIds];
+    files.splice(index, 1);
+    ids.splice(index, 1);
+    this.setData({ uploadedFiles: files, parsedAttachmentIds: ids });
   },
 
   copyText(e) {
@@ -58,16 +109,9 @@ Page({
 
   formatMarkdown(text) {
     if (!text) return '';
-    let html = text;
-    html = html.replace(/```[a-z]*/gi, '');
-    html = html.replace(/^### (.*$)/gim, '<div style="font-size: 30rpx; font-weight: bold; color: #333; margin-top: 24rpx; margin-bottom: 12rpx;">$1</div>');
-    html = html.replace(/^## (.*$)/gim, '<div style="font-size: 32rpx; font-weight: bold; color: #2b85e4; margin-top: 28rpx; margin-bottom: 12rpx;">$1</div>');
-    html = html.replace(/^# (.*$)/gim, '<div style="font-size: 36rpx; font-weight: bold; color: #333; margin-top: 32rpx; margin-bottom: 16rpx;">$1</div>');
-    html = html.replace(/^\s*[-*_]{3,}\s*$/gim, '<hr style="border: none; border-top: 2rpx dashed #dcdcdc; margin: 30rpx 0;" />');
-    html = html.replace(/^\>\s+(.*$)/gim, '<div style="border-left: 6rpx solid #a3e4b7; padding-left: 16rpx; color: #666; margin: 10rpx 0; background: #f0fdf4; padding: 10rpx 16rpx; border-radius: 4rpx;">$1</div>');
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #333; font-weight: bold;">$1</strong>');
-    html = html.replace(/^(\d+\.)\s+(.*$)/gim, '<div style="margin-top: 12rpx; margin-bottom: 8rpx;"><strong style="color:#2b85e4; margin-right: 8rpx;">$1</strong> $2</div>');
-    html = html.replace(/^[\-\*]\s+(.*$)/gim, '<div style="padding-left: 24rpx; position: relative; margin-top: 6rpx;"><span style="position: absolute; left: 0; color: #2b85e4;">•</span>$1</div>');
+    let html = text.replace(/```[a-z]*/gi, '');
+    html = html.replace(/^### (.*$)/gim, '<div style="font-weight:bold; margin-top:20rpx;">$1</div>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#333;">$1</strong>');
     html = html.replace(/\n/g, '<br/>');
     return html;
   },
@@ -76,21 +120,13 @@ Page({
     wx.showLoading({ title: '恢复记忆中...' });
     try {
       const res = await util.request(`/api/v1/student/messages/session/${sessionId}`, 'GET');
-      
-      const historyList = (res || []).map(msg => {
-        let item = {
-          id: msg.id || ('msg_' + Date.now() + Math.random()),
-          role: msg.role === 'assistant' ? 'ai' : 'user', 
-          content: msg.content
-        };
-        if (item.role === 'ai') item.htmlNodes = this.formatMarkdown(item.content);
-        return item;
-      });
-
-      this.setData({ 
-        messageList: historyList,
-        scrollToId: historyList.length > 0 ? `msg-${historyList[historyList.length - 1].id}` : ''
-      });
+      const historyList = (res || []).map(msg => ({
+        id: msg.id || ('msg_' + Date.now()),
+        role: msg.role === 'assistant' ? 'ai' : 'user', 
+        content: msg.content,
+        htmlNodes: msg.role === 'assistant' ? this.formatMarkdown(msg.content) : ''
+      }));
+      this.setData({ messageList: historyList });
     } catch (e) {
       console.error('加载历史记录失败', e);
     } finally {
@@ -100,22 +136,18 @@ Page({
 
   async generateSummary() {
     const text = this.data.inputText.trim();
-    const fileName = this.data.fileName;
+    const attachmentIds = this.data.parsedAttachmentIds;
     
-    if ((!text && !fileName) || this.data.isLoading) return;
+    if ((!text && attachmentIds.length === 0) || this.data.isLoading) return;
 
     if (!this.data.currentSessionId) {
       wx.showLoading({ title: '准备工作台...' });
       try {
-        const titleText = text ? text.substring(0, 10) : fileName;
         const sessionRes = await util.request('/api/v1/student/sessions/', 'POST', {
-          title: titleText + '...', 
+          title: text.substring(0, 10) + '...', 
           task_type: 'summary' 
         });
-        this.setData({ 
-          currentSessionId: sessionRes.id,
-          isFavorited: false // 新建会话默认未收藏
-        });
+        this.setData({ currentSessionId: sessionRes.id });
         wx.hideLoading();
       } catch (err) {
         wx.hideLoading();
@@ -124,98 +156,76 @@ Page({
       }
     }
 
-    let displayContent = text;
-    if (fileName) {
-      displayContent = `[附件: ${fileName}]\n${text}`;
-    }
-
-    const userMsg = { id: 'u_' + Date.now(), role: 'user', content: displayContent };
+    const userMsg = { id: 'u_' + Date.now(), role: 'user', content: text };
     const aiMsgId = 'ai_' + Date.now();
-    const initialAiMsg = { id: aiMsgId, role: 'ai', content: '', htmlNodes: '' };
-
     this.setData({
-      messageList: [...this.data.messageList, userMsg, initialAiMsg],
+      messageList: [...this.data.messageList, userMsg, { id: aiMsgId, role: 'ai', content: '' }],
       inputText: '', 
-      isLoading: true,
-      scrollToId: `msg-${userMsg.id}`
+      uploadedFiles: [],
+      parsedAttachmentIds: [],
+      isLoading: true
     });
 
-    this.startStreaming(text, aiMsgId);
+    this.startStreaming(text, attachmentIds, aiMsgId);
   },
 
-  startStreaming(userText, aiMsgId) {
+  startStreaming(userText, attachmentIds, aiMsgId) {
     const token = wx.getStorageSync('token');
     let buffer = ''; 
-
     const requestTask = wx.request({
       url: `${BASE_URL}/api/v1/student/ai/summary/stream`, 
       method: 'POST', 
       enableChunked: true,
-      header: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
+      header: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: {
         session_id: this.data.currentSessionId,
-        content: userText 
+        content: userText,
+        attachment_ids: JSON.stringify(attachmentIds) 
       },
-      success: () => {
-        this.setData({ isLoading: false });
-      },
-      fail: (err) => {
-        this.appendChunkToMessage(aiMsgId, '\n[网络连接中断，请重试]');
-        this.setData({ isLoading: false });
-      }
+      success: () => { this.setData({ isLoading: false }); },
+      fail: () => { this.setData({ isLoading: false }); }
     });
 
-    requestTask.onChunkReceived((response) => {
-      const chunkText = new TextDecoder('utf-8').decode(response.data);
+    requestTask.onChunkReceived((res) => {
+      const chunkText = new TextDecoder('utf-8').decode(res.data);
       buffer += chunkText;
-
       let parts = buffer.split('\n\n');
       buffer = parts.pop(); 
-
-      for (let part of parts) {
+      parts.forEach(part => {
         if (part.startsWith('data: ')) {
-          let dataStr = part.substring(6).trim(); 
-          if (dataStr === '[DONE]') {
-            this.setData({ isLoading: false });
-            return;
-          }
+          let dataStr = part.substring(6).trim();
+          if (dataStr === '[DONE]') return;
           try {
-            let dataObj = JSON.parse(dataStr);
-            if (dataObj.content) {
-              this.appendChunkToMessage(aiMsgId, dataObj.content);
-            }
-          } catch (err) {}
+            let data = JSON.parse(dataStr);
+            if (data.content) this.appendChunkToMessage(aiMsgId, data.content);
+          } catch (e) {}
         }
-      }
+      });
     });
   },
 
   appendChunkToMessage(msgId, chunk) {
     const messages = this.data.messageList;
-    const targetIndex = messages.findIndex(m => m.id === msgId);
-    
-    if (targetIndex !== -1) {
-      messages[targetIndex].content += chunk;
-      if (messages[targetIndex].role === 'ai') {
-        messages[targetIndex].htmlNodes = this.formatMarkdown(messages[targetIndex].content);
-      }
-      this.setData({ 
-        messageList: messages,
-        scrollToId: `msg-${msgId}` 
-      });
+    const idx = messages.findIndex(m => m.id === msgId);
+    if (idx !== -1) {
+      messages[idx].content += chunk;
+      messages[idx].htmlNodes = this.formatMarkdown(messages[idx].content);
+      this.setData({ messageList: messages });
     }
   },
 
-  // 检查当前会话的收藏状态
+  // 检查收藏状态
   async checkFavoriteStatus(sessionId) {
     try {
       const res = await util.request('/api/v1/student/favorites/status', 'GET', {
         content_type: 'session', 
         content_id: sessionId
       });
+      // ✨ 在这里添加日志
+      console.log('--- 收藏状态接口返回 ---');
+      console.log('传入的 sessionId:', sessionId);
+      console.log('后端返回的 res:', res);
+      
       this.setData({ 
         isFavorited: res.data ? res.data.is_favorited : false 
       });
@@ -224,25 +234,21 @@ Page({
     }
   },
 
-  // 点击切换收藏状态
+  // 点击收藏/取消
   async toggleFavorite() {
     if (!this.data.currentSessionId || this.data.isLoadingFav) return;
     this.setData({ isLoadingFav: true });
 
+    const endpoint = this.data.isFavorited ? '/api/v1/student/favorites/remove' : '/api/v1/student/favorites/add';
+
     try {
-      const res = await util.request('/api/v1/student/favorites/toggle', 'POST', {
+      await util.request(endpoint, 'POST', {
         content_type: 'session', 
         content_id: this.data.currentSessionId
       });
-
-      const isFav = res.data.action === 'added';
-      this.setData({ isFavorited: isFav });
-      
-      wx.showToast({ 
-        title: isFav ? '已加入收藏' : '已取消收藏', 
-        icon: 'success' 
-      });
-    } catch (error) {
+      this.setData({ isFavorited: !this.data.isFavorited });
+      wx.showToast({ title: this.data.isFavorited ? '已收藏' : '已取消', icon: 'success' });
+    } catch (e) {
       wx.showToast({ title: '操作失败', icon: 'none' });
     } finally {
       this.setData({ isLoadingFav: false });

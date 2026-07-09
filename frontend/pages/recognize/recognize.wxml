@@ -1,49 +1,47 @@
 <view class="container">
   <view class="form-card">
     
-    <view class="tabs">
-      <view class="tab-item {{activeTab === 'file' ? 'active' : ''}}" bindtap="switchTab" data-tab="file">上传文档/图片</view>
-      <view class="tab-item {{activeTab === 'text' ? 'active' : ''}}" bindtap="switchTab" data-tab="text">粘贴长文本</view>
-    </view>
-
-    <view class="form-title">{{activeTab === 'file' ? '上传文档或图片' : '文本智能识别'}}</view>
+    <view class="form-title">AI 智能题库提取</view>
     <view class="form-subtitle">
-      {{activeTab === 'file' ? '支持上传图片、PDF格式，AI将自动提取并整理成专属题库。' : '输入题库名称并粘贴题目文本，AI将自动解析并生成题库。'}}
+      输入题库名称，粘贴长文本或上传图片/PDF文件，AI将自动识别、排版并生成专属题库。
     </view>
 
-    <view class="upload-area" wx:if="{{activeTab === 'file'}}">
-      <view class="empty-state" bindtap="showFilePicker" wx:if="{{!tempFilePath}}">
-        <view class="plus-icon">+</view>
-        <view class="upload-text">点击选择文件</view>
-      </view>
+    <view class="input-group">
+      <text class="label">题库名称 <text class="required">*</text></text>
+      <input class="input-box" placeholder="例如：2026大学物理期末题库" value="{{bankName}}" bindinput="onBankNameInput" />
+    </view>
 
-      <view class="preview-state" wx:else>
-        <image wx:if="{{fileCategory === 'image'}}" src="{{tempFilePath}}" mode="aspectFit" class="preview-img"></image>
+    <view class="input-group">
+      <text class="label">题目内容或文件 <text class="required">*</text></text>
+      
+      <view class="content-area">
+        <textarea 
+          class="textarea-box" 
+          placeholder="在此粘贴题目文本，支持选择、判断、问答等混排...或点击下方按钮上传文件。" 
+          value="{{rawText}}" 
+          bindinput="onTextInput"
+          maxlength="-1"
+          disable-default-padding="true"
+        ></textarea>
         
-        <view wx:if="{{fileCategory === 'doc'}}" class="doc-preview">
-          <text class="doc-icon">📄</text>
-          <text class="doc-name">{{fileName}}</text>
+        <view class="file-list" wx:if="{{uploadedFiles.length > 0}}">
+          <view class="file-tag" wx:for="{{uploadedFiles}}" wx:key="id">
+            <text class="file-name">📄 {{item.name}}</text>
+            <text class="delete-icon" catchtap="removeFile" data-index="{{index}}">×</text>
+          </view>
         </view>
-        
-        <view class="remove-btn" catchtap="clearFile">×</view>
       </view>
-    </view>
 
-    <view class="text-area-wrapper" wx:if="{{activeTab === 'text'}}">
-      <view class="input-group">
-        <text class="label">题库名称 <text class="required">*</text></text>
-        <input class="input-box" placeholder="例如：2026大学物理期末题库" model:value="{{bankName}}" />
-      </view>
-      <view class="input-group">
-        <text class="label">题目内容 <text class="required">*</text></text>
-        <textarea class="textarea-box" placeholder="在此粘贴包含题目的长文本，支持选择、判断、问答等混排..." model:value="{{rawText}}" maxlength="-1"></textarea>
+      <view class="upload-btn-full" bindtap="uploadDoc">
+        <text class="icon">+</text> 上传素材(图片/文档)
       </view>
     </view>
 
     <view class="btn-wrapper">
-      <button class="submit-btn {{(activeTab === 'file' && tempFilePath) || (activeTab === 'text' && bankName && rawText) ? 'active' : ''}}" bindtap="submitRecognize" disabled="{{isUploading}}">
-        {{isUploading ? '提取中...' : '开始提取'}}
+      <button class="submit-btn {{(bankName && (rawText || uploadedFiles.length > 0)) ? 'active' : ''}}" bindtap="submitRecognize" disabled="{{isUploading}}">
+        {{isUploading ? 'AI 提取中...' : '开始生成题库'}}
       </button>
     </view>
+
   </view>
 </view>
