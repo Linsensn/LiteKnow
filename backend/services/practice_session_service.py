@@ -8,6 +8,7 @@ from sqlalchemy import select
 from crud import practice_sessions_crud
 from models.bank_questions import BankQuestion
 from models.wrong_questions import WrongQuestion
+from models.practice_records import PracticeRecord  # 🌟 新增导入：引入练习记录模型
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class PracticeSessionService:
@@ -119,8 +120,10 @@ class PracticeSessionService:
         result = db.execute(stmt)
         questions = {q.id: q for q in result.scalars().all()}
 
-        # 🌟 修复点 1：不再只存 ID，而是把整道题的对象和用户的答案都暂存下来
         wrong_questions_data = []
+        
+        # 🌟🌟🌟 新增：准备一个列表，用来装所有的做题记录（无论对错）
+        practice_records_to_insert = []
 
         # 3. 逐题对比
         for q_id in sequence:
@@ -138,6 +141,18 @@ class PracticeSessionService:
                 is_correct = set(c_ans) == set(u_ans)
             elif str(c_ans).strip() == str(u_ans).strip():
                 is_correct = True
+                
+            # 🌟🌟🌟 新增：将每一道题的作答结果记录下来，存入明细表
+            practice_records_to_insert.append(
+                PracticeRecord(
+                    user_id=user_id,
+                    session_id=session_id,    
+                    question_id=q_id,         
+                    user_answer=u_ans,        
+                    is_correct=is_correct,
+                    is_completed=True         
+                )
+            )
 
             if not is_correct:
                 wrong_questions_data.append({
@@ -145,6 +160,10 @@ class PracticeSessionService:
                     "u_ans": u_ans,
                     "q_obj": q
                 })
+
+        # 🌟🌟🌟 新增：批量将做题记录真正写入数据库
+        if practice_records_to_insert:
+            db.add_all(practice_records_to_insert)
 
         # 4. 错题去重并写入数据库
         if wrong_questions_data:
@@ -158,7 +177,7 @@ class PracticeSessionService:
             exist_res = db.execute(exist_stmt)
             exist_ids = set(exist_res.scalars().all())
 
-            # 🌟 修复点 2：在实例化 WrongQuestion 时，把题目快照内容塞进去
+            # 在实例化 WrongQuestion 时，把题目快照内容塞进去
             new_wrong_objs = []
             for item in wrong_questions_data:
                 if item["q_id"] not in exist_ids:
