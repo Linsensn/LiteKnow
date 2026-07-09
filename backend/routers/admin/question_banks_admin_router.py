@@ -13,7 +13,7 @@ from schemas.common import ResponseModel, PageResult
 from schemas.question_bank_schemas import QuestionBankOut, QuestionBankUpdate, BulkDeleteIn
 
 audit_logger = logging.getLogger("liteknow.audit")
-router = APIRouter(prefix="/admin/question-banks", tags=["Admin - Question Banks"])
+router = APIRouter(prefix="/admin/question-banks", tags=["Admin/Question Banks"])
 
 @router.get("", response_model=ResponseModel[PageResult[QuestionBankOut]], summary="管理员分页搜索全局题库")
 async def admin_list_question_banks(

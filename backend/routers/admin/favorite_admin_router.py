@@ -9,7 +9,7 @@ from schemas.common import ResponseModel, PageResult
 from schemas.favorite_schema import FavoriteResponse, FavoriteAdminBatchDeleteReq
 from services.favorite_service import fav_service
 from schemas.favorite_schema import FavoriteResponse
-router = APIRouter(prefix="/favorites", tags=["Admin - 收藏管理"])
+router = APIRouter(prefix="/favorites", tags=["Admin/favorites"])
 
 
 @router.get(
