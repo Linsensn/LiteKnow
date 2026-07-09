@@ -176,7 +176,44 @@ class CRUDFavorite:
         result = db.execute(stmt)
         return result.scalars().all()
 
-    # 14. 管理端：统计符合条件的收藏夹总数
+    # 14. 从所有指定类型的收藏夹中移除指定的 content_ids
+    # 用于级联删除：当业务数据（如题库）被删除时，清理收藏夹中的脏数据
+    async def remove_content_ids_by_type(
+        self, db: AsyncSession, *, content_type: str, content_ids: List[int]
+    ) -> int:
+        """"从所有指定类型的收藏夹中移除指定的 content_ids"""
+        stmt = select(Favorite).where(Favorite.content_type == content_type)
+        result = db.execute(stmt)
+        folders = result.scalars().all()
+        total_removed = 0
+        for folder in folders:
+            current = folder.content_ids or []
+            new_ids = [cid for cid in current if cid not in content_ids]
+            if len(new_ids) != len(current):
+                folder.content_ids = new_ids
+                total_removed += len(current) - len(new_ids)
+        db.flush()
+        return total_removed
+
+    # 15. 同步版本：从所有指定类型的收藏夹中移除指定的 content_ids
+    # 给同步风格的 router（如 sessions）使用
+    @staticmethod
+    def remove_content_ids_by_type_sync(db, *, content_type: str, content_ids: List[int]) -> int:
+        """"同步版本：从所有指定类型的收藏夹中移除指定的 content_ids"""
+        stmt = select(Favorite).where(Favorite.content_type == content_type)
+        result = db.execute(stmt)
+        folders = result.scalars().all()
+        total_removed = 0
+        for folder in folders:
+            current = folder.content_ids or []
+            new_ids = [cid for cid in current if cid not in content_ids]
+            if len(new_ids) != len(current):
+                folder.content_ids = new_ids
+                total_removed += len(current) - len(new_ids)
+        db.flush()
+        return total_removed
+
+    # 16. 管理端：统计符合条件的收藏夹总数
     # 筛选条件与全量分页查询完全对齐，用于管理端分页计算
     async def count_admin(
         self, db: AsyncSession, *, content_type: Optional[str] = None,

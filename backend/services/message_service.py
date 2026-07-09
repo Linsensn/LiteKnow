@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.exceptions import CustomAPIException, ErrorCode
 from crud.messages_crud import msg_crud
+from crud.favorites_crud import favorite_crud
 from schemas.message_schema import MessageCreate
 from schemas.common import PageResult
 
@@ -51,6 +52,10 @@ class MessageService:
     async def delete_message(self, db: AsyncSession, message_id: int):
         message = await self.get_message(db, message_id=message_id)
         try:
+            # 级联清理收藏夹中对应的摘要ID
+            await favorite_crud.remove_content_ids_by_type(
+                db, content_type="summary", content_ids=[message_id]
+            )
             await msg_crud.delete(db, db_obj=message)
             db.commit()
         except Exception as e:

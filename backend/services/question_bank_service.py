@@ -3,6 +3,7 @@ from io import StringIO
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from crud import question_banks_crud
+from crud.favorites_crud import favorite_crud
 from utils.exceptions import CustomAPIException, ErrorCode
 
 class QuestionBankService:
@@ -78,6 +79,11 @@ class QuestionBankService:
     async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int], is_admin_mode: bool = False) -> int:
         query_user_id = None if is_admin_mode else current_user.id
         try:
+            # 先级联清理收藏夹中对应的题库ID
+            await favorite_crud.remove_content_ids_by_type(
+                db, content_type="bank", content_ids=bank_ids
+            )
+            # 再删除题库
             rowcount = await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
             db.commit()
             return rowcount

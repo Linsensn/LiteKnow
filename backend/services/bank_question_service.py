@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.exceptions import CustomAPIException, ErrorCode
 from crud.bank_questions_crud import bank_question
+from crud.favorites_crud import favorite_crud
 from schemas.bank_question_schema import QuestionCreate, QuestionUpdate
 from schemas.common import PageResult
 
@@ -72,6 +73,10 @@ class BankQuestionService:
     async def delete_question(self, db: AsyncSession, question_id: int):
         await self.get_question(db, question_id=question_id)
         try:
+            # 级联清理收藏夹中对应的题目ID
+            await favorite_crud.remove_content_ids_by_type(
+                db, content_type="question", content_ids=[question_id]
+            )
             await bank_question.delete(db, question_id=question_id)
             db.commit()
         except Exception as e:
