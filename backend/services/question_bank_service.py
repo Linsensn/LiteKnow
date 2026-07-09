@@ -20,34 +20,44 @@ class QuestionBankService:
         if not bank:
             raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "题库不存在"})
             
+        # 鉴权：如果是管理员直接放行，否则必须是自己的题库
         user_role = getattr(current_user, 'role', None) 
-        if user_role != "admin" and bank.user_id != current_user.id:
+        is_admin = user_role == "admin"
+        if not is_admin and bank.user_id != current_user.id:
             raise CustomAPIException(code=ErrorCode.RESOURCE_ACCESS_DENIED, data={"detail": "无权访问此题库"})
             
-        # 动态计算该用户在此题库的练习数据
-        completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank_id)
-        
-        total_questions = bank.total_questions or 0
-        setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
-        setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
+        # 如果是管理员查看全局题库，不计算答题统计
+        if is_admin:
+            setattr(bank, "completion_rate", 0.0)
+            setattr(bank, "accuracy_rate", 0.0)
+        else:
+            # 动态计算该学生在此题库的练习数据
+            completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank_id)
+            total_questions = bank.total_questions or 0
+            setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
+            setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
             
         return bank
 
-    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc"):
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    # 👇 修复重点：引入 is_admin_mode，默认开启数据隔离保护
+    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc", is_admin_mode: bool = False):
+        query_user_id = None if is_admin_mode else current_user.id
         skip = (page - 1) * page_size
         
         items, total = await question_banks_crud.get_multi_question_banks(
             db=db, user_id=query_user_id, keyword=keyword, skip=skip, limit=page_size, sort_by=sort_by
         )
         
-        # 给列表里的每一个题库也动态计算统计数据，方便前端渲染列表卡片进度条
+        # 给列表渲染进度条。如果是管理员视角则直接设为0
         for bank in items:
-            completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank.id)
-            total_questions = bank.total_questions or 0
-            setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
-            setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
+            if is_admin_mode:
+                setattr(bank, "completion_rate", 0.0)
+                setattr(bank, "accuracy_rate", 0.0)
+            else:
+                completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank.id)
+                total_questions = bank.total_questions or 0
+                setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
+                setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
 
         return {"total": total, "items": items}
 
@@ -64,9 +74,9 @@ class QuestionBankService:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
-    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int]) -> int:
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    # 👇 同理修复：彻底阻断潜在的越权删除风险
+    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int], is_admin_mode: bool = False) -> int:
+        query_user_id = None if is_admin_mode else current_user.id
         try:
             rowcount = await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
             db.commit()
@@ -75,9 +85,8 @@ class QuestionBankService:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED, data={"error_detail": str(e)})
 
-    async def export_banks_to_csv(self, db: AsyncSession, current_user) -> str:
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    async def export_banks_to_csv(self, db: AsyncSession, current_user, is_admin_mode: bool = False) -> str:
+        query_user_id = None if is_admin_mode else current_user.id
         banks, _ = await question_banks_crud.get_multi_question_banks(db=db, user_id=query_user_id, limit=2000)
         output = StringIO()
         writer = csv.writer(output)
