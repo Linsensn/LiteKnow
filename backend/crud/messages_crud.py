@@ -54,4 +54,12 @@ class CRUDMessage:
         db.flush()
 
 
+    # 7. 按 ID 列表批量查询消息
+    async def get_by_ids(self, db: AsyncSession, *, ids: List[int]) -> List[Message]:
+        """按 ID 列表批量查询"""
+        stmt = select(Message).where(Message.id.in_(ids))
+        result = db.execute(stmt)
+        return result.scalars().all()
+
+
 msg_crud = CRUDMessage()
