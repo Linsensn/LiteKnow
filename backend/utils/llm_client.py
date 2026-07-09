@@ -139,7 +139,7 @@ class LLMClient:
             logger.error(f"LLM 对话流式调用异常: {str(e)}")
             yield f"\n[服务异常: {str(e)}]"
 
-    def get_langchain_chat_model(model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
+    def get_langchain_chat_model(self, model_name: str = None, temperature: float = 0.3) -> ChatOpenAI:
         """
         获取配置好的 LangChain ChatOpenAI 实例
         """
@@ -156,5 +156,26 @@ class LLMClient:
             temperature=temperature,
             max_retries=2  # 如果网络抖动，允许 LangChain 自动重试 2 次
         )
+    async def async_call_chat_stream(
+        self, system_prompt: str, messages: list,
+        target_model: str = None
+    ) -> AsyncGenerator[str, None]:
+        """支持多轮对话历史的流式调用"""
+        actual_model = target_model or self.model_name
+        try:
+            response = await self.client.chat.completions.create(
+                model=actual_model,
+                messages=[{"role": "system", "content": system_prompt}] + messages,
+                temperature=0.7,
+                stream=True
+            )
+            async for chunk in response:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as e:
+            logger.error(f"多轮对话流式调用异常: {str(e)}")
+            yield f"\n[服务异常: {str(e)}]"
+
 # 实例化单例，整个项目只需 from utils.llm_client import llm_client 即可调用
 llm_client = LLMClient()

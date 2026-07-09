@@ -31,12 +31,8 @@ class AttachmentService:
         file_type: str = None, page: int, page_size: int
     ):
         skip = (page - 1) * page_size
-        total = await attachment_crud.count(
-            db, user_id=user_id, file_type=file_type
-        )
-        items = await attachment_crud.get_multi(
-            db, user_id=user_id, file_type=file_type,
-            skip=skip, limit=page_size
+        items, total = await attachment_crud.get_multi_attachments(
+            db, user_id=user_id, file_type=file_type, skip=skip, limit=page_size
         )
         return PageResult(
             list=items,

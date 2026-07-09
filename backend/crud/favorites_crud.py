@@ -54,7 +54,7 @@ class CRUDFavorite:
         if content_type:
             stmt = stmt.where(Favorite.content_type == content_type)
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar() or 0
 
     # 5. 新建收藏夹
     # 初始化 content_ids 为空数组，自动关联所属用户
@@ -87,10 +87,9 @@ class CRUDFavorite:
     # 兜底空值：兼容历史脏数据中 content_ids 为 None 的场景
     async def add_content(self, db: AsyncSession, *, db_obj: Favorite, content_id: int) -> bool:
         """"往收藏夹添加单条内容"""
-        if db_obj.content_ids is None:
-            db_obj.content_ids = []
-        if content_id not in db_obj.content_ids:
-            db_obj.content_ids.append(content_id)
+        current = db_obj.content_ids or []       # 兜底 None
+        if content_id not in current:
+            db_obj.content_ids = current + [content_id]  # ★ 新列表 → 触发脏追踪
             db.flush()
             return True
         return False
@@ -99,10 +98,9 @@ class CRUDFavorite:
     # 返回 True 表示移除成功，False 表示内容不存在
     async def remove_content(self, db: AsyncSession, *, db_obj: Favorite, content_id: int) -> bool:
         """"从收藏夹移除单条内容"""
-        if db_obj.content_ids is None:
-            db_obj.content_ids = []
-        if content_id in db_obj.content_ids:
-            db_obj.content_ids.remove(content_id)
+        current = db_obj.content_ids or []       # 兜底 None
+        if content_id in current:
+            db_obj.content_ids = [cid for cid in current if cid != content_id]  # ★ 新列表
             db.flush()
             return True
         return False
@@ -191,7 +189,7 @@ class CRUDFavorite:
         if user_id:
             stmt = stmt.where(Favorite.user_id == user_id)
         result = db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar() or 0
 
 
 favorite_crud = CRUDFavorite()

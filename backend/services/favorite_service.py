@@ -24,7 +24,7 @@ class FavoriteService:
             if not folder:
                 folder = await favorite_crud.create(db, user_id=user_id, obj_in=obj_in.model_dump())
 
-            if content_id in folder.content_ids:
+            if content_id in (folder.content_ids or []):
                 await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
                 db.commit()
                 return {"action": "removed", "message": "已取消收藏"}

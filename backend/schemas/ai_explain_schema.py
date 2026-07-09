@@ -6,7 +6,8 @@ from datetime import datetime
 class ExplainRequest(BaseModel):
     session_id: int = Field(..., description="精讲会话ID")
     question: str = Field(..., description="用户提出的问题")
-
+    attachment_ids: Optional[list[int]] = Field(None, description="关联的附件ID列表")  # ← 新增
+    
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

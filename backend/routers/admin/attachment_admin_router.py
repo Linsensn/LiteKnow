@@ -24,6 +24,7 @@ async def admin_get_all_attachments(
         db, user_id=None, file_type=file_type,
         page=page, page_size=page_size
     )
+    data.list = [AttachmentResponse.model_validate(item) for item in data.list]
     return success(data=data)
 
 

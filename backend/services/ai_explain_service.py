@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from utils.exceptions import CustomAPIException, ErrorCode
 import logging
 import json
-
 from services.message_service import msg_service
 from schemas.message_schema import MessageCreate
 from utils.llm_client import llm_client
+from services.attachment_service import att_service  # ← 新增
+from typing import Optional
 
 logger = logging.getLogger("liteknow.ai_explain")
 
@@ -29,7 +30,8 @@ class AIExplainService:
         self.max_history_messages = 40
 
     async def generate_explain_stream(
-        self, db: AsyncSession, session_id: int, question: str
+        self, db: AsyncSession, session_id: int, question: str,
+        user_id: int = None, attachment_ids: Optional[list[int]] = None  # ← 新增两个参数
     ):
         try:
             # 1. 记录用户问题到数据库
@@ -50,9 +52,25 @@ class AIExplainService:
                 for msg in history[-self.max_history_messages:]
             ]
 
-            # 4. 调用带上下文的流式对话
+            # ★ 新增：加载附件 OCR 文本，注入到 system prompt
+            final_system_prompt = self.system_prompt
+            if attachment_ids and user_id:
+                extra_context = ""
+                for att_id in attachment_ids:
+                    att = await att_service.get_attachment_by_id(db, att_id=att_id, user_id=user_id)
+                    if att and att.extracted_text:
+                        extra_context += f"\n【附件{att_id}内容】\n{att.extracted_text}\n"
+                if extra_context:
+                    final_system_prompt += (
+                        "\n\n【背景资料】\n"
+                        "学生同时上传了以下参考资料，请结合这些资料内容回答学生的问题：\n"
+                        f"{extra_context}"
+                    )
+                    logger.info(f"精讲会话 {session_id} 已注入 {len(attachment_ids)} 个附件上下文")
+
+            # 4. 调用带上下文的流式对话（用 final_system_prompt 替换 self.system_prompt）
             llm_generator = llm_client.async_call_chat_stream(
-                system_prompt=self.system_prompt,
+                system_prompt=final_system_prompt,  # ← 改用 final_system_prompt
                 messages=chat_history
             )
 

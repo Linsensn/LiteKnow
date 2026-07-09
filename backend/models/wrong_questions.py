@@ -10,7 +10,6 @@ class WrongQuestion(BaseModel):
     question_content = Column(Text, nullable=False, comment='题目完整文本')
     source_image_url = Column(String(255), comment='原始拍照图片链接')
     
-    # 🌟 修改点：统一使用 JSON 格式，与练习记录和题库保持一致
     user_answer = Column(JSON, comment='用户错误答案(JSON格式)')
     correct_answer = Column(JSON, comment='正确答案(JSON格式)')
     
