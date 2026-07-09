@@ -1,17 +1,27 @@
 # backend/services/favorite_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List, Optional
+
 from crud.favorites_crud import favorite_crud
+from crud.bank_questions_crud import bank_question
+from crud.messages_crud import msg_crud
 from schemas.favorite_schema import FavoriteCreate
 from schemas.common import PageResult
+from models.sessions import Session as SessionModel
 from utils.exceptions import CustomAPIException, ErrorCode
+
+
+def _sa_to_dict(obj):
+    """SQLAlchemy 模型 → dict（替代 model_dump，SA 模型没有该方法）"""
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
 
 
 class FavoriteService:
 
     # ==================== 学生端方法 ====================
 
-        # 1. 添加收藏
+    # 1. 添加收藏
     # 自动定位对应类型的收藏夹，不存在则自动创建；幂等：已存在时不做变更
     async def add_favorite(
         self, db: AsyncSession, user_id: int, obj_in: FavoriteCreate, content_id: int
@@ -176,19 +186,22 @@ class FavoriteService:
         if not page_ids:
             items = []
         elif folder.content_type == "question":
-            from crud.bank_questions_crud import get_bank_questions_by_ids
-            items = await get_bank_questions_by_ids(db, ids=page_ids)
-            items = [q.model_dump() for q in items]
+            db_items = await bank_question.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
         elif folder.content_type == "summary":
-            from crud.messages_crud import msg_crud
-            items = await msg_crud.get_by_ids(db, ids=page_ids)
-            items = [m.model_dump() for m in items]
+            db_items = await msg_crud.get_by_ids(db, ids=page_ids)
+            items = [_sa_to_dict(o) for o in db_items]
+        elif folder.content_type == "session":
+            stmt = select(SessionModel).where(SessionModel.id.in_(page_ids))
+            result = await db.execute(stmt)
+            db_items = result.scalars().all()
+            items = [_sa_to_dict(o) for o in db_items]
         else:
             # knowledge 或其他类型暂不支持
             items = []
 
         return {
-            "folder": folder,
+            "folder": _sa_to_dict(folder),
             "contents": items,
             "total": total,
             "page": page,
