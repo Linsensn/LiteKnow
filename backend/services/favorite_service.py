@@ -11,27 +11,48 @@ class FavoriteService:
 
     # ==================== 学生端方法 ====================
 
-    # 1. 收藏/取消收藏 状态切换
-    # 自动定位对应类型的收藏夹，不存在则自动创建
-    async def toggle_favorite(
+        # 1. 添加收藏
+    # 自动定位对应类型的收藏夹，不存在则自动创建；幂等：已存在时不做变更
+    async def add_favorite(
         self, db: AsyncSession, user_id: int, obj_in: FavoriteCreate, content_id: int
     ):
         try:
             folder = await favorite_crud.get_by_type(
                 db, user_id=user_id, content_type=obj_in.content_type
             )
-            # 对应类型收藏夹不存在，自动创建默认夹
             if not folder:
                 folder = await favorite_crud.create(db, user_id=user_id, obj_in=obj_in.model_dump())
 
             if content_id in (folder.content_ids or []):
-                await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
                 db.commit()
-                return {"action": "removed", "message": "已取消收藏"}
+                return {"action": "exists", "message": "已收藏，无需重复添加"}
             else:
                 await favorite_crud.add_content(db, db_obj=folder, content_id=content_id)
                 db.commit()
                 return {"action": "added", "message": "收藏成功"}
+        except Exception as e:
+            db.rollback()
+            raise CustomAPIException(
+                code=ErrorCode.DB_OPERATION_FAILED,
+                message=str(e)
+            )
+
+    # 2. 取消收藏
+    # 收藏夹不存在或内容不存在时均视为"已取消"，幂等
+    async def remove_favorite(
+        self, db: AsyncSession, user_id: int, obj_in: FavoriteCreate, content_id: int
+    ):
+        try:
+            folder = await favorite_crud.get_by_type(
+                db, user_id=user_id, content_type=obj_in.content_type
+            )
+            if not folder or content_id not in (folder.content_ids or []):
+                db.commit()
+                return {"action": "removed", "message": "已取消收藏"}
+
+            await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
+            db.commit()
+            return {"action": "removed", "message": "已取消收藏"}
         except Exception as e:
             db.rollback()
             raise CustomAPIException(

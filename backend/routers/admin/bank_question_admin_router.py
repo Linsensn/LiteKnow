@@ -9,7 +9,7 @@ from utils.deps import get_admin_user
 from services.bank_question_service import bq_service
 from schemas.bank_question_schema import QuestionCreate, QuestionUpdate, QuestionResponse
 
-router = APIRouter(prefix="/questions", tags=["Admin - 题目管理"])
+router = APIRouter(prefix="/questions", tags=["Admin/bank_questions"])
 
  
 @router.get("", summary="分页查询题目列表", response_model=ResponseModel[PageResult[QuestionResponse]])
