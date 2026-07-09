@@ -9,7 +9,6 @@ from utils.exceptions import CustomAPIException, ErrorCode
 class QuestionBankService:
     async def create_bank(self, db: AsyncSession, current_user, bank_in: dict):
         try:
-            # 修复：改为 current_user.id
             new_bank = await question_banks_crud.create_question_bank(db=db, obj_in=bank_in, user_id=current_user.id)
             db.commit()
             return new_bank
@@ -22,42 +21,63 @@ class QuestionBankService:
         if not bank:
             raise CustomAPIException(code=ErrorCode.DATA_NOT_FOUND, data={"detail": "题库不存在"})
             
-        # 修复：获取 role 和 id 改为对象属性调用
-        # 注意：如果 user 模型没有 role 字段，可以使用 getattr(current_user, 'role', 'student') 防御性获取
+        # 鉴权：如果是管理员直接放行，否则必须是自己的题库
         user_role = getattr(current_user, 'role', None) 
-        if user_role != "admin" and bank.user_id != current_user.id:
+        is_admin = user_role == "admin"
+        if not is_admin and bank.user_id != current_user.id:
             raise CustomAPIException(code=ErrorCode.RESOURCE_ACCESS_DENIED, data={"detail": "无权访问此题库"})
+            
+        # 如果是管理员查看全局题库，不计算答题统计
+        if is_admin:
+            setattr(bank, "completion_rate", 0.0)
+            setattr(bank, "accuracy_rate", 0.0)
+        else:
+            # 动态计算该学生在此题库的练习数据
+            completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank_id)
+            total_questions = bank.total_questions or 0
+            setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
+            setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
+            
         return bank
 
-    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc"):
-        # 修复：改为对象属性调用
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    # 👇 修复重点：引入 is_admin_mode，默认开启数据隔离保护
+    async def get_banks(self, db: AsyncSession, current_user, keyword: str, page: int, page_size: int, sort_by: str = "desc", is_admin_mode: bool = False):
+        query_user_id = None if is_admin_mode else current_user.id
         skip = (page - 1) * page_size
         
         items, total = await question_banks_crud.get_multi_question_banks(
             db=db, user_id=query_user_id, keyword=keyword, skip=skip, limit=page_size, sort_by=sort_by
         )
+        
+        # 给列表渲染进度条。如果是管理员视角则直接设为0
+        for bank in items:
+            if is_admin_mode:
+                setattr(bank, "completion_rate", 0.0)
+                setattr(bank, "accuracy_rate", 0.0)
+            else:
+                completed_count, total_attempts, correct_attempts = await question_banks_crud.get_user_bank_stats(db, current_user.id, bank.id)
+                total_questions = bank.total_questions or 0
+                setattr(bank, "completion_rate", round((completed_count / total_questions) * 100, 2) if total_questions > 0 else 0.0)
+                setattr(bank, "accuracy_rate", round((correct_attempts / total_attempts) * 100, 2) if total_attempts > 0 else 0.0)
+
         return {"total": total, "items": items}
 
     async def update_bank(self, db: AsyncSession, current_user, bank_id: int, update_data: dict) -> int:
         await self.get_bank_detail(db=db, current_user=current_user, bank_id=bank_id)
         update_dict = {k: v for k, v in update_data.items() if v is not None}
         if not update_dict:
-            return 0  # 如果没有需要更新的字段，直接返回 0
+            return 0
         try:
-            # 捕获 CRUD 层返回的 rowcount
             rowcount = await question_banks_crud.update_question_bank(db=db, bank_id=bank_id, update_data=update_dict)
             db.commit()
-            return rowcount  # 将受影响行数返回给 Router 层
+            return rowcount
         except Exception as e:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.DATABASE_ERROR, data={"detail": str(e)})
 
-    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int]) -> int:
-        # 修复：改为对象属性调用
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    # 👇 同理修复：彻底阻断潜在的越权删除风险
+    async def bulk_delete(self, db: AsyncSession, current_user, bank_ids: list[int], is_admin_mode: bool = False) -> int:
+        query_user_id = None if is_admin_mode else current_user.id
         try:
             # 先级联清理收藏夹中对应的题库ID
             await favorite_crud.remove_content_ids_by_type(
@@ -66,15 +86,13 @@ class QuestionBankService:
             # 再删除题库
             rowcount = await question_banks_crud.delete_banks_by_ids(db=db, ids=bank_ids, user_id=query_user_id)
             db.commit()
-            return rowcount  # 将受影响行数返回给 Router 层
+            return rowcount
         except Exception as e:
             db.rollback()
             raise CustomAPIException(code=ErrorCode.QUESTION_BANK_DELETE_FAILED, data={"error_detail": str(e)})
 
-    async def export_banks_to_csv(self, db: AsyncSession, current_user) -> str:
-        # 修复：改为对象属性调用
-        user_role = getattr(current_user, 'role', None)
-        query_user_id = current_user.id if user_role != "admin" else None
+    async def export_banks_to_csv(self, db: AsyncSession, current_user, is_admin_mode: bool = False) -> str:
+        query_user_id = None if is_admin_mode else current_user.id
         banks, _ = await question_banks_crud.get_multi_question_banks(db=db, user_id=query_user_id, limit=2000)
         output = StringIO()
         writer = csv.writer(output)
@@ -97,7 +115,6 @@ class QuestionBankService:
                 "description": row.get("描述", "")
             })
         if objs_in:
-            # 修复：改为 current_user.id
             await question_banks_crud.create_multi_question_banks(db=db, objs_in=objs_in, user_id=current_user.id)
             db.commit()
 
