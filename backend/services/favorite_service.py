@@ -60,13 +60,22 @@ class FavoriteService:
             folder = await favorite_crud.get_by_type(
                 db, user_id=user_id, content_type=obj_in.content_type
             )
-            if not folder or content_id not in (folder.content_ids or []):
+            
+            current_ids = folder.content_ids or [] if folder else []
+            if not folder or content_id not in current_ids:
                 db.commit()
                 return {"action": "removed", "message": "已取消收藏"}
 
             logger.debug("remove_favorite | folder_id={} content_ids={} type={} content_id={}",
                          folder.id, folder.content_ids, type(folder.content_ids), content_id)
-            await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
+            
+            if len(current_ids) == 1 and current_ids[0] == content_id:
+                # 如果这是数组里的最后一个 ID，直接把整个收藏记录彻底删掉
+                db.delete(folder)
+            else:
+                # 否则只是移除数组里的这个 ID
+                await favorite_crud.remove_content(db, db_obj=folder, content_id=content_id)
+            
             db.commit()
             return {"action": "removed", "message": "已取消收藏"}
         except Exception as e:
@@ -137,6 +146,13 @@ class FavoriteService:
             if not folder:
                 return 0
             count = await favorite_crud.remove_contents_batch(db, db_obj=folder, content_ids=content_ids)
+
+            # 批量移完后如果 content_ids 为空，整条删除
+            remaining = folder.content_ids or []
+            if len(remaining) == 0:
+                await favorite_crud.delete(db, db_obj=folder)
+                logger.info("收藏夹 {} 已清空，整条删除", folder.id)
+
             db.commit()
             return count
         except Exception as e:

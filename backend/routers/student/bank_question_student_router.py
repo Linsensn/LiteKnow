@@ -34,4 +34,14 @@ async def student_get_question(
     current_student: dict = Depends(get_current_user)
 ):
     data = await bq_service.get_question(db, question_id=question_id)
-    return success(data=QuestionResponse.model_validate(data)) 
+    return success(data=QuestionResponse.model_validate(data))
+
+
+@router.delete("/{question_id}", summary="学生删除题目")
+async def student_delete_question(
+    question_id: int = Path(..., description="题目ID"),
+    db: AsyncSession = Depends(get_db),
+    current_student: dict = Depends(get_current_user)
+):
+    await bq_service.delete_question(db, question_id=question_id)
+    return success(message="题目已删除") 
