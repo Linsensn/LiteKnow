@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.exceptions import CustomAPIException, ErrorCode
 from crud.bank_questions_crud import bank_question
+from crud.question_banks_crud import update_bank_total_questions
 from crud.favorites_crud import favorite_crud
 from schemas.bank_question_schema import QuestionCreate, QuestionUpdate
 from schemas.common import PageResult
@@ -37,6 +38,9 @@ class BankQuestionService:
     async def create_question(self, db: AsyncSession, obj_in: QuestionCreate):
         try:
             new_question = await bank_question.create(db, obj_in=obj_in.model_dump())
+            # 同步更新父题库的 total_questions +1
+            if new_question.bank_id:
+                await update_bank_total_questions(db, bank_id=new_question.bank_id, increment=1)
             db.commit()
             db.refresh(new_question)
             return new_question
@@ -50,6 +54,9 @@ class BankQuestionService:
         try:
             dicts = [obj.model_dump() for obj in objects_in]
             count = await bank_question.create_multi(db, objects_in=dicts)
+            # 同步更新父题库的 total_questions +count（所有题目属于同一个 bank_id）
+            if dicts and dicts[0].get("bank_id"):
+                await update_bank_total_questions(db, bank_id=dicts[0]["bank_id"], increment=count)
             db.commit()
             return count
         except Exception as e:
@@ -71,13 +78,17 @@ class BankQuestionService:
 
     # 6. 删除题目
     async def delete_question(self, db: AsyncSession, question_id: int):
-        await self.get_question(db, question_id=question_id)
+        question = await self.get_question(db, question_id=question_id)
+        bank_id = question.bank_id
         try:
             # 级联清理收藏夹中对应的题目ID
             await favorite_crud.remove_content_ids_by_type(
                 db, content_type="question", content_ids=[question_id]
             )
             await bank_question.delete(db, question_id=question_id)
+            # 同步更新父题库的 total_questions -1
+            if bank_id:
+                await update_bank_total_questions(db, bank_id=bank_id, increment=-1)
             db.commit()
         except Exception as e:
             db.rollback()
