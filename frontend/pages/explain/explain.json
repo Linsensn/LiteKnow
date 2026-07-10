@@ -1,3 +1,6 @@
 {
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "知识精讲",
+  "backgroundColor": "#f5f7fa",
+  "navigationBarBackgroundColor": "#ffffff"
 }

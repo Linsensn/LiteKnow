@@ -1,12 +1,27 @@
 <view class="container">
+  <view class="tabs-wrapper">
+    <view class="tab {{contentType === 'session' ? 'active' : ''}}" bindtap="switchTab" data-type="session">
+      会话记录
+    </view>
+    <view class="tab {{contentType === 'bank' ? 'active' : ''}}" bindtap="switchTab" data-type="bank">
+      精选题库
+    </view>
+  </view>
+
   <view class="list-wrapper" wx:if="{{list.length > 0}}">
-    <view class="item-card" wx:for="{{list}}" wx:key="id">
+    <view class="item-card" wx:for="{{list}}" wx:key="id" bindtap="goToDetail" data-item="{{item}}">
+      <view class="item-header">
+        <text class="type-tag">{{item.content_type === 'session' ? '会话' : '题库'}}</text>
+        <text class="time">{{item.created_at}}</text>
+      </view>
       <view class="item-title">{{item.title}}</view>
-      <view class="item-meta">{{item.created_at}}</view>
+      <view class="item-footer">
+        <button class="delete-btn" catchtap="removeFavorite" data-item="{{item}}">取消收藏</button>
+      </view>
     </view>
   </view>
   
   <view class="empty-state" wx:else>
-    <text>暂无记录</text>
+    <text>暂无收藏记录</text>
   </view>
 </view>

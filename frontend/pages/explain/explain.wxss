@@ -1,92 +1,466 @@
 page {
-  background-color: #F5F7FA;
+  height: 100%;
+  overflow: hidden; /* 防止整个页面产生橡皮筋滚动 */
 }
 
 .container {
-  padding: 30rpx 24rpx;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-}
-
-.content-card {
+  height: 100vh;
   width: 100%;
+  align-items: stretch; 
+  background-color: #f5f7fa;
+  padding: 0;
   box-sizing: border-box;
-  background: #FFF;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
 }
 
-.card-title {
+/* 顶部可滚动的聊天区域 */
+.chat-scroll-area {
+  flex: 1;
+  height: 0;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40rpx;
+  padding-bottom: 40rpx;
+}
+
+.chat-item {
+  display: flex;
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.user-msg {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 50%;
+  background-color: #eeeeee;
+  flex-shrink: 0; 
+}
+
+.user-msg .avatar { margin-left: 20rpx; }
+.ai-msg .avatar { margin-right: 20rpx; }
+
+/* 气泡外层，用于包裹气泡和下方的复制按钮 */
+.bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 82%;
+}
+
+.user-msg .bubble-wrapper {
+  align-items: flex-end;
+}
+
+.bubble {
+  padding: 24rpx 30rpx;
+  border-radius: 20rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.user-msg .bubble {
+  background-color: #07c160;
+  color: #ffffff;
+  border-top-right-radius: 4rpx;
+}
+
+.ai-msg .bubble {
+  background-color: #ffffff;
+  color: #333333;
+  border-top-left-radius: 4rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 复制按钮样式 */
+.copy-btn {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #888888;
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  background: #eaeaea;
+  border-radius: 8rpx;
+  transition: opacity 0.2s;
+}
+.copy-btn:active { opacity: 0.6; }
+
+/* 底部固定的输入区域 */
+.bottom-input-area {
+  flex-shrink: 0;
+  width: 100%; 
+  box-sizing: border-box;
+  background-color: #ffffff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 30rpx 30rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.form-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 24rpx;
+  color: #333333;
+  margin-bottom: 20rpx;
 }
 
-.text-input {
+.question-input {
   width: 100%;
-  height: 200rpx; /* 相比摘要页面稍微短一点 */
-  background-color: #F9F9F9;
-  border-radius: 12rpx;
-  padding: 20rpx;
-  font-size: 28rpx;
-  color: #333;
-  box-sizing: border-box;
-  line-height: 1.6;
-}
-
-.action-group {
-  display: flex;
-  justify-content: flex-end; /* 按钮靠右对齐 */
-  margin-top: 30rpx;
-}
-
-.generate-btn {
-  margin: 0;
-  background: #07c160;
-  color: #FFF;
-  font-size: 28rpx;
-  border-radius: 40rpx;
-  padding: 0 60rpx;
-  height: 72rpx;
-  line-height: 72rpx;
-}
-
-.generate-btn[disabled] {
-  background: #A5E4C0 !important;
-  color: #FFF !important;
-}
-
-.result-card {
-  background: #FAFAFC;
-  border: 1px solid #EAEAEA;
-}
-
-.result-text {
+  height: 160rpx;
   font-size: 30rpx;
-  color: #444;
-  line-height: 1.8;
-  margin-bottom: 30rpx;
+  color: #333333;
+  line-height: 1.6;
+  transition: height 0.3s;
 }
+.question-input.compact { height: 100rpx; }
 
-.action-footer {
+.placeholder-style { color: #bbbbbb; }
+
+/* ================= 附件与工具栏样式 ================= */
+.input-area {
+  background-color: #f7f8fa; /* 统一为浅灰色背景 */
+  border-radius: 16rpx;
+  padding: 24rpx;
+  position: relative;
+  margin-bottom: 24rpx;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.file-tag {
+  display: inline-flex;
   align-items: center;
-  border-top: 1rpx solid #EEEEEE;
-  padding-top: 20rpx;
+  background-color: #e6f1fc;
+  color: #2b85e4;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  max-width: 100%;
 }
 
-.feedback-btn {
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300rpx;
+}
+
+.delete-icon {
+  margin-left: 12rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #888888;
+}
+
+.word-count {
+  font-size: 22rpx;
+  color: #bbbbbb;
+  text-align: right;
+  margin-top: 8rpx;
+}
+
+/* ==== 全宽绿色虚线上传按钮 ==== */
+.upload-btn-full {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 22rpx 0;
+  margin-bottom: 24rpx; /* 与底部开始精讲按钮保持间距 */
+  border: 2rpx dashed #51c471;
+  border-radius: 12rpx;
+  background-color: #ffffff;
+  color: #51c471;
   font-size: 28rpx;
-  color: #576B95; /* 微信文字链接经典蓝 */
 }
 
+.upload-btn-full .icon {
+  font-size: 34rpx;
+  margin-right: 8rpx;
+  font-weight: 400;
+  margin-bottom: 4rpx;
+}
+
+/* ================= 提交按钮 ================= */
+.btn-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.submit-btn {
+  width: 100% !important;
+  background-color: #a3e4b7; 
+  color: #ffffff;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  padding: 16rpx 0;
+}page {
+  height: 100%;
+  overflow: hidden; /* 防止整个页面产生橡皮筋滚动 */
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  align-items: stretch; 
+  background-color: #f5f7fa;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 顶部可滚动的聊天区域 */
+.chat-scroll-area {
+  flex: 1;
+  height: 0;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40rpx;
+  padding-bottom: 40rpx;
+}
+
+.chat-item {
+  display: flex;
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.user-msg {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 50%;
+  background-color: #eeeeee;
+  flex-shrink: 0;
+}
+
+.user-msg .avatar { margin-left: 20rpx; }
+.ai-msg .avatar { margin-right: 20rpx; }
+
+/* 气泡外层，用于包裹气泡和下方的复制按钮 */
+.bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 82%;
+}
+
+.user-msg .bubble-wrapper {
+  align-items: flex-end;
+}
+
+.bubble {
+  padding: 24rpx 30rpx;
+  border-radius: 20rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.user-msg .bubble {
+  background-color: #07c160;
+  color: #ffffff;
+  border-top-right-radius: 4rpx;
+}
+
+.ai-msg .bubble {
+  background-color: #ffffff;
+  color: #333333;
+  border-top-left-radius: 4rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+/* 复制按钮样式 */
 .copy-btn {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #888888;
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  background: #eaeaea;
+  border-radius: 8rpx;
+  transition: opacity 0.2s;
+}
+.copy-btn:active { opacity: 0.6; }
+
+/* 底部固定的输入区域 */
+.bottom-input-area {
+  flex-shrink: 0;
+  width: 100%; 
+  box-sizing: border-box;
+  background-color: #ffffff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 30rpx 30rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.form-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 20rpx;
+}
+
+.question-input {
+  width: 100%;
+  height: 160rpx;
+  font-size: 30rpx;
+  color: #333333;
+  line-height: 1.6;
+  transition: height 0.3s;
+}
+.question-input.compact { height: 100rpx; }
+
+.placeholder-style { color: #bbbbbb; }
+
+/* ================= 附件与工具栏样式 ================= */
+.input-area {
+  background-color: #f7f8fa; /* 统一为浅灰色背景 */
+  border-radius: 16rpx;
+  padding: 24rpx;
+  position: relative;
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.file-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: #e6f1fc;
+  color: #2b85e4;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  max-width: 100%;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300rpx;
+}
+
+.delete-icon {
+  margin-left: 12rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #888888;
+}
+
+.word-count {
+  font-size: 22rpx;
+  color: #bbbbbb;
+  text-align: right;
+  margin-top: 8rpx;
+}
+
+/* ==== 全宽绿色虚线上传按钮 ==== */
+.upload-btn-full {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 22rpx 0;
+  margin-bottom: 24rpx; /* 与底部开始精讲按钮保持间距 */
+  border: 2rpx dashed #51c471;
+  border-radius: 12rpx;
+  background-color: #ffffff;
+  color: #51c471;
   font-size: 28rpx;
-  color: #07c160;
-  padding: 10rpx 20rpx;
+}
+
+.upload-btn-full .icon {
+  font-size: 34rpx;
+  margin-right: 8rpx;
+  font-weight: 400;
+  margin-bottom: 4rpx;
+}
+
+/* ================= 提交按钮 ================= */
+.btn-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.submit-btn {
+  width: 100% !important;
+  background-color: #a3e4b7;
+  color: #ffffff;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  padding: 16rpx 0;
+}
+.submit-btn::after { border: none; }
+.submit-btn.active {
+  background-color: #07c160;
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
+}
+
+/* ✨ 新增：悬浮收藏按钮样式 */
+.fav-float-btn {
+  position: absolute;
+  top: 20rpx;
+  right: 30rpx;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+.submit-btn::after { border: none; }
+.submit-btn.active {
+  background-color: #07c160;
+  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.3);
 }

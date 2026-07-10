@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="header">题库管理详情 (ID: {{bankId}})</view>
+
+  <view class="question-list" style="padding-bottom: 120rpx;">
+    <checkbox-group bindchange="onCheckboxChange">
+      <block wx:for="{{questions}}" wx:key="id">
+        <view class="q-card">
+          <view class="q-header">
+            <label class="checkbox-label">
+              <checkbox value="{{item.id}}" checked="{{item.checked}}" class="q-checkbox" />
+              <text class="tag tag-blue">{{item.question_type === 'single_choice' ? '单选题' : item.question_type === 'multi_choice' ? '多选题' : item.question_type}}</text>
+              <text class="tag tag-gray">难度: {{item.difficulty_level}}</text>
+            </label>
+          </view>
+
+          <view class="q-title">{{index + 1}}. {{item.content}}</view>
+
+          <view class="q-options" wx:if="{{item.options_json && item.options_json.length > 0}}">
+            <view class="q-option" wx:for="{{item.options_json}}" wx:for-item="opt" wx:key="label">
+              {{opt.label}}. {{opt.text}}
+            </view>
+          </view>
+
+          <view class="q-answers">
+            <view class="correct-ans">正确答案：<text class="text-green">{{item.correct_answer}}</text></view>
+            <view class="ai-analysis" wx:if="{{item.ai_analysis}}">AI解析：{{item.ai_analysis}}</view>
+          </view>
+          
+          <view class="action-bar">
+            <button class="btn-edit" bindtap="editQuestion" data-id="{{item.id}}">编辑</button>
+            <button class="btn-del" bindtap="deleteQuestion" data-id="{{item.id}}" data-index="{{index}}">删除</button>
+          </view>
+        </view>
+      </block>
+    </checkbox-group>
+  </view>
+
+  <view class="batch-bar" wx:if="{{questions.length > 0}}">
+    <label class="select-all">
+      <checkbox checked="{{isAllSelected}}" bindtap="toggleSelectAll"/> 全选
+    </label>
+    <button class="btn-batch-del" bindtap="batchDelete" disabled="{{selectedIds.length === 0}}">
+      批量删除 ({{selectedIds.length}})
+    </button>
+  </view>
+</view>

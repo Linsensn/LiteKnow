@@ -1,0 +1,98 @@
+<view class="container" wx:if="{{userInfo}}">
+  
+  <view class="user-profile-card">
+    <image class="avatar" src="{{userInfo.avatar_url || '/assets/ai-avatar.png'}}" mode="aspectFill"></image>
+    <view class="profile-info">
+      <view class="name-row">
+        <text class="nickname">{{userInfo.nickname || '微信用户'}}</text>
+        <text class="tag tag-role {{userInfo.role === 'admin' ? 'tag-admin' : 'tag-student'}}">{{userInfo.role === 'admin' ? '管理员' : '学生'}}</text>
+        <text class="tag tag-status {{userInfo.is_active ? 'tag-active' : 'tag-banned'}}">{{userInfo.is_active ? '正常' : '已封禁'}}</text>
+      </view>
+      <view class="signature">{{userInfo.signature || '该用户很懒，还没有填写签名'}}</view>
+      <view class="sub-info text-gray">用户 ID: {{userInfo.id}} | 注册于 {{userInfo.short_date}}</view>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 0 ? 'active' : ''}}" bindtap="switchTab" data-index="0">账户操作</view>
+    <view class="tab-item {{activeTab === 1 ? 'active' : ''}}" bindtap="switchTab" data-index="1">会话记录</view>
+    <view class="tab-item {{activeTab === 2 ? 'active' : ''}}" bindtap="switchTab" data-index="2">收藏数据</view>
+    <view class="tab-item {{activeTab === 3 ? 'active' : ''}}" bindtap="switchTab" data-index="3">TA的题库</view>
+  </view>
+
+  <view class="tab-content">
+    
+    <view class="content-panel" wx:if="{{activeTab === 0}}">
+      <view class="section-title">高危操作</view>
+      <view class="action-list">
+        <view class="action-item" wx:if="{{userInfo.role !== 'admin'}}">
+          <view class="action-desc">
+            <text class="title">账号状态限制</text>
+            <text class="desc">限制后该用户将无法登录系统和使用 AI 功能</text>
+          </view>
+          <view class="action-btn {{userInfo.is_active ? 'btn-warn' : 'btn-success'}}" bindtap="toggleUserStatus">
+            {{userInfo.is_active ? '立即封禁' : '解除封禁'}}
+          </view>
+        </view>
+        <view class="empty-tip" wx:else>管理员账号受系统保护，不可操作。</view>
+      </view>
+    </view>
+
+    <view class="content-panel" wx:if="{{activeTab === 1}}">
+      <view class="loading-tip" wx:if="{{isLoading}}">加载中...</view>
+      <block wx:for="{{sessions}}" wx:key="id">
+        <view class="list-item" bindtap="goToSessionDetail" data-id="{{item.id}}">
+          <view class="item-content-left">
+            <view class="item-title text-blue">会话 ID: {{item.id}}</view>
+            <view class="item-desc">任务类型: {{item.task_type || '默认聊天'}}</view>
+            <view class="item-meta text-gray">更新时间: {{item.updated_at}}</view>
+          </view>
+          <view class="item-arrow text-gray">></view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{!isLoading && sessions.length === 0}}">该用户暂无会话记录</view>
+    </view>
+
+    <view class="content-panel" wx:if="{{activeTab === 2}}">
+      <view class="loading-tip" wx:if="{{isLoading}}">加载中...</view>
+      <block wx:for="{{favorites}}" wx:key="id">
+        <view class="list-item" bindtap="goToFavoriteDetail" data-id="{{item.id}}">
+          <view class="item-content-left">
+            <view class="item-title text-purple">类型: {{item.content_type}}</view>
+            <view class="item-desc">关联 ID: {{item.content_ids[0] || '无'}}</view>
+            <view class="item-meta text-gray">收藏时间: {{item.created_at}}</view>
+          </view>
+          <view class="item-arrow text-gray">></view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{!isLoading && favorites.length === 0}}">该用户暂无收藏记录</view>
+    </view>
+
+    <view class="content-panel" wx:if="{{activeTab === 3}}">
+      <view class="loading-tip" wx:if="{{isLoading}}">加载中...</view>
+      <block wx:for="{{banks}}" wx:key="id">
+        <view class="list-item" bindtap="goToBankDetail" data-id="{{item.id}}">
+          <view class="item-content-left">
+            <view class="item-title text-purple">{{item.bank_name}}</view>
+            <view class="item-desc">题目数: {{item.total_questions || 0}}</view>
+            <view class="item-meta text-gray">创建于: {{item.created_at}}</view>
+          </view>
+          <view class="item-arrow text-gray">></view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{!isLoading && banks.length === 0}}">该用户暂无题库</view>
+    </view>
+
+  </view>
+
+  <view class="modal-mask" wx:if="{{showDetailModal}}" bindtap="closeDetailModal">
+    <view class="modal-content" catchtap="stopBubble">
+      <view class="modal-header">{{detailModalTitle}}</view>
+      <scroll-view class="modal-scroll" scroll-y>
+        <rich-text nodes="{{detailModalHtml}}"></rich-text>
+      </scroll-view>
+      <view class="modal-btn" bindtap="closeDetailModal">关闭并返回</view>
+    </view>
+  </view>
+
+</view>

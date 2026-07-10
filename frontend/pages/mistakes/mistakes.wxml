@@ -1,43 +1,56 @@
 <view class="container">
-  <view class="empty-state" wx:if="{{mistakesList.length === 0}}">
-    <text class="empty-icon">🎉</text>
-    <text class="empty-text">太棒了，目前没有任何错题记录！</text>
+  <view class="header-bar">
+    <view class="search-box">
+      <text class="search-icon">🔍</text>
+      <input 
+        class="search-input" 
+        placeholder="搜索错题内容..." 
+        value="{{keyword}}" 
+        bindinput="onSearchInput" 
+        bindconfirm="onSearch" 
+        confirm-type="search"
+      />
+      <view class="clear-btn-area" wx:if="{{keyword}}" catchtap="clearSearch">
+        <text class="clear-icon">×</text>
+      </view>
+    </view>
   </view>
 
-  <block wx:else>
-    <view 
-      class="content-card mistake-card" 
-      wx:for="{{mistakesList}}" 
-      wx:key="id" 
-      bindtap="toggleExpand" 
-      data-index="{{index}}">
-      
-      <view class="card-header">
-        <text class="tag">{{item.topic}}</text>
-        <text class="date">{{item.date}}</text>
-      </view>
-      
-      <view class="question-text">{{item.question}}</view>
+  <block wx:if="{{mistakesList.length > 0}}">
+    <view class="list-container">
+      <view class="mistake-card" wx:for="{{mistakesList}}" wx:key="id">
+        <view class="card-content" bindtap="goToDetail" data-id="{{item.id}}">
+          <view class="question-text">{{item.question_content || '暂无题目内容'}}</view>
+          
+          <view class="answer-contrast" wx:if="{{item.user_answer || item.correct_answer}}">
+            <view class="answer-item error">我的：{{item.user_answer || '未作答'}}</view>
+            <view class="answer-item correct">正确：{{item.correct_answer || '略'}}</view>
+          </view>
 
-      <view class="expand-hint" wx:if="{{!item.expanded}}">
-        <text>点击查看解析 ▾</text>
-      </view>
+          <view class="card-meta">
+            <text class="tag" wx:if="{{item.question_id}}">关联原题</text>
+            <text class="time">{{item.created_at || '最近加入'}}</text>
+          </view>
+        </view>
 
-      <view class="detail-area" wx:if="{{item.expanded}}">
-        <view class="answer-row">
-          <text class="wrong-ans">你的答案：{{item.userAnswer}}</text>
-          <text class="correct-ans">正确答案：{{item.correctAnswer}}</text>
-        </view>
-        
-        <view class="explanation-box">
-          <text class="exp-title">💡 知识点回扣：</text>
-          <text class="exp-content">{{item.explanation}}</text>
-        </view>
-        
-        <view class="action-row">
-          <button class="review-btn" catchtap="goToExplain" data-question="{{item.question}}">没看懂？让 AI 再讲讲</button>
+        <view class="card-footer">
+          <view class="status-badge">未掌握</view>
+          <button class="remove-btn" catchtap="removeMistake" data-id="{{item.id}}" data-index="{{index}}">
+            <text class="icon">✅</text> 已掌握，移出
+          </button>
         </view>
       </view>
     </view>
+
+    <view class="loading-status">
+      <text wx:if="{{isLoading}}">努力提取中...</text>
+      <text wx:elif="{{!hasMore}}">到底啦，没有更多错题了</text>
+    </view>
   </block>
+
+  <view class="empty-state" wx:if="{{mistakesList.length === 0 && !isLoading}}">
+    <text class="empty-icon">🎉</text>
+    <text class="empty-text">太棒了！您的错题本是空的</text>
+    <text class="empty-subtext">继续保持，逢考必过</text>
+  </view>
 </view>

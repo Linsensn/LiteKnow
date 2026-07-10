@@ -1,26 +1,71 @@
 <view class="container">
-  <view class="header">
-    <view class="title">LiteKnow 控制台</view>
-    <view class="subtitle">System Administration</view>
+  
+  <view class="mode-section">
+    <view class="section-header">
+      <view class="section-title"><view class="title-line"></view>全站核心数据</view>
+      <view class="setting-btn" bindtap="fetchDashboardData">🔄 刷新</view>
+    </view>
+
+    <view class="stats-container" wx:if="{{!isLoading}}">
+      <view class="stats-card">
+        <view class="stats-title">用户角色分布</view>
+        <view class="stats-row" wx:for="{{userStats}}" wx:key="role">
+          <text class="stats-label">{{item.role == 'admin' ? '管理员' : '普通用户'}}</text>
+          <text class="stats-value text-blue">{{item.count}} 人</text>
+        </view>
+        <view class="empty-tip" wx:if="{{userStats.length === 0}}">暂无数据</view>
+      </view>
+
+      <view class="stats-card">
+        <view class="stats-title">会话任务分类</view>
+        <view class="stats-row" wx:for="{{sessionStats}}" wx:key="task_type">
+          <text class="stats-label">{{item.task_type || '未分类'}}</text>
+          <text class="stats-value text-orange">{{item.count}} 次</text>
+        </view>
+        <view class="empty-tip" wx:if="{{sessionStats.length === 0}}">暂无数据</view>
+      </view>
+    </view>
+    <view class="loading-tip" wx:else>数据加载中...</view>
   </view>
 
-  <view class="admin-grid">
-    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminUsers/adminUsers">
-      <view class="card-icon">👥</view>
-      <view class="card-title">用户管理</view>
-      <view class="card-desc">增删改查 / 权限管控</view>
+  <view class="mode-section">
+    <view class="section-header">
+      <view class="section-title"><view class="title-line"></view>系统管理模块</view>
     </view>
 
-    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminBanks/adminBanks">
-      <view class="card-icon">📚</view>
-      <view class="card-title">题库管理</view>
-      <view class="card-desc">全局题库维护 / 批量删除</view>
-    </view>
+    <view class="mode-grid">
+      <view class="mode-item" bindtap="navigateTo" data-target="adminUsers">
+        <view class="mode-info">
+          <view class="mode-name">用户管理</view>
+          <view class="mode-progress">封禁/解封/导入</view>
+        </view>
+        <view class="mode-icon text-blue">👥</view>
+      </view>
 
-    <view class="admin-card" bindtap="navigateTo" data-url="/pages/adminSessions/adminSessions">
-      <view class="card-icon">📊</view>
-      <view class="card-title">会话与统计</view>
-      <view class="card-desc">批量状态操作 / 数据导出</view>
+      <view class="mode-item" bindtap="navigateTo" data-target="adminBanks">
+        <view class="mode-info">
+          <view class="mode-name">题库管理</view>
+          <view class="mode-progress">全局题库维护</view>
+        </view>
+        <view class="mode-icon text-purple">📚</view>
+      </view>
+
+      <view class="mode-item disabled" bindtap="navigateTo" data-target="adminSessions">
+        <view class="mode-info">
+          <view class="mode-name">会话管理</view>
+          <view class="mode-progress">全局会话监控</view>
+        </view>
+        <view class="mode-icon text-orange">💬</view>
+      </view>
+      
+      <view class="mode-item disabled" bindtap="navigateTo" data-target="adminAttachments">
+        <view class="mode-info">
+          <view class="mode-name">附件管理</view>
+          <view class="mode-progress">全站文件清理</view>
+        </view>
+        <view class="mode-icon text-green">📁</view>
+      </view>
     </view>
   </view>
+
 </view>

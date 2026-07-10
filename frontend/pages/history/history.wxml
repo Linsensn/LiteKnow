@@ -2,14 +2,14 @@
   
   <block wx:if="{{sessionList.length > 0}}">
     <view class="history-list">
-      <view class="history-card" wx:for="{{sessionList}}" wx:key="id">
+      <view class="history-card" wx:for="{{sessionList}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}" data-type="{{item.task_type}}">
         <view class="card-header">
           <view class="task-type">{{item.task_type || '通用任务'}}</view>
           <view class="create-time">{{item.created_at}}</view>
         </view>
         
         <view class="card-body">
-          <view class="content-preview">{{item.keyword || '暂无内容摘要...'}}</view>
+          <view class="content-preview">{{item.title || '暂无内容摘要...'}}</view>
         </view>
         
         <view class="card-footer">

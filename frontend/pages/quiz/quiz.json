@@ -1,3 +1,6 @@
 {
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "智能测验",
+  "backgroundColor": "#f5f7fa",
+  "navigationBarBackgroundColor": "#ffffff"
 }

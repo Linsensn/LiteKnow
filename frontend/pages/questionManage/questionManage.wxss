@@ -1,0 +1,188 @@
+.container {
+  display: block;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding-bottom: 120rpx; /* 留出底部操作栏空间 */
+  box-sizing: border-box;
+}
+
+.list-container {
+  height: calc(100vh - 120rpx);
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+/* 题目卡片 */
+.q-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
+}
+
+.q-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.q-type {
+  background: #e6f1fc;
+  color: #2b85e4;
+  font-size: 24rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  margin-left: 16rpx;
+}
+
+.q-content {
+  font-size: 30rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 20rpx;
+}
+
+.q-options {
+  background: #f8f9fa;
+  padding: 16rpx;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.opt-text {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.q-answer {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx dashed #eee;
+}
+.text-green { color: #52c41a; font-weight: bold; }
+
+/* 按钮操作区 */
+.q-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+}
+
+.btn {
+  margin: 0 !important;
+  font-size: 26rpx;
+  padding: 10rpx 30rpx;
+  border-radius: 40rpx;
+  line-height: 1.5;
+}
+.btn::after { border: none; }
+.edit-btn { background: #e6f1fc; color: #2b85e4; }
+.del-btn { background: #fff1f0; color: #ff4d4f; }
+
+/* 底部批量操作栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40rpx;
+  box-sizing: border-box;
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.04);
+  z-index: 10;
+}
+
+.selected-count {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.batch-del-btn {
+  margin: 0 !important;
+  background: #cccccc;
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  padding: 16rpx 40rpx;
+}
+.batch-del-btn.active { background: #ff4d4f; }
+
+/* ================= 编辑弹窗 ================= */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  width: 85%;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  font-size: 34rpx;
+  font-weight: bold;
+  text-align: center;
+  padding: 30rpx 0;
+  border-bottom: 2rpx solid #eee;
+}
+
+.modal-scroll {
+  flex: 1;
+  padding: 30rpx;
+  box-sizing: border-box;
+}
+
+.form-group { margin-bottom: 30rpx; }
+.label { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 16rpx; }
+.tip { font-size: 22rpx; color: #999; font-weight: normal; }
+
+.textarea-box, .input-box {
+  width: 100%;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+.textarea-box { min-height: 160rpx; line-height: 1.5; }
+
+.option-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+.opt-label { font-weight: bold; color: #666; width: 60rpx; }
+.answer-box { font-weight: bold; color: #52c41a; }
+
+.modal-footer {
+  display: flex;
+  border-top: 2rpx solid #eee;
+}
+.m-btn {
+  flex: 1;
+  background: transparent;
+  font-size: 32rpx;
+  height: 100rpx;
+  line-height: 100rpx;
+  border-radius: 0;
+}
+.m-btn::after { border: none; }
+.cancel-btn { color: #666; border-right: 2rpx solid #eee; }
+.save-btn { color: #2b85e4; font-weight: bold; }

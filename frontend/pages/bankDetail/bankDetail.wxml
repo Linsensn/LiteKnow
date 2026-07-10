@@ -1,95 +1,105 @@
-<view class="container">
-  <view class="dashboard-card">
-    <view class="bank-title">{{bankTitle || '加载中...'}}</view>
-    <view class="bank-meta">{{questionCount}}题 · {{createDate}}创建</view>
+<view class="detail-page">
+  <view class="header-card">
+    <view class="title-row">
+      <view class="title">{{bankInfo.name || '加载中...'}}</view>
+      <view class="more-btn" bindtap="goToManage">•••</view>
+    </view>
+    
+    <view class="subtitle">
+      {{bankInfo.question_count || 0}}题  {{bankInfo.created_at || '刚刚'}}创建
+    </view>
     
     <view class="stats-row">
       <view class="stat-item">
-        <text class="stat-value purple">{{completionRate}}<text class="percent">%</text></text>
-        <text class="stat-label">完成率</text>
+        <view class="stat-num text-purple">{{bankInfo.completion_rate || 0}}<text class="percent">%</text></view>
+        <view class="stat-label">完成率</view>
       </view>
-      <view class="stat-divider"></view>
       <view class="stat-item">
-        <text class="stat-value green">{{accuracyRate}}<text class="percent">%</text></text>
-        <text class="stat-label">正确率</text>
+        <view class="stat-num text-green">{{bankInfo.accuracy_rate || 0}}<text class="percent">%</text></view>
+        <view class="stat-label">正确率</view>
       </view>
     </view>
   </view>
 
   <view class="quick-actions">
-    <view class="action-box bg-blue">
-      <text class="action-title">题库管理</text>
-      <text class="action-desc">更多功能看这里</text>
-    </view>
-    <view class="action-box bg-orange">
-      <view class="hot-tag">HOT</view>
-      <text class="action-title">练习统计</text>
-      <text class="action-desc">追踪学习进度</text>
-    </view>
-    <view class="action-box bg-green">
-      <text class="action-title">我的笔记</text>
-      <text class="action-desc">记录心得技巧</text>
-    </view>
-  </view>
-
-  <view class="section-header">
-    <view class="section-mark"></view>
-    <text class="section-title">练习模式</text>
-  </view>
-
-  <view class="mode-grid">
-    <view class="mode-card" bindtap="startPractice" data-mode="顺序练习">
-      <view class="mode-info">
-        <text class="mode-name">顺序练习</text>
-        <text class="mode-desc">1/{{questionCount}}</text>
-      </view>
-      <text class="mode-icon">📝</text>
+    <view class="action-card bg-blue" bindtap="goToManage">
+      <view class="action-title text-blue">题库管理</view>
+      <view class="action-desc text-blue-light">更多题库功能看这里</view>
     </view>
     
-    <view class="mode-card" bindtap="startPractice" data-mode="随机练习">
-      <view class="mode-info">
-        <text class="mode-name">随机练习</text>
-        <text class="mode-desc">随机打乱题目</text>
-      </view>
-      <text class="mode-icon">🔀</text>
+    <view class="action-card bg-orange" bindtap="goToHistory">
+      <view class="badge hot">HOT</view>
+      <view class="action-title text-orange">练习统计</view>
+      <view class="action-desc text-orange-light">多维度追踪学习进度</view>
     </view>
-
-    <view class="mode-card" bindtap="startPractice" data-mode="模拟考试">
-      <view class="mode-info">
-        <text class="mode-name">模拟考试</text>
-        <text class="mode-desc">仿真模拟自测</text>
-      </view>
-      <text class="mode-icon">⏱️</text>
-    </view>
-
-    <view class="mode-card" bindtap="startPractice" data-mode="错题练习">
-      <view class="mode-info">
-        <text class="mode-name">错题练习</text>
-        <text class="mode-desc">攻克薄弱环节</text>
-      </view>
-      <text class="mode-icon">🎯</text>
-    </view>
-
-    <!-- 补充：章节练习 -->
-    <view class="mode-card" bindtap="startPractice" data-mode="章节练习">
-      <view class="mode-info">
-        <text class="mode-name">章节练习</text>
-        <text class="mode-desc">按章节分类练习</text>
-      </view>
-      <text class="mode-icon">🗂️</text> <!-- 可以替换为合适的图标 -->
-    </view>
-
-    <!-- 补充：题型练习 -->
-    <view class="mode-card" bindtap="startPractice" data-mode="题型练习">
-      <view class="mode-info">
-        <text class="mode-name">题型练习</text>
-        <text class="mode-desc">专项突破题型</text>
-      </view>
-      <text class="mode-icon">📑</text> <!-- 可以替换为合适的图标 -->
+    
+    <view class="action-card bg-green" bindtap="goToNotes">
+      <view class="badge new">练匀心得</view>
+      <view class="action-title text-green-dark">我的笔记</view>
+      <view class="action-desc text-green-light">记录刷题心得和技巧</view>
     </view>
   </view>
 
-  <view class="bottom-action">
+  <view class="mode-section">
+    <view class="section-header">
+      <view class="section-title"><view class="title-line"></view>练习模式</view>
+      <view class="setting-btn">⚙️ 设置</view>
+    </view>
+
+    <view class="mode-grid">
+      <view class="mode-item" bindtap="startPractice" data-mode="sequential">
+        <view class="mode-info">
+          <view class="mode-name">顺序练习</view>
+          <view class="mode-progress">1/{{bankInfo.question_count || 0}}</view>
+        </view>
+        <view class="mode-icon text-blue">📝</view>
+      </view>
+
+      <view class="mode-item" bindtap="startPractice" data-mode="random">
+        <view class="mode-info">
+          <view class="mode-name">随机练习</view>
+          <view class="mode-progress">随机打乱题目练习</view>
+        </view>
+        <view class="mode-icon text-purple">🔀</view>
+      </view>
+
+      <view class="mode-item" bindtap="startPractice" data-mode="mock">
+        <view class="mode-info">
+          <view class="mode-name text-orange">模拟考试</view>
+          <view class="mode-progress">仿真模拟自测考试</view>
+        </view>
+        <view class="mode-icon text-orange">⏱️</view>
+      </view>
+
+      <view class="mode-item" bindtap="startPractice" data-mode="chapter">
+        <view class="mode-info">
+          <view class="mode-name">章节练习</view>
+          <view class="mode-progress">按章节分类练习</view>
+        </view>
+        <view class="mode-icon text-blue">📁</view>
+      </view>
+
+      <view class="mode-item" bindtap="startPractice" data-mode="mistake">
+        <view class="mode-info">
+          <view class="mode-name text-red">错题练习</view>
+          <view class="mode-progress">攻克薄弱知识点</view>
+        </view>
+        <view class="mode-icon text-red">❌</view>
+      </view>
+
+      <view class="mode-item" bindtap="startPractice" data-mode="type">
+        <view class="mode-info">
+          <view class="mode-name">题型练习</view>
+          <view class="mode-progress">专项强化提升</view>
+        </view>
+        <view class="mode-icon text-blue">📑</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-spacer"></view>
+
+  <view class="footer-bar">
     <button class="share-btn" open-type="share">分 享 题 库</button>
   </view>
 </view>

@@ -1,1 +1,140 @@
-/* pages/adminBanks/adminBanks.wxss */
+/* pages/adminBanks/adminBanks.wxss *//* pages/adminBanks/adminBanks.wxss */
+page {
+  background-color: #f7f8fa;
+}
+
+.container {
+  padding: 20rpx;
+  padding-bottom: 60rpx;
+}
+
+/* 搜索栏 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  gap: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  background-color: #fff;
+  padding: 16rpx 28rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.02);
+}
+
+.search-btn {
+  background-color: #007aff;
+  color: #fff;
+  padding: 16rpx 36rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+/* 头部统计 */
+.header-bar {
+  margin-bottom: 20rpx;
+  padding: 0 10rpx;
+}
+
+.header-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.total-count {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: normal;
+  margin-left: 10rpx;
+}
+
+/* 题库卡片 */
+.bank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  width: 100%; /* 确保列表容器撑满 */
+}
+
+.bank-card {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 26rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+  width: 100%; /* 确保卡片撑满父容器 */
+  box-sizing: border-box; /* 让 padding 向内收缩，不撑爆卡片宽度 */
+}
+
+.bank-info {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.bank-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bank-desc {
+  font-size: 26rpx;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bank-meta {
+  display: flex;
+  gap: 16rpx;
+}
+
+.tag {
+  font-size: 22rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  background-color: #f0f0f0;
+}
+
+.text-blue { background-color: #e8f4ff; color: #007aff; }
+.text-purple { background-color: #f2e6ff; color: #5856d6; }
+.text-gray { color: #999; font-size: 22rpx; margin-top: 4rpx;}
+
+/* 右侧操作区 */
+.action-area {
+  margin-left: 24rpx;
+}
+
+.action-btn {
+  font-size: 24rpx;
+  padding: 12rpx 30rpx;
+  border-radius: 30rpx;
+  text-align: center;
+}
+
+.btn-danger {
+  background-color: #ffe8e6;
+  color: #ff3b30;
+}
+
+/* 提示 */
+.loading-tip, .no-more-tip, .empty-tip {
+  text-align: center;
+  font-size: 24rpx;
+  color: #ccc;
+  margin-top: 30rpx;
+}

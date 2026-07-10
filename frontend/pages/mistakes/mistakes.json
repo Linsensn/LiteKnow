@@ -1,3 +1,7 @@
 {
-  "usingComponents": {}
+  "usingComponents": {},
+  "navigationBarTitleText": "我的错题本",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f5f7fa",
+  "backgroundTextStyle": "dark"
 }
