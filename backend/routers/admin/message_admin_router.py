@@ -49,6 +49,17 @@ async def admin_filter_messages(
     return success(data=data)
 
 
+@router.get("/session/{session_id}", summary="管理员获取指定会话的全部消息")
+async def admin_get_session_messages(
+    session_id: int = Path(..., description="会话ID"),
+    db: AsyncSession = Depends(get_db),
+    current_admin: dict = Depends(get_admin_user)
+):
+    items = await msg_service.get_session_messages(db, session_id=session_id)
+    data = [MessageResponse.model_validate(item).model_dump() for item in items]
+    return success(data=data)
+
+
 @router.get("/{message_id}", summary="查询单条消息详情", response_model=ResponseModel[MessageResponse])
 async def admin_get_message(
     message_id: int = Path(..., description="消息ID"),
