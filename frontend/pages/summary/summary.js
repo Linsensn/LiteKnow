@@ -20,10 +20,13 @@ Page({
   onLoad(options) {
     this.setData({ userInfo: app.globalData.userInfo });
     
-    // 从历史记录进入时恢复聊天
+    // 如果是从历史记录进入，options.sessionId 会有值
     if (options.sessionId) {
       this.setData({ currentSessionId: options.sessionId });
       this.fetchSessionHistory(options.sessionId);
+      
+      // ✨ 修复：进入历史会话页面时，立即调用状态查询接口
+      this.checkFavoriteStatus(options.sessionId);
     }
   },
 
@@ -221,16 +224,15 @@ Page({
         content_type: 'session', 
         content_id: sessionId
       });
-      // ✨ 在这里添加日志
-      console.log('--- 收藏状态接口返回 ---');
-      console.log('传入的 sessionId:', sessionId);
-      console.log('后端返回的 res:', res);
       
-      this.setData({ 
-        isFavorited: res.data ? res.data.is_favorited : false 
-      });
-    } catch (error) {
-      console.error('获取收藏状态失败', error);
+      // 直接判断 res 以及 res 里的 is_favorited 属性
+      if (res && res.is_favorited !== undefined) {
+        this.setData({ 
+          isFavorited: res.is_favorited 
+        });
+      }
+    } catch (e) {
+      console.error('获取收藏状态失败', e);
     }
   },
 

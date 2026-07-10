@@ -1,2 +1,42 @@
-<!--pages/adminBanks/adminBanks.wxml-->
-<text>pages/adminBanks/adminBanks.wxml</text>
+<view class="container">
+  
+  <view class="search-bar">
+    <input class="search-input" placeholder="输入题库名称或描述搜索" bindinput="onSearchInput" bindconfirm="searchBanks" value="{{keyword}}" />
+    <view class="search-btn" bindtap="searchBanks">搜索</view>
+  </view>
+
+  <view class="header-bar">
+    <view class="header-title">全局题库 <text class="total-count">共 {{total}} 个</text></view>
+  </view>
+
+  <view class="bank-list">
+    <block wx:for="{{banks}}" wx:key="id">
+      
+      <view class="bank-card" bindtap="goToBankDetail" data-id="{{item.id}}">
+        
+        <view class="bank-info">
+          <view class="bank-title">{{item.bank_name}}</view>
+          <view class="bank-desc">{{item.description || '暂无描述'}}</view>
+          
+          <view class="bank-meta">
+            <text class="tag text-blue">包含题目: {{item.total_questions || 0}}</text>
+            <text class="tag text-purple">所属用户ID: {{item.user_id}}</text>
+          </view>
+          
+          <view class="bank-date text-gray">创建于: {{item.short_date}} | 题库ID: {{item.id}}</view>
+        </view>
+        
+        <view class="action-area">
+          <view class="action-btn btn-danger" catchtap="deleteBank" data-id="{{item.id}}" data-index="{{index}}">
+            删除
+          </view>
+        </view>
+        
+      </view>
+    </block>
+  </view>
+
+  <view class="loading-tip" wx:if="{{isLoading}}">数据加载中...</view>
+  <view class="no-more-tip" wx:if="{{!hasMore && banks.length > 0}}">- 到底了 -</view>
+  <view class="empty-tip" wx:if="{{!isLoading && banks.length === 0}}">未找到相关题库，换个关键词试试</view>
+</view>

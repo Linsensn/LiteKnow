@@ -29,7 +29,7 @@ Page({
     });
   },
 
-  // 获取数据 (两步走：先获取文件夹，再获取内容)
+  // 获取数据
   async fetchData(isRefresh = false) {
     if (this.data.isLoading || (!isRefresh && !this.data.hasMore)) return;
     
@@ -41,7 +41,7 @@ Page({
       const folderRes = await util.request('/api/v1/student/favorites', 'GET', {
         content_type: this.data.contentType,
         page: 1,
-        page_size: 1 // 我们只需要拿到收藏夹的壳子
+        page_size: 1
       });
       
       const folders = folderRes.data ? folderRes.data.list : (folderRes.list || []);
@@ -52,7 +52,7 @@ Page({
       
       const folderId = folders[0].id;
 
-      // 2. 根据收藏夹 ID，调用 /contents 接口获取里面的【具体内容】
+      // 2. 获取具体内容
       const contentRes = await util.request(`/api/v1/student/favorites/${folderId}/contents`, 'GET', {
         page: page,
         page_size: this.data.pageSize
@@ -61,15 +61,21 @@ Page({
       const resultData = contentRes.data || contentRes;
       const newContents = resultData.contents || [];
       
-      // 3. 将后端查出的具体表记录格式化为卡片需要的字段
+      // 3. 将后端查出的记录格式化
       const formattedList = newContents.map(item => {
+         // 处理时间格式，把中间的 'T' 换成空格，去掉毫秒
+         let timeStr = item.created_at || '';
+         if (timeStr && timeStr.includes('T')) {
+             timeStr = timeStr.replace('T', ' ').split('.')[0];
+         }
+
          return {
-            id: item.id,            // 方便 key="id"
-            content_id: item.id,    // 真实内容的 ID
+            id: item.id,
+            content_id: item.id,
             content_type: this.data.contentType,
-            created_at: item.created_at,
-            // 如果是会话展示会话标题，题库展示题库标题
-            title: item.title || (this.data.contentType === 'session' ? '摘要会话' : '未命名题目')
+            created_at: timeStr,
+            // ✨ 重点修复：依次尝试读取 title, name, bank_name
+            title: item.title || item.name || item.bank_name || (this.data.contentType === 'session' ? '摘要会话' : '未命名题库')
          }
       });
 
@@ -87,9 +93,9 @@ Page({
     }
   },
 
-  // ✨修改点：适配后端的 POST /remove 接口
+  // 取消收藏
   async removeFavorite(e) {
-    const item = e.currentTarget.dataset.item; // 获取整个对象
+    const item = e.currentTarget.dataset.item; 
     
     wx.showModal({
       title: '提示',
@@ -102,8 +108,7 @@ Page({
               content_id: item.content_id
             });
             wx.showToast({ title: '已取消收藏', icon: 'success' });
-            // 刷新列表
-            this.fetchData(true);
+            this.fetchData(true); // 刷新列表
           } catch (error) {
             wx.showToast({ title: '操作失败', icon: 'none' });
           }
@@ -112,11 +117,11 @@ Page({
     });
   },
 
-  // 跳转到对应的会话或题库详情
+  // 跳转到详情
   goToDetail(e) {
     const item = e.currentTarget.dataset.item;
     if (item.content_type === 'session') {
-      wx.navigateTo({ url: `/pages/index/index?session_id=${item.content_id}` });
+      wx.navigateTo({ url: `/pages/summary/summary?sessionId=${item.content_id}` });
     } else if (item.content_type === 'bank') {
       wx.navigateTo({ url: `/pages/bankDetail/bankDetail?id=${item.content_id}` });
     }

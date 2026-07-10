@@ -12,7 +12,9 @@ Page({
     messageList: [],
     userInfo: {},
     currentSessionId: null,
-    scrollToId: '' 
+    scrollToId: '',
+    isFavorited: false,     // 收藏状态
+    isLoadingFav: false     // 防止防抖
   },
 
   onLoad(options) {
@@ -20,6 +22,50 @@ Page({
     if (options.sessionId) {
       this.setData({ currentSessionId: options.sessionId });
       this.fetchHistory(options.sessionId);
+      this.checkFavoriteStatus(options.sessionId); // 初始化查状态
+    }
+  },
+
+  onShow() {
+    // 页面显示时同步状态
+    if (this.data.currentSessionId) {
+      this.checkFavoriteStatus(this.data.currentSessionId);
+    }
+  },
+
+  // 获取收藏状态方法
+  async checkFavoriteStatus(sessionId) {
+    try {
+      const res = await util.request('/api/v1/student/favorites/status', 'GET', {
+        content_type: 'session', 
+        content_id: sessionId
+      });
+      if (res && res.is_favorited !== undefined) {
+        this.setData({ isFavorited: res.is_favorited });
+      }
+    } catch (e) {
+      console.error('获取收藏状态失败', e);
+    }
+  },
+
+  // 点击收藏/取消方法
+  async toggleFavorite() {
+    if (!this.data.currentSessionId || this.data.isLoadingFav) return;
+    this.setData({ isLoadingFav: true });
+
+    const endpoint = this.data.isFavorited ? '/api/v1/student/favorites/remove' : '/api/v1/student/favorites/add';
+
+    try {
+      await util.request(endpoint, 'POST', {
+        content_type: 'session', 
+        content_id: this.data.currentSessionId
+      });
+      this.setData({ isFavorited: !this.data.isFavorited });
+      wx.showToast({ title: this.data.isFavorited ? '已收藏' : '已取消', icon: 'success' });
+    } catch (e) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ isLoadingFav: false });
     }
   },
 

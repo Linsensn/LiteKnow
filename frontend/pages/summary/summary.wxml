@@ -3,8 +3,8 @@
   <view class="session-header" wx:if="{{currentSessionId}}">
     <text class="session-title">摘要会话</text>
     <view class="favorite-btn" bindtap="toggleFavorite">
-      <text class="fav-icon">{{isFavorited ? '★' : '☆'}}</text>
-      <text class="fav-text {{isFavorited ? 'active' : ''}}">{{isFavorited ? '已收藏' : '收藏'}}</text>
+      <text class="{{isFavorited ? 'fav-icon-active' : 'fav-icon'}}">★</text>
+      <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
     </view>
   </view>
 

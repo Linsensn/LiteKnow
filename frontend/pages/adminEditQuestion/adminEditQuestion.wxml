@@ -1,0 +1,39 @@
+<view class="page-container">
+  
+  <view class="form-group">
+    <view class="label-title">题干内容</view>
+    <textarea class="input-box textarea-large" value="{{formData.content}}" bindinput="onInput" data-field="content" placeholder="请输入题目内容" maxlength="-1"></textarea>
+  </view>
+
+  <view class="form-group" wx:if="{{formData.question_type !== 'essay'}}">
+    <view class="label-title">选项设置</view>
+    <view class="option-list">
+      <view class="option-item" wx:for="{{formData.options_json}}" wx:key="index">
+        <view class="opt-label-fixed">{{item.label}}</view>
+        <textarea class="input-box opt-text" value="{{item.text}}" auto-height="true" bindinput="onOptionInput" data-index="{{index}}" placeholder="输入选项内容" maxlength="-1"></textarea>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-group">
+    <view class="label-title">正确答案</view>
+    <input class="input-box tall-input" value="{{formData.correct_answer}}" bindinput="onInput" data-field="correct_answer" placeholder="如: A 或 A,B,C" />
+  </view>
+
+  <view class="form-group">
+    <view class="label-title">AI解析</view>
+    <textarea class="input-box textarea-medium" value="{{formData.ai_analysis}}" bindinput="onInput" data-field="ai_analysis" placeholder="请输入题目解析" maxlength="-1"></textarea>
+  </view>
+
+  <view class="form-group">
+    <view class="label-title">难度等级</view>
+    <picker bindchange="onDifficultyChange" range="{{difficulties}}" value="{{difficultyIndex}}">
+      <view class="picker-box">
+        当前难度: <text class="text-blue">{{formData.difficulty_level || 'medium'}}</text> (点击修改)
+      </view>
+    </picker>
+  </view>
+
+  <button class="btn-submit" bindtap="submitUpdate" loading="{{isSubmitting}}">保存修改</button>
+  
+</view>

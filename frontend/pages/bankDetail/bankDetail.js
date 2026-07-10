@@ -3,19 +3,59 @@ const util = require('../../utils/util.js');
 Page({
   data: {
     bankId: null,
-    bankInfo: {} // 存放当前题库数据
+    bankInfo: {}, // 存放当前题库数据
+    isFavorited: false, // ✨ 收藏状态
+    isLoadingFav: false // ✨ 防止防抖
   },
 
   onLoad(options) {
     if (options.id) {
       this.setData({ bankId: options.id });
       this.fetchBankDetail(options.id);
+      this.checkFavoriteStatus(options.id); // 初始化查状态
     }
   },
 
   onShow() {
     if (this.data.bankId) {
       this.fetchBankDetail(this.data.bankId);
+      this.checkFavoriteStatus(this.data.bankId); // 每次显示刷新状态
+    }
+  },
+
+  // 查状态 (注意这里的 content_type 是 'bank')
+  async checkFavoriteStatus(id) {
+    try {
+      const res = await util.request('/api/v1/student/favorites/status', 'GET', {
+        content_type: 'bank', 
+        content_id: id
+      });
+      if (res && res.is_favorited !== undefined) {
+        this.setData({ isFavorited: res.is_favorited });
+      }
+    } catch (e) {
+      console.error('获取收藏状态失败', e);
+    }
+  },
+
+  // 切换收藏
+  async toggleFavorite() {
+    if (!this.data.bankId || this.data.isLoadingFav) return;
+    this.setData({ isLoadingFav: true });
+
+    const endpoint = this.data.isFavorited ? '/api/v1/student/favorites/remove' : '/api/v1/student/favorites/add';
+
+    try {
+      await util.request(endpoint, 'POST', {
+        content_type: 'bank', 
+        content_id: this.data.bankId
+      });
+      this.setData({ isFavorited: !this.data.isFavorited });
+      wx.showToast({ title: this.data.isFavorited ? '已收藏题库' : '已取消收藏', icon: 'success' });
+    } catch (e) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ isLoadingFav: false });
     }
   },
 
@@ -44,17 +84,24 @@ Page({
   goToManage() {
     if (!this.data.bankId) return;
     
+    // 根据状态决定文案
+    const favText = this.data.isFavorited ? '取消收藏' : '⭐ 收藏题库';
+    // 把收藏放在第一个选项
+    const itemList = [favText, '📝 题目列表管理', '✏️ 修改题库名称', '🗑️ 删除题库'];
+
     wx.showActionSheet({
-      itemList: ['📝 题目列表管理', '✏️ 修改题库名称', '🗑️ 删除题库'],
+      itemList: itemList,
       itemColor: '#333333',
       success: (res) => {
         if (res.tapIndex === 0) {
+          this.toggleFavorite();
+        } else if (res.tapIndex === 1) {
           wx.navigateTo({ 
             url: `/pages/questionManage/questionManage?bankId=${this.data.bankId}` 
           });
-        } else if (res.tapIndex === 1) {
-          this.handleRenameBank();
         } else if (res.tapIndex === 2) {
+          this.handleRenameBank();
+        } else if (res.tapIndex === 3) {
           this.handleDeleteBank();
         }
       }

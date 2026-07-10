@@ -1,5 +1,9 @@
 <view class="container">
   
+  <view class="fav-float-btn" wx:if="{{currentSessionId}}" bindtap="toggleFavorite">
+    <text style="color: {{isFavorited ? '#fa8c16' : '#999'}};">{{isFavorited ? '★ 已收藏' : '☆ 收藏'}}</text>
+  </view>
+
   <scroll-view class="chat-scroll-area" scroll-y="true" scroll-into-view="{{scrollToId}}" scroll-with-animation="true">
     <view class="chat-list" wx:if="{{messageList.length > 0}}">
       

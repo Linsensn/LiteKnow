@@ -1,2 +1,54 @@
-<!--pages/adminUsers/adminUsers.wxml-->
-<text>pages/adminUsers/adminUsers.wxml</text>
+<view class="container">
+  
+  <view class="search-bar">
+    <input class="search-input" placeholder="输入昵称等关键词搜索" bindinput="onSearchInput" bindconfirm="searchUsers" value="{{keyword}}" />
+    <view class="search-btn" bindtap="searchUsers">搜索</view>
+  </view>
+
+  <view class="header-bar">
+    <view class="header-title">全部用户 <text class="total-count">共 {{total}} 人</text></view>
+  </view>
+
+  <view class="user-list">
+    <block wx:for="{{users}}" wx:key="id">
+      
+      <view class="user-card {{item.is_active ? '' : 'card-disabled'}}" bindtap="goToUserDetail" data-id="{{item.id}}">
+        
+        <view class="user-info-area">
+          <image class="avatar" src="{{item.avatar_url || '/assets/ai-avatar.png'}}" mode="aspectFill"></image>
+          <view class="info-content">
+            <view class="name-row">
+              <text class="nickname">{{item.nickname || '微信用户'}}</text>
+              <text class="tag tag-role {{item.role === 'admin' ? 'tag-admin' : 'tag-student'}}">{{item.role === 'admin' ? '管理员' : '学生'}}</text>
+              <text class="tag tag-status {{item.is_active ? 'tag-active' : 'tag-banned'}}">{{item.is_active ? '正常' : '已封禁'}}</text>
+            </view>
+            <view class="sub-info text-gray">ID: {{item.id}} | 注册日期: {{item.short_date}}</view>
+          </view>
+        </view>
+
+        <view class="action-area" wx:if="{{item.role !== 'admin'}}">
+          <view class="btn-group">
+            <view class="action-btn {{item.is_active ? 'btn-warn' : 'btn-success'}}" 
+                  catchtap="toggleStatus" 
+                  data-id="{{item.id}}" 
+                  data-active="{{item.is_active}}" 
+                  data-index="{{index}}">
+              {{item.is_active ? '封禁' : '解封'}}
+            </view>
+            <view class="action-btn btn-danger" 
+                  catchtap="deleteUser" 
+                  data-id="{{item.id}}" 
+                  data-index="{{index}}">
+              注销
+            </view>
+          </view>
+        </view>
+        
+      </view>
+    </block>
+  </view>
+
+  <view class="loading-tip" wx:if="{{isLoading}}">数据加载中...</view>
+  <view class="no-more-tip" wx:if="{{!hasMore && users.length > 0}}">- 到底了 -</view>
+  <view class="empty-tip" wx:if="{{!isLoading && users.length === 0}}">未找到匹配的用户</view>
+</view>

@@ -14,11 +14,13 @@
     "pages/adminDashboard/adminDashboard",
     "pages/adminUsers/adminUsers",
     "pages/adminBanks/adminBanks",
-    "pages/adminSessions/adminSessions",
     "pages/profileEdit/profileEdit",
     "pages/doPractice/doPractice",
     "pages/questionManage/questionManage",
-    "pages/mistakeDetail/mistakeDetail"
+    "pages/mistakeDetail/mistakeDetail",
+    "pages/adminUserDetail/adminUserDetail",
+    "pages/adminBankDetail/adminBankDetail",
+    "pages/adminEditQuestion/adminEditQuestion"
   ],
   "window": {
     "navigationBarTextStyle": "black",
