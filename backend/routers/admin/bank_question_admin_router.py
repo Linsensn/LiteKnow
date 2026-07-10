@@ -1,5 +1,5 @@
 # backend/routers/admin/bank_questions_admin_router.py
-from fastapi import APIRouter, Depends, Query, Body, Pathr
+from fastapi import APIRouter, Depends, Query, Body, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from utils.response import success
